@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Calendar, ChevronRight, Star } from "lucide-react";
+import { ArrowBigLeft, Calendar, ChevronRight, Star } from "lucide-react";
 
 const Home = () => {
   const headlineWords = ["Transform", "Your", "Look", "at", "PalmsBeauty"];
@@ -75,7 +75,7 @@ const Home = () => {
                                  bg-gray-900 text-white rounded-lg font-medium 
                                  transition-all duration-200 hover:bg-gray-800 shadow-sm"
                 >
-                  Book Your Session
+                 <a href="/services">Book Appointment </a>
                   <Calendar className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </button>
 
