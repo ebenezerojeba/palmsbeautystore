@@ -14,7 +14,7 @@ const navigate = useNavigate()
       <p className="text-lg font-medium text-purple-600">Starting from ${price}</p>
     </div>
     <p className="text-gray-600 mb-6">{description}</p>
-    <button onClick={()=>navigate(`/appointment/${id}`)} className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors cursor-pointer duration-300">
+    <button onClick={()=>{navigate(`/appointment/${id}`); scrollTo(0,0)}} className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors cursor-pointer duration-300">
       Book Now
     </button>
   </div>
