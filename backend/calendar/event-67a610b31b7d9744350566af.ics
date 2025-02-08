@@ -1,0 +1,20 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+CALSCALE:GREGORIAN
+PRODID:adamgibbons/ics
+METHOD:PUBLISH
+X-PUBLISHED-TTL:PT1H
+BEGIN:VEVENT
+UID:-kJ3uS5cVRPkzoDxz7FKx
+SUMMARY:Appointment for Box Braids
+DTSTAMP:20250207T135500Z
+DTSTART:20250207T020000Z
+DESCRIPTION:You have an appointment for Box Braids at 03:00 PM.
+URL:https://palmsbeauty.com
+LOCATION:Palms Beauty Salon\, 123 Beauty Street\, City\, Country
+STATUS:CONFIRMED
+ORGANIZER;CN="Palms Beauty":MAILTO:admin@palmsbeauty.com
+ATTENDEE;CN="Ebenezer Ojeba":mailto:ebenezerojeba@gmail.com
+DURATION:PT1H
+END:VEVENT
+END:VCALENDAR

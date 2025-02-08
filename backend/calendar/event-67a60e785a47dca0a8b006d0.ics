@@ -1,0 +1,20 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+CALSCALE:GREGORIAN
+PRODID:adamgibbons/ics
+METHOD:PUBLISH
+X-PUBLISHED-TTL:PT1H
+BEGIN:VEVENT
+UID:lvNIC9NGF1RRuUtiHvDTd
+SUMMARY:Appointment for Corn Rows
+DTSTAMP:20250207T134528Z
+DTSTART:20250207T023000Z
+DESCRIPTION:You have an appointment for Corn Rows at 03:30 PM.
+URL:https://palmsbeauty.com
+LOCATION:Palms Beauty Salon\, 123 Beauty Street\, City\, Country
+STATUS:CONFIRMED
+ORGANIZER;CN="Palms Beauty":MAILTO:admin@palmsbeauty.com
+ATTENDEE;CN="Ebenezer Ojeba":mailto:ebenezerojeba@gmail.com
+DURATION:PT1H
+END:VEVENT
+END:VCALENDAR

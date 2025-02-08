@@ -1,0 +1,20 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+CALSCALE:GREGORIAN
+PRODID:adamgibbons/ics
+METHOD:PUBLISH
+X-PUBLISHED-TTL:PT1H
+BEGIN:VEVENT
+UID:CcDYCjcgI5dkB3IWtKq-j
+SUMMARY:Appointment for Knotless Braids
+DTSTAMP:20250205T232419Z
+DTSTART:20250206T080000Z
+DESCRIPTION:You have an appointment for Knotless Braids at 09:00 AM.
+URL:https://palmsbeauty.com
+LOCATION:Palms Beauty Salon\, 123 Beauty Street\, City\, Country
+STATUS:CONFIRMED
+ORGANIZER;CN="Palms Beauty":MAILTO:admin@palmsbeauty.com
+ATTENDEE;CN="Ebenezer Ojeba":mailto:ebenezerojeba@gmail.com
+DURATION:PT1H
+END:VEVENT
+END:VCALENDAR

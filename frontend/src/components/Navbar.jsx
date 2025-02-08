@@ -32,7 +32,9 @@ const Navbar = () => {
   return (
     <nav className="flex items-center justify-between text-sm py-4 px-6 md:px-10 border-b border-gray-300">
       {/* Logo */}
-      <img className="w-50 cursor-pointer" src={assets.palm_logo2} alt="Logo" />
+     <NavLink to='/'>
+     <img onClick={'/'} className="w-50 cursor-pointer h-auto " src={assets.palm_logo2} alt="Logo" />
+     </NavLink>
 
       {/* Desktop Navigation */}
       <ul className="hidden md:flex items-center gap-6 font-medium">
@@ -52,7 +54,7 @@ const Navbar = () => {
       {/* CTA Button */}
       <div className="hidden md:block">
         <button className="bg-gray-700 text-white px-6 py-2 rounded-full font-light hover:bg-gray-900 transition">
-          Book Now
+          <a href="/services">Book now</a>
         </button>
       </div>
 

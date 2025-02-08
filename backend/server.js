@@ -3,6 +3,7 @@ import cors from 'cors'
 import 'dotenv/config'
 import connectDB from './config/mongodb.js'
 import appointmentRouter from './routes/appointmentRoute.js'
+import adminRouter from './routes/adminRoute.js'
 
 // App Config
 const app = express()
@@ -15,6 +16,7 @@ app.use(express.json())
 
 // API Endpoint
 app.use('/api/appointment', appointmentRouter)
+app.use('/api/admin', adminRouter)
 
 
 // Serve .ics files for download

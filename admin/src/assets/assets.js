@@ -11,9 +11,13 @@ import tick_icon from './tick_icon.svg'
 import appointments_icon from './appointments_icon.svg'
 import earning_icon from './earning_icon.svg'
 import patients_icon from './patients_icon.svg'
+import admin1 from './admin.png'
+import admin2 from './admin2.png'
 
 export const assets = {
     add_icon,
+    admin1,
+    admin2,
     admin_logo,
     appointment_icon,
     cancel_icon,
@@ -27,3 +31,4 @@ export const assets = {
     appointments_icon,
     earning_icon
 }
+
