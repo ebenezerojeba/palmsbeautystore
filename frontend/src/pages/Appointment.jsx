@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 
 import BookingModal from "../components/BookingModal";
 import { Loader } from "lucide-react";
+
 const Appointment = () => {
   const { id } = useParams();
   const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
@@ -39,7 +40,7 @@ const Appointment = () => {
         try {
           // Fetch booked slots from the backend
           const response = await fetch(
-            `${backendUrl}/api/appointment/booked-slots`,
+            `https://palmsbeauty-backend.vercel.app/api/appointment/booked-slots`,
             {
               method: "GET",
               headers: {
