@@ -49,7 +49,7 @@ const AdminContextProvider = (props) => {
     setLoading('cancelOperation', true);
     try {
       const { data } = await axios.post(
-        `${backendUrl}api/admin/cancel-appointment`,
+        `${backendUrl}/api/admin/cancel-appointment`,
         { appointmentId }
       );
       if (data.success) {
@@ -97,7 +97,7 @@ const AdminContextProvider = (props) => {
     setLoading('completeOperation', true);
     try {
       const { data } = await axios.post(
-        `${backendUrl}api/admin/complete-appointment`,
+        `${backendUrl}/api/admin/complete-appointment`,
         { appointmentId }
       );
       if (data.success) {
@@ -144,7 +144,7 @@ const AdminContextProvider = (props) => {
   const getDashData = async () => {
     setLoading('dashboard', true);
     try {
-      const { data } = await axios.get(`${backendUrl}api/admin/dashboard`, {
+      const { data } = await axios.get(`${backendUrl}/api/admin/dashboard`, {
         headers: { "Content-Type": "application/json" },
       });
       if (data.success) {
@@ -166,7 +166,7 @@ const AdminContextProvider = (props) => {
     setLoading('appointments', true);
     try {
       const { data } = await axios.get(
-        `${backendUrl}api/admin/all-appointments`,
+        `${backendUrl}/api/admin/all-appointments`,
         { headers: { "Content-Type": "application/json" } }
       );
       if (data.success) {
