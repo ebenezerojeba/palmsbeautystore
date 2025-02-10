@@ -40,7 +40,7 @@ const Appointment = () => {
         try {
           // Fetch booked slots from the backend
           const response = await fetch(
-            `https://palmsbeauty-backend.vercel.app/api/appointment/booked-slots`,
+            `${backendUrl}/api/appointment/booked-slots`,
             {
               method: "GET",
               headers: {
