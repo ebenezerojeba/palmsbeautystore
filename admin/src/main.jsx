@@ -4,7 +4,6 @@ import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import App from "./App.jsx";
 import AdminContextProvider from "./context/adminContext.jsx";
-// import AdminContextProvider from "./context/adminContext.jsx";
 
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>
