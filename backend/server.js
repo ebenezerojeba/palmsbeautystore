@@ -10,8 +10,22 @@ const app = express();
 
 const port = process.env.PORT || 3000;
 connectDB();
+
+// CORS Configuration
+const corsOptions = {
+  origin: [
+    'http://localhost:5173',  // Your local frontend URL
+    'http://localhost:5174',  // Your local frontend URL
+    'https://palmsbeautystore.vercel.app' // Your deployed frontend URL
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true // If you're using cookies or authentication headers
+};
+
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // API Endpoint
