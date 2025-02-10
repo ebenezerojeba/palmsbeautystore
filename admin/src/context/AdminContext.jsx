@@ -1,7 +1,7 @@
-
-import { useState, createContext } from "react";
-import axios from "axios";
+import { createContext, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 export const AdminContext = createContext();
 
@@ -12,12 +12,11 @@ const AdminContextProvider = (props) => {
     dashboard: false,
     appointments: false,
     cancelOperation: false,
-    completeOperation: false
+    completeOperation: false,
   });
 
   // const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const backendUrl = "https://palmsbeauty-backend.vercel.app";
-
 
   const months = [
     "",
@@ -39,15 +38,15 @@ const AdminContextProvider = (props) => {
   };
 
   const setLoading = (key, value) => {
-    setLoadingStates(prev => ({
+    setLoadingStates((prev) => ({
       ...prev,
-      [key]: value
+      [key]: value,
     }));
   };
 
   // API for cancelling appointment
   const cancelAppointment = async (appointmentId) => {
-    setLoading('cancelOperation', true);
+    setLoading("cancelOperation", true);
     try {
       const { data } = await axios.post(
         `${backendUrl}/api/admin/cancel-appointment`,
@@ -61,15 +60,19 @@ const AdminContextProvider = (props) => {
           if (!prevData) return null;
           return {
             ...prevData,
-            cancelledAppointments: data.isCancelled 
-              ? (prevData.cancelledAppointments || 0) + 1 
-              : (prevData.cancelledAppointments || 0),
-            pendingAppointments: Math.max(0, (prevData.pendingAppointments || 0) - 1),
-            latestAppointments: prevData.latestAppointments?.map((appointment) =>
-              appointment._id === appointmentId
-                ? { ...appointment, isCancelled: true }
-                : appointment
-            ) || [],
+            cancelledAppointments: data.isCancelled
+              ? (prevData.cancelledAppointments || 0) + 1
+              : prevData.cancelledAppointments || 0,
+            pendingAppointments: Math.max(
+              0,
+              (prevData.pendingAppointments || 0) - 1
+            ),
+            latestAppointments:
+              prevData.latestAppointments?.map((appointment) =>
+                appointment._id === appointmentId
+                  ? { ...appointment, isCancelled: true }
+                  : appointment
+              ) || [],
           };
         });
 
@@ -89,13 +92,13 @@ const AdminContextProvider = (props) => {
         error.response?.data?.message || "Failed to cancel appointment"
       );
     } finally {
-      setLoading('cancelOperation', false);
+      setLoading("cancelOperation", false);
     }
   };
 
   // API for completing appointment
   const isCompleted = async (appointmentId) => {
-    setLoading('completeOperation', true);
+    setLoading("completeOperation", true);
     try {
       const { data } = await axios.post(
         `${backendUrl}/api/admin/complete-appointment`,
@@ -109,15 +112,19 @@ const AdminContextProvider = (props) => {
           if (!prevData) return null;
           return {
             ...prevData,
-            completedAppointments: data.isCompleted 
-              ? (prevData.completedAppointments || 0) + 1 
-              : (prevData.completedAppointments || 0),
-            pendingAppointments: Math.max(0, (prevData.pendingAppointments || 0) - 1),
-            latestAppointments: prevData.latestAppointments?.map((appointment) =>
-              appointment._id === appointmentId
-                ? { ...appointment, isCompleted: true }
-                : appointment
-            ) || [],
+            completedAppointments: data.isCompleted
+              ? (prevData.completedAppointments || 0) + 1
+              : prevData.completedAppointments || 0,
+            pendingAppointments: Math.max(
+              0,
+              (prevData.pendingAppointments || 0) - 1
+            ),
+            latestAppointments:
+              prevData.latestAppointments?.map((appointment) =>
+                appointment._id === appointmentId
+                  ? { ...appointment, isCompleted: true }
+                  : appointment
+              ) || [],
           };
         });
 
@@ -137,13 +144,13 @@ const AdminContextProvider = (props) => {
         error.response?.data?.message || "Failed to complete appointment"
       );
     } finally {
-      setLoading('completeOperation', false);
+      setLoading("completeOperation", false);
     }
   };
 
   // API for Dashboard Data
   const getDashData = async () => {
-    setLoading('dashboard', true);
+    setLoading("dashboard", true);
     try {
       const { data } = await axios.get(`${backendUrl}/api/admin/dashboard`, {
         headers: { "Content-Type": "application/json" },
@@ -158,13 +165,13 @@ const AdminContextProvider = (props) => {
         error.response?.data?.message || "Failed to fetch dashboard data"
       );
     } finally {
-      setLoading('dashboard', false);
+      setLoading("dashboard", false);
     }
   };
 
   // API to get all appointments
   const getAllAppointments = async () => {
-    setLoading('appointments', true);
+    setLoading("appointments", true);
     try {
       const { data } = await axios.get(
         `${backendUrl}/api/admin/all-appointments`,
@@ -178,7 +185,7 @@ const AdminContextProvider = (props) => {
     } catch (error) {
       toast.error(error.message);
     } finally {
-      setLoading('appointments', false);
+      setLoading("appointments", false);
     }
   };
 
@@ -194,7 +201,7 @@ const AdminContextProvider = (props) => {
         slotDateFormat,
         isCompleted,
         loadingStates,
-        months
+        months,
       }}
     >
       {props.children}
