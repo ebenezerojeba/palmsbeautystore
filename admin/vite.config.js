@@ -9,5 +9,14 @@ export default defineConfig({
     alias: {
       '@': '/src'
     }
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+      },
+    }
   }
 })
