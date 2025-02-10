@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 const sendAppointmentNotification = (appointment) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
-    to: 'ojebaebenezer@gmail.com', // Admin's email address
+    to: process.env.ADMIN_EMAIL, // Admin's email address
     subject: 'New appointment Received',
     text: `
       New Appointment Details:

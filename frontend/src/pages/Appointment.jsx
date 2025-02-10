@@ -247,9 +247,9 @@ const Appointment = () => {
 
           <div className="px-6 sm:px-8 py-4 bg-gray-50 border-t border-gray-100">
             <div className="flex items-baseline">
-              <span className="text-gray-700 font-medium">Price:</span>
+              <span className="text-gray-700 font-medium">Price from:</span>
               <span className="ml-2 text-2xl font-bold text-green-600">
-                ₦{serviceInfo?.price?.toLocaleString()}
+                ${serviceInfo?.price?.toLocaleString()}
               </span>
             </div>
           </div>

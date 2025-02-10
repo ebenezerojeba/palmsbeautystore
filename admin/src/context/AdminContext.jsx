@@ -1,3 +1,4 @@
+
 import { useState, createContext } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -7,14 +8,21 @@ export const AdminContext = createContext();
 const AdminContextProvider = (props) => {
   const [dashData, setDashData] = useState(null);
   const [appointments, setAppointments] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const backendUrl = "http://localhost:3000/";
+  const [loadingStates, setLoadingStates] = useState({
+    dashboard: false,
+    appointments: false,
+    cancelOperation: false,
+    completeOperation: false
+  });
+
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
 
   const months = [
     "",
     "Jan",
     "Feb",
-    "MArch",
+    "March",
     "April",
     "May",
     "Jun",
@@ -24,13 +32,21 @@ const AdminContextProvider = (props) => {
     "Nov",
     "Dec",
   ];
+
   const slotDateFormat = (slotDate) => {
     return slotDate.split("T")[0];
   };
 
-  // API for cancelling apppointment
+  const setLoading = (key, value) => {
+    setLoadingStates(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  // API for cancelling appointment
   const cancelAppointment = async (appointmentId) => {
-    setIsLoading(true);
+    setLoading('cancelOperation', true);
     try {
       const { data } = await axios.post(
         `${backendUrl}api/admin/cancel-appointment`,
@@ -39,15 +55,31 @@ const AdminContextProvider = (props) => {
       if (data.success) {
         toast.success(data.message);
 
-        // ✅ Update state after cancellation
-        setDashData((prevData) => ({
-          ...prevData,
-          latestAppointments: prevData.latestAppointments.map((appointment) =>
+        // Update the Dashboard Data with null check
+        setDashData((prevData) => {
+          if (!prevData) return null;
+          return {
+            ...prevData,
+            cancelledAppointments: data.isCancelled 
+              ? (prevData.cancelledAppointments || 0) + 1 
+              : (prevData.cancelledAppointments || 0),
+            pendingAppointments: Math.max(0, (prevData.pendingAppointments || 0) - 1),
+            latestAppointments: prevData.latestAppointments?.map((appointment) =>
+              appointment._id === appointmentId
+                ? { ...appointment, isCancelled: true }
+                : appointment
+            ) || [],
+          };
+        });
+
+        // Update the appointment data
+        setAppointments((prevAppointments) =>
+          prevAppointments.map((appointment) =>
             appointment._id === appointmentId
-              ? { ...appointment, cancelled: true } // Mark as cancelled
+              ? { ...appointment, isCancelled: true }
               : appointment
-          ),
-        }));
+          )
+        );
       } else {
         toast.error(data.message);
       }
@@ -55,14 +87,14 @@ const AdminContextProvider = (props) => {
       toast.error(
         error.response?.data?.message || "Failed to cancel appointment"
       );
-    }
-    finally{
-      setIsLoading(false);
+    } finally {
+      setLoading('cancelOperation', false);
     }
   };
 
   // API for completing appointment
   const isCompleted = async (appointmentId) => {
+    setLoading('completeOperation', true);
     try {
       const { data } = await axios.post(
         `${backendUrl}api/admin/complete-appointment`,
@@ -71,36 +103,52 @@ const AdminContextProvider = (props) => {
       if (data.success) {
         toast.success(data.message);
 
-           // ✅ Update state to reflect completed status
-           setDashData((prevData) => ({
+        // Update Dashboard with null check
+        setDashData((prevData) => {
+          if (!prevData) return null;
+          return {
             ...prevData,
-            completedAppointments: data.isCompleted ? prevData.completedAppointments + 1 : prevData.completedAppointments,
-            pendingAppointments: prevData.pendingAppointments - 1,
-            latestAppointments: prevData.latestAppointments.map((appointment) =>
+            completedAppointments: data.isCompleted 
+              ? (prevData.completedAppointments || 0) + 1 
+              : (prevData.completedAppointments || 0),
+            pendingAppointments: Math.max(0, (prevData.pendingAppointments || 0) - 1),
+            latestAppointments: prevData.latestAppointments?.map((appointment) =>
               appointment._id === appointmentId
                 ? { ...appointment, isCompleted: true }
                 : appointment
-            ),
-          }));
+            ) || [],
+          };
+        });
 
+        // Update appointment status
+        setAppointments((prevAppointments) =>
+          prevAppointments.map((appointment) =>
+            appointment._id === appointmentId
+              ? { ...appointment, isCompleted: true }
+              : appointment
+          )
+        );
       } else {
         toast.error(data.message);
       }
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "Failed to cancel appointment"
+        error.response?.data?.message || "Failed to complete appointment"
       );
+    } finally {
+      setLoading('completeOperation', false);
     }
   };
+
   // API for Dashboard Data
   const getDashData = async () => {
+    setLoading('dashboard', true);
     try {
       const { data } = await axios.get(`${backendUrl}api/admin/dashboard`, {
         headers: { "Content-Type": "application/json" },
       });
       if (data.success) {
         setDashData(data.dashData);
-        console.log(data.dashData);
       } else {
         toast.error(data.message);
       }
@@ -108,11 +156,14 @@ const AdminContextProvider = (props) => {
       toast.error(
         error.response?.data?.message || "Failed to fetch dashboard data"
       );
+    } finally {
+      setLoading('dashboard', false);
     }
   };
 
-  // API to get all appointmnents
-  const getAllAppointments = async (params) => {
+  // API to get all appointments
+  const getAllAppointments = async () => {
+    setLoading('appointments', true);
     try {
       const { data } = await axios.get(
         `${backendUrl}api/admin/all-appointments`,
@@ -120,12 +171,13 @@ const AdminContextProvider = (props) => {
       );
       if (data.success) {
         setAppointments(data.appointments);
-        console.log(data.appointments);
       } else {
         toast.error(data.message);
       }
     } catch (error) {
       toast.error(error.message);
+    } finally {
+      setLoading('appointments', false);
     }
   };
 
@@ -140,8 +192,8 @@ const AdminContextProvider = (props) => {
         cancelAppointment,
         slotDateFormat,
         isCompleted,
-        isLoading,
-        setIsLoading
+        loadingStates,
+        months
       }}
     >
       {props.children}

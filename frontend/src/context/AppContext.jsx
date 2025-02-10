@@ -5,7 +5,8 @@ export const AppContext = createContext()
 
 const AppContextProvider = (props) => {
 
-    const backendUrl = "http://localhost:3000"
+    // const backendUrl = "http://localhost:3000"
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
     const value = {
         braidingServices,
