@@ -15,7 +15,8 @@ const AdminContextProvider = (props) => {
     completeOperation: false
   });
 
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  // const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = "https://palmsbeauty-backend.vercel.app";
 
 
   const months = [
