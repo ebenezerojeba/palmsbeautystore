@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { toast } from "react-toastify";
+import axios from "axios"
 
 import BookingModal from "../components/BookingModal";
 import { Loader } from "lucide-react";
@@ -37,27 +38,43 @@ const Appointment = () => {
         );
         setServiceInfo(service);
 
-        try {
-          // Fetch booked slots from the backend
-          const response = await fetch(
-            `${backendUrl}/api/appointment/booked-slots`,
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-              },
-            }
-          );
-          if (response.ok) {
-            const data = await response.json();
-            setBookedSlots(data);
-          }
-        } catch (error) {
-          console.error("Error fetching booked slots:", error);
-          toast.error("Error loading availability. Please try again.");
-        }
+    //     try {
+    //       // Fetch booked slots from the backend
+    //       const response = await fetch(
+    //         `${backendUrl}/api/appointment/booked-slots`,
+    //         {
+    //           method: "GET",
+    //           headers: {
+    //             "Content-Type": "application/json",
+    //           },
+    //         }
+    //       );
+    //       if (response.ok) {
+    //         const data = await response.json();
+    //         setBookedSlots(data);
+    //       }
+    //     } catch (error) {
+    //       console.error("Error fetching booked slots:", error);
+    //       toast.error("Error loading availability. Please try again.");
+    //     }
+    //   }
+    // };
+
+    try {
+      // Fetch booked slots from the backend using Axios
+      const response = await axios.get(`${backendUrl}/api/appointment/booked-slots`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    
+      setBookedSlots(response.data);
+    } catch (error) {
+      console.error("Error fetching booked slots:", error);
+      toast.error("Error loading availability. Please try again.");
+    }
       }
-    };
+    }    
 
     fetchData();
   }, [braidingServices, beautyServices, id, backendUrl]);
@@ -167,60 +184,111 @@ const Appointment = () => {
 
     setIsBooking(true);
 
-    try {
-      const response = await fetch(
-        `${backendUrl}/api/appointment/book-appointment`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(bookingData),
-        }
-      );
+  //   try {
+  //     const response = await fetch(
+  //       `${backendUrl}/api/appointment/book-appointment`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify(bookingData),
+  //       }
+  //     );
 
-      // Prepare confrimation data
-      const confirmationData = {
-        ...bookingData,
-        price: serviceInfo.price,
-        serviceId: serviceInfo.id,
-      };
+  //     // Prepare confrimation data
+  //     const confirmationData = {
+  //       ...bookingData,
+  //       price: serviceInfo.price,
+  //       serviceId: serviceInfo.id,
+  //     };
 
-      if (response.ok) {
-        const data = await response.json();
-        toast.success("Appointment booked successfully!");
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       toast.success("Appointment booked successfully!");
 
-        // Store calender link
-        setCalendarLink(data.calendarLink);
+  //       // Store calender link
+  //       setCalendarLink(data.calendarLink);
 
-        // Download calendar file
-        // const downloadLink = `${backendUrl}/api/appointment${data.calendarLink}`;
-        // window.open(downloadLink, "_blank");
+  //       // Download calendar file
+  //       // const downloadLink = `${backendUrl}/api/appointment${data.calendarLink}`;
+  //       // window.open(downloadLink, "_blank");
 
-        // Update booked slots and refresh available slots
-        setBookedSlots([
-          ...bookedSlots,
-          { date: selectedDate, time: slotTime, serviceId: serviceInfo.id },
-        ]);
-        getAvailableSlot();
+  //       // Update booked slots and refresh available slots
+  //       setBookedSlots([
+  //         ...bookedSlots,
+  //         { date: selectedDate, time: slotTime, serviceId: serviceInfo.id },
+  //       ]);
+  //       getAvailableSlot();
 
-        // Reset form
-        setUserDetails({ name: "", email: "", phone: "" });
-        setSlotTime("");
+  //       // Reset form
+  //       setUserDetails({ name: "", email: "", phone: "" });
+  //       setSlotTime("");
 
-        // Show Modal
-        setConfirmationDetails(confirmationData);
-        setShowConfirmation(true);
-      } else {
-        toast.error("Failed to book appointment. Please try again.");
+  //       // Show Modal
+  //       setConfirmationDetails(confirmationData);
+  //       setShowConfirmation(true);
+  //     } else {
+  //       toast.error("Failed to book appointment. Please try again.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error booking appointment:", error);
+  //     toast.error("An error occurred. Please try again.");
+  //   } finally {
+  //     setIsBooking(false);
+  //   }
+  // };
+
+
+  try {
+    const response = await axios.post(
+      `${backendUrl}/api/appointment/book-appointment`,
+      bookingData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
-    } catch (error) {
-      console.error("Error booking appointment:", error);
-      toast.error("An error occurred. Please try again.");
-    } finally {
-      setIsBooking(false);
+    );
+  
+    // Prepare confirmation data
+    const confirmationData = {
+      ...bookingData,
+      price: serviceInfo.price,
+      serviceId: serviceInfo.id,
+    };
+  
+    if (response.status === 200) {
+      const data = response.data;
+      toast.success("Appointment booked successfully!");
+  
+      // Store calendar link
+      setCalendarLink(data.calendarLink);
+  
+      // Update booked slots and refresh available slots
+      setBookedSlots([
+        ...bookedSlots,
+        { date: selectedDate, time: slotTime, serviceId: serviceInfo.id },
+      ]);
+      getAvailableSlot();
+  
+      // Reset form
+      setUserDetails({ name: "", email: "", phone: "" });
+      setSlotTime("");
+  
+      // Show Modal
+      setConfirmationDetails(confirmationData);
+      setShowConfirmation(true);
+    } else {
+      toast.error("Failed to book appointment. Please try again.");
     }
-  };
+  } catch (error) {
+    console.error("Error booking appointment:", error);
+    toast.error("An error occurred. Please try again.");
+  } finally {
+    setIsBooking(false);
+  }
+  }  
 
   useEffect(() => {
     if (serviceInfo && bookedSlots.length >= 0) {
