@@ -2,8 +2,6 @@ import React, { useContext, useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { toast } from "react-toastify";
-import axios from "axios"
-
 import BookingModal from "../components/BookingModal";
 import { Loader } from "lucide-react";
 
@@ -27,6 +25,8 @@ const Appointment = () => {
   const [confirmationDetails, setConfirmationDetails] = useState(null);
   const [calendarLink, setCalendarLink] = useState(null);
   const [isBooking, setIsBooking] = useState(false);
+
+  // const backendUrl = "http://localhost:3000"
   // const [isLoading, setIsLoading] = useState(false)
   // Fetch service info and booked slots
   useEffect(() => {
@@ -38,43 +38,28 @@ const Appointment = () => {
         );
         setServiceInfo(service);
 
-    //     try {
-    //       // Fetch booked slots from the backend
-    //       const response = await fetch(
-    //         `${backendUrl}/api/appointment/booked-slots`,
-    //         {
-    //           method: "GET",
-    //           headers: {
-    //             "Content-Type": "application/json",
-    //           },
-    //         }
-    //       );
-    //       if (response.ok) {
-    //         const data = await response.json();
-    //         setBookedSlots(data);
-    //       }
-    //     } catch (error) {
-    //       console.error("Error fetching booked slots:", error);
-    //       toast.error("Error loading availability. Please try again.");
-    //     }
-    //   }
-    // };
-
-    try {
-      // Fetch booked slots from the backend using Axios
-      const response = await axios.get(`${backendUrl}/api/appointment/booked-slots`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-    
-      setBookedSlots(response.data);
-    } catch (error) {
-      console.error("Error fetching booked slots:", error);
-      toast.error("Error loading availability. Please try again.");
-    }
+        try {
+          // Fetch booked slots from the backend
+          const response = await fetch(
+            `${backendUrl}/api/appointment/booked-slots`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          if (response.ok) {
+            const data = await response.json();
+            setBookedSlots(data);
+          }
+        } catch (error) {
+          console.error("Error fetching booked slots:", error);
+          toast.error("Error loading availability. Please try again.");
+        }
       }
-    }    
+  
+    }
 
     fetchData();
   }, [braidingServices, beautyServices, id, backendUrl]);
@@ -177,6 +162,7 @@ const Appointment = () => {
     const bookingData = {
       serviceId: serviceInfo.id,
       serviceTitle: serviceInfo.title,
+      duration: serviceInfo.duration,
       date: selectedDate,
       time: slotTime,
       userDetails,
@@ -184,111 +170,60 @@ const Appointment = () => {
 
     setIsBooking(true);
 
-  //   try {
-  //     const response = await fetch(
-  //       `${backendUrl}/api/appointment/book-appointment`,
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //         body: JSON.stringify(bookingData),
-  //       }
-  //     );
+    try {
+      const response = await fetch(
+        `${backendUrl}/api/appointment/book-appointment`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(bookingData),
+        }
+      );
 
-  //     // Prepare confrimation data
-  //     const confirmationData = {
-  //       ...bookingData,
-  //       price: serviceInfo.price,
-  //       serviceId: serviceInfo.id,
-  //     };
+      // Prepare confrimation data
+      const confirmationData = {
+        ...bookingData,
+        price: serviceInfo.price,
+        serviceId: serviceInfo.id,
+      };
 
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       toast.success("Appointment booked successfully!");
+      if (response.ok) {
+        const data = await response.json();
+        toast.success("Appointment booked successfully!");
 
-  //       // Store calender link
-  //       setCalendarLink(data.calendarLink);
+        // Store calender link
+        setCalendarLink(data.calendarLink);
 
-  //       // Download calendar file
-  //       // const downloadLink = `${backendUrl}/api/appointment${data.calendarLink}`;
-  //       // window.open(downloadLink, "_blank");
+        // Download calendar file
+        // const downloadLink = `${backendUrl}/api/appointment${data.calendarLink}`;
+        // window.open(downloadLink, "_blank");
 
-  //       // Update booked slots and refresh available slots
-  //       setBookedSlots([
-  //         ...bookedSlots,
-  //         { date: selectedDate, time: slotTime, serviceId: serviceInfo.id },
-  //       ]);
-  //       getAvailableSlot();
+        // Update booked slots and refresh available slots
+        setBookedSlots([
+          ...bookedSlots,
+          { date: selectedDate, time: slotTime, serviceId: serviceInfo.id },
+        ]);
+        getAvailableSlot();
 
-  //       // Reset form
-  //       setUserDetails({ name: "", email: "", phone: "" });
-  //       setSlotTime("");
+        // Reset form
+        setUserDetails({ name: "", email: "", phone: "" });
+        setSlotTime("");
 
-  //       // Show Modal
-  //       setConfirmationDetails(confirmationData);
-  //       setShowConfirmation(true);
-  //     } else {
-  //       toast.error("Failed to book appointment. Please try again.");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error booking appointment:", error);
-  //     toast.error("An error occurred. Please try again.");
-  //   } finally {
-  //     setIsBooking(false);
-  //   }
-  // };
-
-
-  try {
-    const response = await axios.post(
-      `${backendUrl}/api/appointment/book-appointment`,
-      bookingData,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
+        // Show Modal
+        setConfirmationDetails(confirmationData);
+        setShowConfirmation(true);
+      } else {
+        toast.error("Failed to book appointment. Please try again.");
       }
-    );
-  
-    // Prepare confirmation data
-    const confirmationData = {
-      ...bookingData,
-      price: serviceInfo.price,
-      serviceId: serviceInfo.id,
-    };
-  
-    if (response.status === 200) {
-      const data = response.data;
-      toast.success("Appointment booked successfully!");
-  
-      // Store calendar link
-      setCalendarLink(data.calendarLink);
-  
-      // Update booked slots and refresh available slots
-      setBookedSlots([
-        ...bookedSlots,
-        { date: selectedDate, time: slotTime, serviceId: serviceInfo.id },
-      ]);
-      getAvailableSlot();
-  
-      // Reset form
-      setUserDetails({ name: "", email: "", phone: "" });
-      setSlotTime("");
-  
-      // Show Modal
-      setConfirmationDetails(confirmationData);
-      setShowConfirmation(true);
-    } else {
-      toast.error("Failed to book appointment. Please try again.");
+    } catch (error) {
+      console.error("Error booking appointment:", error);
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setIsBooking(false);
     }
-  } catch (error) {
-    console.error("Error booking appointment:", error);
-    toast.error("An error occurred. Please try again.");
-  } finally {
-    setIsBooking(false);
-  }
-  }  
+  };
 
   useEffect(() => {
     if (serviceInfo && bookedSlots.length >= 0) {
@@ -301,29 +236,51 @@ const Appointment = () => {
     setSlotTime("");
   }, [slotIndex]);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-xl mx-auto">
-        <div className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
-          <div className="p-6 sm:p-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">
-              {serviceInfo?.title}
-            </h1>
-            <p className="text-gray-600 text-lg leading-relaxed">
-              {serviceInfo?.description}
-            </p>
-          </div>
 
-          <div className="px-6 sm:px-8 py-4 bg-gray-50 border-t border-gray-100">
-            <div className="flex items-baseline">
-              <span className="text-gray-700 font-medium">Price from:</span>
-              <span className="ml-2 text-2xl font-bold text-green-600">
-                ${serviceInfo?.price?.toLocaleString()}
-              </span>
+    return(
+      
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-6 px-4 sm:py-12 sm:px-6 lg:px-8">
+    <div className="max-w-xl mx-auto">
+      {/* Service Info Card */}
+      <div className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
+        <div className="p-4 sm:p-8">
+          {serviceInfo?.image && (
+            <div className="relative h-48 sm:h-64 mb-4 overflow-hidden rounded-lg">
+              <img
+                src={serviceInfo.image}
+                alt={serviceInfo.title}
+                className="object-cover w-full h-full"
+              />
             </div>
+          )}
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 tracking-tight">
+            {serviceInfo?.title || 'Service Title'}
+          </h1>
+          <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
+            {serviceInfo?.description || 'Service description'}
+          </p>
+        </div>
+
+        <div className="px-4 sm:px-8 py-4 bg-gray-50 border-t border-gray-100">
+          <div className="flex items-baseline">
+            <span className="text-gray-700 font-medium">Price:</span>
+            <span className="ml-2 text-xl sm:text-2xl font-bold text-green-600">
+              {serviceInfo?.price?.toLocaleString() || '0'}
+            </span>
+
           </div>
+      
+       
+          <div className="flex items-center gap-2 mt-4">
+              
+                <span className="text-gray-600 font-medium">
+                  Duration: {serviceInfo?.duration || 'N/A'}
+                </span>
+              </div>
+
         </div>
       </div>
+    </div>
 
       <div className="sm:ml-72 sm:pl-4 mt-4 font-medium text-gray-700">
         <p>Available Booking Slots</p>

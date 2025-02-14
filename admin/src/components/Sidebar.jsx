@@ -18,16 +18,16 @@ const Sidebar = () => {
       icon: <Calendar className="w-5 h-5" />,
       label: 'Appointments'
     },
-    {
-      path: '/clients',
-      icon: <Users className="w-5 h-5" />,
-      label: 'Clients'
-    },
-    {
-      path: '/services',
-      icon: <Clock className="w-5 h-5" />,
-      label: 'Services'
-    },
+    // {
+    //   path: '/clients',
+    //   icon: <Users className="w-5 h-5" />,
+    //   label: 'Clients'
+    // },
+    // {
+    //   path: '/services',
+    //   icon: <Clock className="w-5 h-5" />,
+    //   label: 'Services'
+    // },
   ];
 
   return (

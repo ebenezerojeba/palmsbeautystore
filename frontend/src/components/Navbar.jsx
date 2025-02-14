@@ -54,7 +54,7 @@ const Navbar = () => {
       {/* CTA Button */}
       <div className="hidden md:block">
         <button className="bg-gray-700 text-white px-6 py-2 rounded-full font-light hover:bg-gray-900 transition">
-          <a href="/services">Book now</a>
+          <a className="cursor-pointer" href="/services">Book now</a>
         </button>
       </div>
 

@@ -106,15 +106,15 @@ const Dashboard = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       <div className="flex items-center text-sm text-gray-600">
                         <Users className="w-4 h-4 mr-2" />
-                        {item.userDetails.name}
+                        {item.userDetails?.name}
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
                         <Mail className="w-4 h-4 mr-2" />
-                        {item.userDetails.email}
+                        {item.userDetails?.email}
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
                         <Phone className="w-4 h-4 mr-2" />
-                        {item.userDetails.phone}
+                        {item.userDetails?.phone}
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
                         <Calendar className="w-4 h-4 mr-2" />
@@ -132,13 +132,13 @@ const Dashboard = () => {
                       <div className="flex space-x-2">
                         <button
                           onClick={() => cancelAppointment(item._id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                          className="p-2 text-red-500 border hover:bg-red-50 rounded-full transition-colors"
                         >
                           <X className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => isCompleted(item._id)}
-                          className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
+                          className="p-2 text-green-600 border hover:bg-green-50 rounded-full transition-colors"
                         >
                           <Check className="w-5 h-5" />
                         </button>

@@ -72,9 +72,16 @@ const BookingModal = ({ isOpen, onClose, bookingDetails, onDownloadCalendar }) =
                 </span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                <span className="text-gray-600">Duration</span>
+                <span className="font-medium text-gray-800">
+                  {bookingDetails.duration}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-gray-200">
                 <span className="text-gray-600">Amount</span>
                 <span className="font-medium text-gray-800">
-                  ₦{bookingDetails.price?.toLocaleString()}
+                
+                  {bookingDetails.price?.toLocaleString()}
                 </span>
               </div>
             </div>

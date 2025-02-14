@@ -76,7 +76,7 @@ const AllAppointment = () => {
                 {/* Mobile View */}
                 <div className="md:hidden p-4 space-y-2">
                   <div className="flex justify-between items-center">
-                    <h3 className="font-medium">{item.userDetails.name}</h3>
+                    <h3 className="font-medium">{item.userDetails?.name}</h3>
                     <StatusBadge item={item} />
                   </div>
                   <div className="text-sm text-gray-500 space-y-1">
@@ -84,11 +84,12 @@ const AllAppointment = () => {
                     <p>
                       Date: {slotDateFormat(item.date)} {item.time}
                     </p>
-                    <p>Phone: {item.userDetails.phone}</p>
+                    <p>Phone: {item.userDetails?.phone}</p>
                   </div>
                   {!item.isCancelled && !item.isCompleted && (
                     <div className="flex gap-2 pt-2">
                       <ActionButton
+                      color="border-red-400"
                         icon={loadingStates.cancelOperation ? 
                           <Loader className="animate-spin text-red-500" /> : 
                           <X className="text-red-500" />}
@@ -97,9 +98,10 @@ const AllAppointment = () => {
                         disabled={loadingStates.cancelOperation || loadingStates.completeOperation}
                       />
                       <ActionButton
+                          color="border-green-500"
                         icon={loadingStates.completeOperation ? 
                           <Loader className="animate-spin text-green-500" /> : 
-                          <Check className="text-green-500" />}
+                          <Check className="text-green-500 border-green-500" />}
                         onClick={() => isCompleted(item._id)}
                         label={loadingStates.completeOperation ? "Completing..." : "Complete"}
                         disabled={loadingStates.cancelOperation || loadingStates.completeOperation}
@@ -111,20 +113,22 @@ const AllAppointment = () => {
                 {/* Desktop View */}
                 <div className="hidden md:grid md:grid-cols-7 p-4 items-center">
                   <div className="col-span-1">{index + 1}</div>
-                  <div className="col-span-1">{item.userDetails.name}</div>
+                  <div className="col-span-1">{item.userDetails?.name}</div>
                   <div className="col-span-1">{item.serviceTitle}</div>
                   <div className="col-span-2">
                     {slotDateFormat(item.date)} {item.time}
                   </div>
-                  <div className="col-span-1">{item.userDetails.phone}</div>
+                  <div className="col-span-1">{item.userDetails?.phone}</div>
                   <div className="col-span-1">
                     <StatusBadge item={item} />
                     {!item.isCancelled && !item.isCompleted && (
                       <div className="flex gap-2 mt-2">
                         <ActionButton
+                        color="border-red-500 border-2"
                           icon={loadingStates.cancelOperation ? 
                             <Loader className="animate-spin text-red-500" /> : 
-                            <X className="text-red-500" />}
+                            <X className="text-red-500 border-green-500 " />}
+                            
                           onClick={() => cancelAppointment(item._id)}
                           label={loadingStates.cancelOperation ? "Cancelling..." : "Cancel"}
                           disabled={loadingStates.cancelOperation || loadingStates.completeOperation}
@@ -132,7 +136,7 @@ const AllAppointment = () => {
                         <ActionButton
                           icon={loadingStates.completeOperation ? 
                             <Loader className="animate-spin text-green-500" /> : 
-                            <Check className="text-green-500" />}
+                            <Check className="text-green-500 border-green-500" />}
                           onClick={() => isCompleted(item._id)}
                           label={loadingStates.completeOperation ? "Completing..." : "Complete"}
                           disabled={loadingStates.cancelOperation || loadingStates.completeOperation}
