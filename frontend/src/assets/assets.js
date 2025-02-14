@@ -3,7 +3,7 @@ import palm_logo2 from "./palm_logo2.png";
 import bg from "./bg.jpg";
 import bg_video from "./bg-video.mp4";
 import palm from "./palm.jpg";
-import braid1 from "./braid1.JPG";
+import braid1 from "./braid1.jpg";
 import hair1 from "./hair1.jpg";
 import braid2 from "./braids2.JPG";
 import extension1 from "./extension1.jpg";
@@ -38,6 +38,7 @@ export const assets = {
 
   braid2,
   extension1,
+  extension,
   hair1,
   lash1,
   lash2,
