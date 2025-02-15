@@ -17,7 +17,8 @@ const corsOptions = {
     'http://localhost:5173',  // Your local frontend URL
     'http://localhost:5174',  // Your local frontend URL
     'https://palmsbeautystore.vercel.app',
-    'https://palmsbeautystore.onrender.com'
+    'https://palmsbeautystore.onrender.com',
+    'https://palmsbeautyadmin.onrender.com'
     //  // Your deployed frontend URL
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
