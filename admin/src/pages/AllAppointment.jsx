@@ -1,8 +1,10 @@
 import React, { useContext, useEffect } from "react";
-import { AdminContext } from "../context/AdminContext";
+// import { AdminContext } from "../context/AdminContext";
+
 import { X, Check, Loader } from "lucide-react";
 import StatusBadge from "../components/StatusBadge";
 import ActionButton from "../components/ActionButton";
+import { AdminContext } from "../context/adminContext";
 
 const AllAppointment = () => {
   const {

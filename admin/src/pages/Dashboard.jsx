@@ -1,6 +1,6 @@
 import React, { useEffect, useContext } from "react";
 import { Check, Clock, Users, X, Calendar, Mail, Phone } from "lucide-react";
-import { AdminContext } from "../context/AdminContext";
+import { AdminContext } from "../context/adminContext";
 import { assets } from "../assets/assets";
 
 const Dashboard = () => {
