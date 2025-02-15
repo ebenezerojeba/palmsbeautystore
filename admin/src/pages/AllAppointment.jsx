@@ -4,7 +4,8 @@ import React, { useContext, useEffect } from "react";
 import { X, Check, Loader } from "lucide-react";
 import StatusBadge from "../components/StatusBadge";
 import ActionButton from "../components/ActionButton";
-import { AdminContext } from "../context/adminContext";
+import { AdminContexts } from "../context/AdminContexts";
+// import { AdminContext } from "../context/adminContext";
 
 const AllAppointment = () => {
   const {
@@ -14,7 +15,7 @@ const AllAppointment = () => {
     isCompleted,
     slotDateFormat,
     loadingStates
-  } = useContext(AdminContext);
+  } = useContext(AdminContexts);
 
   useEffect(() => {
     getAllAppointments();

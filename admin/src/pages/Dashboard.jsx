@@ -1,7 +1,8 @@
 import React, { useEffect, useContext } from "react";
 import { Check, Clock, Users, X, Calendar, Mail, Phone } from "lucide-react";
-import { AdminContext } from "../context/adminContext";
+// import { AdminContext } from "../context/adminContext";
 import { assets } from "../assets/assets";
+import { AdminContexts } from "../context/AdminContexts";
 
 const Dashboard = () => {
   const {
@@ -10,7 +11,7 @@ const Dashboard = () => {
     slotDateFormat,
     cancelAppointment,
     isCompleted,
-  } = useContext(AdminContext);
+  } = useContext(AdminContexts);
 
   useEffect(() => {
     getDashData();
