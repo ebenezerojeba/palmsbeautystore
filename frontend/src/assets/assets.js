@@ -5,7 +5,7 @@ import bg_video from "./bg-video.mp4";
 import palm from "./palm.jpg";
 import braid1 from "./braid1.jpg";
 import hair1 from "./hair1.jpg";
-import braid2 from "./braids2.JPG";
+// import braid2 from "./braids2.JPG";
 import extension1 from "./extension1.jpg";
 import extension from "./extension.jpg";
 import makeup1 from "./makeup1.jpg";
@@ -36,7 +36,7 @@ export const assets = {
   pic5,
   braid1,
 
-  braid2,
+  // braid2,
   extension1,
   extension,
   hair1,
