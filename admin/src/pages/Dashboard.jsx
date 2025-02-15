@@ -9,7 +9,10 @@ const Dashboard = () => {
     slotDateFormat,
     cancelAppointment,
     isCompleted,
+    loadingId
   } = useContext(AdminContexts);
+
+// const [loadingId, setLoadingId] = useState(null);
 
   useEffect(() => {
     getDashData();
@@ -204,15 +207,17 @@ const Dashboard = () => {
                       <button
                         onClick={() => cancelAppointment(item._id)}
                         className="p-2 text-red-500 border hover:bg-red-50 rounded-full transition-colors"
-                      >
-                        <X className="w-5 h-5" />
+                        disabled={loadingId === item._id}
+                      > {loadingId === item._id ? <Loader2 className="w-5 h-5 animate-spin" /> : <X className="w-5 h-5" />}
                       </button>
                       <button
                         onClick={() => isCompleted(item._id)}
                         className="p-2 text-green-600 border hover:bg-green-50 rounded-full transition-colors"
+                        disabled={loadingId === item._id}
                       >
-                        <Check className="w-5 h-5" />
-                      </button>
+                       {loadingId === item._id ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
+                       </button>
+                      
                     </div>
                   )}
                 </div>

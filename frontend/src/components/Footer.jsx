@@ -35,7 +35,7 @@ const Footer = () => {
               <a href="#" className="hover:text-white transition-colors">
                 <Facebook size={20} />
               </a>
-              <a href="#" className="hover:text-white transition-colors">
+              <a href="https://www.instagram.com/palms_beauty_store/" className="hover:text-white transition-colors">
                 <Instagram size={20} />
               </a>
               <a href="#" className="hover:text-white transition-colors">
@@ -49,27 +49,29 @@ const Footer = () => {
             <h3 className="text-white font-semibold mb-6">Quick Links</h3>
             <ul className="space-y-4">
               <li>
-                <NavLink to="/" className="hover:text-white transition-colors">
+                <NavLink to="/" onClick={()=> scrollTo(0,0)} className="hover:text-white transition-colors">
                   Home
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/services" className="hover:text-white transition-colors">
+                <NavLink to="/services" onClick={()=> scrollTo(0,0)} className="hover:text-white transition-colors">
                   Our Services
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/about" className="hover:text-white transition-colors">
+                <NavLink to="/about" onClick={()=> scrollTo(0,0)} className="hover:text-white transition-colors">
                   About Us
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/contact" className="hover:text-white transition-colors">
+                <NavLink to="/contact" onClick={()=> scrollTo(0,0)} className="hover:text-white transition-colors">
                   Contact
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/booking" className="hover:text-white transition-colors">
+                <NavLink to="/services"
+                onClick={()=> scrollTo(0,0)}
+                 className="hover:text-white transition-colors">
                   Book Appointment
                 </NavLink>
               </li>
@@ -95,12 +97,12 @@ const Footer = () => {
             <ul className="space-y-4">
               <li className="flex items-center gap-3">
                 <MapPin size={20} />
-                <span>123 Water Street, St. John's, NL A1C 1A1</span>
+                <span>430 Topsail Road, St. John's, CA-NL A1E 4N1</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone size={20} />
                 <a href="tel:+1234567890" className="hover:text-white transition-colors">
-                  (123) 456-7890
+                  (709) 690-3673
                 </a>
               </li>
               <li className="flex items-center gap-3">
@@ -129,7 +131,7 @@ const Footer = () => {
             <div className="text-sm">
               © {currentYear} PalmsBeauty. All rights reserved.
             </div>
-            <div className="mt-4 md:mt-0">
+            {/* <div className="mt-4 md:mt-0">
               <ul className="flex space-x-6 text-sm">
                 <li>
                   <a href="#" className="hover:text-white transition-colors">
@@ -147,7 +149,7 @@ const Footer = () => {
                   </a>
                 </li>
               </ul>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

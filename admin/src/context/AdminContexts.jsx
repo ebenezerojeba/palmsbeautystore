@@ -226,6 +226,9 @@ const AdminContextsProvider = (props) => {
     cancelOperation: false,
     completeOperation: false,
   });
+  
+const [loadingId, setLoadingId] = useState(null);
+
 
   // const backendUrl = import.meta.env.VITE_BACKEND_URL
 //   const backendUrl = "http://localhost:3000";
@@ -259,7 +262,7 @@ const AdminContextsProvider = (props) => {
 
   // API for cancelling appointment
   const cancelAppointment = async (appointmentId) => {
-    setLoading("cancelOperation", true);
+    setLoadingId(appointmentId)
     try {
       const response = await fetch(`${backendUrl}/api/admin/cancel-appointment`, {
         method: "POST",
@@ -303,13 +306,14 @@ const AdminContextsProvider = (props) => {
     } catch (error) {
       toast.error("Failed to cancel appointment");
     } finally {
-      setLoading("cancelOperation", false);
+      setLoadingId(null);
     }
   };
 
   // API for completing appointment
   const isCompleted = async (appointmentId) => {
-    setLoading("completeOperation", true);
+    // setLoading("completeOperation", true);
+    setLoadingId(appointmentId)
     try {
       const response = await fetch(`${backendUrl}/api/admin/complete-appointment`, {
         method: "POST",
@@ -353,7 +357,8 @@ const AdminContextsProvider = (props) => {
     } catch (error) {
       toast.error("Failed to complete appointment");
     } finally {
-      setLoading("completeOperation", false);
+    //   setLoading("completeOperation", false);
+    setLoadingId(null)
     }
   };
 
@@ -414,6 +419,8 @@ const AdminContextsProvider = (props) => {
         isCompleted,
         loadingStates,
         months,
+        loadingId,
+        setLoadingId
       }}
     >
       {props.children}
