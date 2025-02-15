@@ -145,7 +145,7 @@ const Home = () => {
               <AnimatedText delay={1200}>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Link
-                    to="/booking"
+                    to="/services"
                     className="group inline-flex items-center justify-center px-6 py-3 
                              bg-gray-900 text-white rounded-lg font-medium 
                              transition-all duration-200 hover:bg-gray-800 shadow-sm"
