@@ -263,6 +263,7 @@ const Dashboard = () => {
   } = useContext(AdminContexts);
 
   const [filterStatus, setFilterStatus] = useState('');
+  const navigate = useNavigate()
   
   useEffect(() => {
     getDashData();
@@ -355,7 +356,7 @@ const Dashboard = () => {
 
   const filteredAppointments = getFilteredAppointments();
 
-  const navigate = useNavigate()
+ 
   return (
     <div className="p-6 mt-9 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
