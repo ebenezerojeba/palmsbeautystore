@@ -20,22 +20,22 @@ const AdminHome = () => {
       color: "bg-purple-50 text-purple-600",
       borderColor: "border-purple-200"
     },
-    {
-      title: "Clients",
-      description: "Access client information and histories",
-      icon: <Users className="w-6 h-6" />,
-      path: "/clients",
-      color: "bg-pink-50 text-pink-600",
-      borderColor: "border-pink-200"
-    },
-    {
-      title: "Services",
-      description: "Configure and manage service offerings",
-      icon: <Clock className="w-6 h-6" />,
-      path: "/services",
-      color: "bg-green-50 text-green-600",
-      borderColor: "border-green-200"
-    }
+    // {
+    //   title: "Clients",
+    //   description: "Access client information and histories",
+    //   icon: <Users className="w-6 h-6" />,
+    //   path: "/clients",
+    //   color: "bg-pink-50 text-pink-600",
+    //   borderColor: "border-pink-200"
+    // },
+    // {
+    //   title: "Services",
+    //   description: "Configure and manage service offerings",
+    //   icon: <Clock className="w-6 h-6" />,
+    //   path: "/services",
+    //   color: "bg-green-50 text-green-600",
+    //   borderColor: "border-green-200"
+    // }
   ];
 
   return (
@@ -74,39 +74,6 @@ const AdminHome = () => {
               </div>
             </Link>
           ))}
-        </div>
-
-        {/* Tips Section */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">
-            Quick Tips
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-medium text-gray-800 mb-2">
-                Getting Started
-              </h3>
-              <p className="text-sm text-gray-600">
-                Visit the Dashboard first to get an overview of your salon's performance and upcoming appointments.
-              </p>
-            </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-medium text-gray-800 mb-2">
-                Managing Appointments
-              </h3>
-              <p className="text-sm text-gray-600">
-                Use the Appointments section to view, manage, and track all customer bookings in real-time.
-              </p>
-            </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-medium text-gray-800 mb-2">
-                Need Help?
-              </h3>
-              <p className="text-sm text-gray-600">
-                Contact your system administrator for support or access to additional features.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

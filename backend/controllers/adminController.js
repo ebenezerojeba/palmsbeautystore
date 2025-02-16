@@ -74,7 +74,7 @@ const adminDashboard = async (req,res) => {
     totalAppointments: appointments.length,
     completedAppointments: appointments.filter(appointment => appointment.isCompleted).length,
     pendingAppointments: appointments.filter(appointment => !appointment.isCompleted).length,
-    latestAppointments: appointments.reverse().slice(0,4),
+    latestAppointments: appointments.reverse(),
     cancelledAppointments: appointments.filter(appointment => appointment.isCancelled).length
   }
   return res.json({success:true,dashData})

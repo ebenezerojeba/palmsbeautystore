@@ -33,18 +33,18 @@ const Sidebar = () => {
       label: 'Appointments',
       ariaLabel: 'Navigate to Appointments'
     },
-    {
-      path: '/clients',
-      icon: <Users className="w-5 h-5" />,
-      label: 'Clients',
-      ariaLabel: 'Navigate to Clients'
-    },
-    {
-      path: '/services',
-      icon: <Clock className="w-5 h-5" />,
-      label: 'Services',
-      ariaLabel: 'Navigate to Services'
-    },
+    // {
+    //   path: '/clients',
+    //   icon: <Users className="w-5 h-5" />,
+    //   label: 'Clients',
+    //   ariaLabel: 'Navigate to Clients'
+    // },
+    // {
+    //   path: '/services',
+    //   icon: <Clock className="w-5 h-5" />,
+    //   label: 'Services',
+    //   ariaLabel: 'Navigate to Services'
+    // },
   ];
 
   if (!isMounted) {

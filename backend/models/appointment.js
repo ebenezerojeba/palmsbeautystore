@@ -6,6 +6,7 @@ const appointmentSchema = new mongoose.Schema({
     date: { type: Date, required: true },
     time: { type: String, required: true },
     isCompleted: { type: Boolean, default: false },
+    isPending: { type: Boolean, default: false },
     isCancelled: { type: Boolean, default: false },
     completedAt: { type: Date},
     cancelleddAt: { type: Date},
