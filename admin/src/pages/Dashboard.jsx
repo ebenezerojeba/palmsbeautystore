@@ -248,6 +248,7 @@
 import React, { useEffect, useContext, useState } from "react";
 import { Check, Clock, Users, X, Calendar, Mail, Phone, Loader2 } from "lucide-react";
 import { AdminContexts } from "../context/AdminContexts";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const {
@@ -354,6 +355,7 @@ const Dashboard = () => {
 
   const filteredAppointments = getFilteredAppointments();
 
+  const navigate = useNavigate()
   return (
     <div className="p-6 mt-9 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
@@ -396,7 +398,7 @@ const Dashboard = () => {
             bgColor="bg-blue-100"
             textColor="text-blue-600"
             status="all"
-            onClick={handleFilterClick}
+            onClick={()=>navigate('/appointments')}
           />
         </div>
 
