@@ -9,6 +9,10 @@ import Footer from './components/Footer'
 import Appointment from './pages/Appointment'
 import MyAppointment from './pages/MyAppointment'
 import { ToastContainer } from 'react-toastify';
+import Product from './pages/Product'
+import Cart from './pages/Cart'
+import PlaceOrder from './pages/PlaceOrder'
+import Collection from './pages/Collection'
 
 
 
@@ -22,7 +26,12 @@ const App = () => {
         <Route path="/services" element={<Services />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/collections" element={<Collection />} />
         <Route path="/appointment/:id" element={<Appointment />} />
+        
+        <Route path='/product/:productId' element={<Product />}/>
+        <Route path='/cart' element={<Cart />}/>
+        <Route path='/place-order' element={<PlaceOrder />}/>
         <Route path="/my-appointments" element={<MyAppointment />} />
       </Routes>
       <Footer />

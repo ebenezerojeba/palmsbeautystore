@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {useNavigate} from "react-router-dom"
-import { Calendar, Users, BarChart2, Clock, Menu, X } from 'lucide-react';
+import { Calendar, Users, BarChart2, Clock, Menu, X, Plus, PlusCircle, List, Box } from 'lucide-react';
 import { assets } from '../assets/assets';
 
 const Sidebar = () => {
@@ -33,18 +33,24 @@ const Sidebar = () => {
       label: 'Appointments',
       ariaLabel: 'Navigate to Appointments'
     },
-    // {
-    //   path: '/clients',
-    //   icon: <Users className="w-5 h-5" />,
-    //   label: 'Clients',
-    //   ariaLabel: 'Navigate to Clients'
-    // },
-    // {
-    //   path: '/services',
-    //   icon: <Clock className="w-5 h-5" />,
-    //   label: 'Services',
-    //   ariaLabel: 'Navigate to Services'
-    // },
+    {
+           path: '/add',
+      icon: <PlusCircle className="w-5 h-5" />,
+      label: 'Add Product',
+      ariaLabel: 'Navigate to Add Product'
+    },
+    {
+           path: '/list',
+      icon: <List className="w-5 h-5" />,
+      label: 'List Products',
+      ariaLabel: 'Navigate to List Products'
+    },
+    {
+           path: '/orders',
+      icon: <Box className="w-5 h-5" />,
+      label: 'Orders',
+      ariaLabel: 'Navigate to Orders'
+    }
   ];
 
   if (!isMounted) {
@@ -121,10 +127,10 @@ const Sidebar = () => {
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-white">
           <div className="flex items-center gap-3">
             {/* <img className="w-8 h-8 rounded-full bg-gray-900" /> */}
-            <img src={assets.ceo} alt="Profile Picture" className='w-8 h-8 rounded-full '/>
+            {/* <img src={assets.ceo} alt="Profile Picture" className='w-8 h-8 rounded-full '/> */}
             <div>
-              <p className="text-sm font-medium text-gray-900">CEO  - Esther Success</p>
-              <p className="text-xs text-gray-500">admin@palmsbeauty.com</p>
+              {/* <p className="text-sm font-medium text-gray-900">CEO  - Esther Success</p> */}
+              {/* <p className="text-xs text-gray-500">admin@palmsbeauty.com</p> */}
             </div>
           </div>
         </div>

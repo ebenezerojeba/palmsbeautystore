@@ -2,7 +2,7 @@ import React from 'react';
 import {useNavigate} from 'react-router-dom'
 import { assets } from '../assets/assets';
 
-const Navbar = () => {
+const Navbar = ({setToken}) => {
   const navigate = useNavigate()
   return (
     <nav className="flex flex-wrap justify-between items-center px-4 sm:px-10 py-3 border-b bg-gray-100">
@@ -17,7 +17,7 @@ const Navbar = () => {
           Admin Panel
         </p>
       </div>
-      <button className="cursor-pointer bg-gray-800 text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 rounded-full">
+      <button onClick={()=>setToken("")} className="cursor-pointer bg-gray-800 text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 rounded-full">
         Logout
       </button>
     </nav>

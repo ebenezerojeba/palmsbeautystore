@@ -2,7 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart2, Calendar, Users, Clock, ExternalLink } from 'lucide-react';
 
-const AdminHome = () => {
+
+const AdminHome = ({token}) => {
   const quickLinks = [
     {
       title: "Dashboard",

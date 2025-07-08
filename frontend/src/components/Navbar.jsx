@@ -43,7 +43,7 @@ const Navbar = () => {
           <span className="absolute left-0 bottom-0 w-3/5 h-0.5 bg-gray-900 hidden group-hover:block"></span>
         </NavLink>
         
-        {["SERVICES", "ABOUT", "CONTACT"].map((item, index) => (
+        {["SERVICES","COLLECTIONS",].map((item, index) => (
           <NavLink key={index} to={`/${item.toLowerCase()}`} className="relative group">
             <li className="py-1">{item}</li>
             <span className="absolute left-0 bottom-0 w-3/5 h-0.5 bg-gray-900 hidden group-hover:block"></span>
@@ -97,7 +97,7 @@ const Navbar = () => {
             <span className="absolute left-0 bottom-0 w-3/5 h-0.5 bg-gray-900 hidden group-hover:block"></span>
           </NavLink>
           
-          {["SERVICES", "ABOUT", "CONTACT"].map((item, index) => (
+          {["SERVICES", "PRODUCT","ABOUT", "CONTACT", "COLLECTIONS"].map((item, index) => (
             <NavLink 
               key={index} 
               to={`/${item.toLowerCase()}`} 
