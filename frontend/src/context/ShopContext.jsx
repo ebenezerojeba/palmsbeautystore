@@ -17,6 +17,20 @@ const ShopContextProvider = (props) => {
   const [products, setProducts] = useState([]);
   const [token, setToken] = useState("");
 
+ // Load products and cart on first mount
+  useEffect(() => {
+    getProductsData();
+
+    const savedCart = localStorage.getItem("guest_cart");
+    if (savedCart && !token) {
+      setCartItems(JSON.parse(savedCart));
+    }
+
+    if (token) {
+      getUserCart(token);
+    }
+  }, [token]);  
+
   const formatNaira = (number) => {
     return new Intl.NumberFormat("en-NG", {
       style: "currency",
@@ -32,19 +46,24 @@ const ShopContextProvider = (props) => {
     } else {
       toast.success("Added to cart");
     }
-    let cartData = structuredClone(cartItems);
+      const updatedCart = structuredClone(cartItems);
+    updatedCart[itemId] = updatedCart[itemId] || {};
+    updatedCart[itemId][size] = (updatedCart[itemId][size] || 0) + 1;
 
-    if (cartData[itemId]) {
-      if (cartData[itemId][size]) {
-        cartData[itemId][size] += 1;
-      } else {
-        cartData[itemId][size] = 1;
-      }
-    } else {
-      cartData[itemId] = {};
-      cartData[itemId][size] = 1;
-    }
-    setCartItems(cartData);
+    setCartItems(updatedCart);
+    persistCart(updatedCart);
+
+    // if (cartData[itemId]) {
+    //   if (cartData[itemId][size]) {
+    //     cartData[itemId][size] += 1;
+    //   } else {
+    //     cartData[itemId][size] = 1;
+    //   }
+    // } else {
+    //   cartData[itemId] = {};
+    //   cartData[itemId][size] = 1;
+    // }
+    // setCartItems(cartData);
 
     if (token) {
       try {
@@ -140,6 +159,15 @@ const ShopContextProvider = (props) => {
     } catch (error) {
       console.log(error);
       toast.error(error.message);
+    }
+  };
+
+
+   const persistCart = (cartData) => {
+    if (token) {
+      // Optional: Sync to backend later if needed
+    } else {
+      localStorage.setItem("guest_cart", JSON.stringify(cartData));
     }
   };
  

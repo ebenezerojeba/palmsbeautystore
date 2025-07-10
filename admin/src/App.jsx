@@ -24,7 +24,7 @@ const App = () => {
     localStorage.setItem('token', token)
   }, [token])
   return (
-    <div>
+    <div className='flex flex-col h-screen'>
     <ToastContainer />
       {token === "" ? <Login setToken={setToken}/> : <>
 <Navbar setToken = {setToken}/>

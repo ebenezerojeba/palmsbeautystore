@@ -1,4 +1,5 @@
 import appointmentModel from "../models/appointment.js";
+import serviceModel from "../models/serviceModel.js";
 
 const completeAppointment = async (req, res) => {
     try {
@@ -80,4 +81,177 @@ const adminDashboard = async (req,res) => {
   return res.json({success:true,dashData})
 }
 
-  export {completeAppointment, getCompletedAppointments, adminDashboard, getAllAppointment}
+// Get all services for admin panel
+const allServices = async (req, res) => {
+  try {
+    const services = await serviceModel.find({})
+      .sort({ createdAt: -1 });
+    
+    res.json({ services });
+  } catch (error) {
+    console.error('Error fetching services:', error);
+    res.status(500).json({ error: 'Failed to fetch services' });
+  }
+};
+
+
+// Create new service
+ const addService = async (req, res) => {
+   try {
+    const { title, description, duration, price, isActive, isCategory, parentService } = req.body;
+    
+    const serviceData = {
+      title,
+      description,
+      duration,
+      price,
+      isActive: isActive === 'true',
+      isCategory: isCategory === 'true',
+      parentService: parentService || null
+    };
+
+    if (req.file) {
+      serviceData.image = req.file.path; // Adjust based on your file storage
+    }
+
+    const service = new serviceModel(serviceData);
+    await service.save();
+    
+    res.status(201).json(service);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// Update service
+const updateService = async (req, res) => {
+
+  try {
+   const { id } = req.params;
+   const { title, description, duration, price, isActive } = req.body;
+   
+   // Validation
+   if (!title || !description || !duration || !price) {
+     return res.status(400).json({ error: 'All fields are required' });
+   }
+   
+   const service = await serviceModel.findById(id);
+   if (!service) {
+     return res.status(404).json({ error: 'Service not found' });
+   }
+   
+   // Update basic fields
+   service.title = title;
+   service.description = description;
+   service.duration = duration;
+   service.price = price;
+   service.isActive = isActive === 'true' || isActive === true;
+   service.updatedAt = new Date();
+   
+   // Handle image update
+   if (req.file) {
+     // Delete old image from Cloudinary if exists
+     if (service.imagePublicId) {
+       try {
+         await cloudinary.uploader.destroy(service.imagePublicId);
+       } catch (deleteError) {
+         console.error('Error deleting old image:', deleteError);
+       }
+     }
+     
+     // Set new image
+     service.image = req.file.path;
+     service.imagePublicId = req.file.filename;
+   }
+   
+   await service.save();
+   
+   res.json({ service });
+ } catch (error) {
+   console.error('Error updating service:', error);
+   res.status(500).json({ error: 'Failed to update service' });
+ }
+}
+
+
+// Service Status Toggle
+const toggleServiceStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+    
+    const service = await serviceModel.findByIdAndUpdate(
+      id,
+      { isActive, updatedAt: new Date() },
+      { new: true }
+    );
+    
+    if (!service) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+    
+    res.json({ service });
+  } catch (error) {
+    console.error('Error toggling service status:', error);
+    res.status(500).json({ error: 'Failed to toggle service status' });
+  }
+}
+
+// Delete Service
+const deleteService = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+    
+    const service = await serviceModel.findByIdAndUpdate(
+      id,
+      { isActive, updatedAt: new Date() },
+      { new: true }
+    );
+    
+    if (!service) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+    
+    res.json({ service });
+  } catch (error) {
+    console.error('Error toggling service status:', error);
+    res.status(500).json({ error: 'Failed to toggle service status' });
+  }
+};
+
+// Delete Service Image only
+const deleteServiceImage = async (req, res) => {
+   try {
+    const { id } = req.params;
+    
+    const service = await serviceModel.findById(id);
+    if (!service) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+    
+    // Delete image from Cloudinary if exists
+    if (service.imagePublicId) {
+      try {
+        await cloudinary.uploader.destroy(service.imagePublicId);
+      } catch (deleteError) {
+        console.error('Error deleting image:', deleteError);
+      }
+    }
+    
+    // Remove image fields from service
+    service.image = undefined;
+    service.imagePublicId = undefined;
+    service.updatedAt = new Date();
+    await service.save();
+    
+    res.json({ message: 'Image deleted successfully', service });
+  } catch (error) {
+    console.error('Error deleting image:', error);
+    res.status(500).json({ error: 'Failed to delete image' });
+  }
+
+}
+
+
+  export {completeAppointment, getCompletedAppointments, adminDashboard, getAllAppointment, allServices, addService, updateService, toggleServiceStatus, deleteService, deleteServiceImage};

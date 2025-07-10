@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { assets } from "../assets/assets";
-import { NavLink, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import { Menu, X, ShoppingCart } from "lucide-react";
+import { ShopContext } from "../context/ShopContext";
+import { useContext } from "react";
 
 const Navbar = () => {
   const [showMenu, setShowMenu] = useState(false);
+  const { setShowSearch, getCartCount, token, setToken, setCartItems } =
+    useContext(ShopContext);
   const location = useLocation();
 
   // Close menu on route change
@@ -43,13 +47,27 @@ const Navbar = () => {
           <span className="absolute left-0 bottom-0 w-3/5 h-0.5 bg-gray-900 hidden group-hover:block"></span>
         </NavLink>
         
-        {["SERVICES","COLLECTIONS",].map((item, index) => (
+        {["ABOUT","SERVICES","COLLECTIONS"].map((item, index) => (
           <NavLink key={index} to={`/${item.toLowerCase()}`} className="relative group">
             <li className="py-1">{item}</li>
             <span className="absolute left-0 bottom-0 w-3/5 h-0.5 bg-gray-900 hidden group-hover:block"></span>
           </NavLink>
         ))}
       </ul>
+
+          <Link
+              to="/cart"
+              className="relative p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              aria-label={`Cart with ${getCartCount()} items`}
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {getCartCount() > 0 && (
+                <span className="absolute -top-1 -right-1 bg-black text-white text-xs w-5 h-5 flex items-center justify-center rounded-full transition-transform duration-200 hover:scale-110">
+                  {getCartCount()}
+                </span>
+              )}
+            </Link>
+
 
       {/* CTA Button */}
       <div className="hidden md:block">
@@ -97,7 +115,7 @@ const Navbar = () => {
             <span className="absolute left-0 bottom-0 w-3/5 h-0.5 bg-gray-900 hidden group-hover:block"></span>
           </NavLink>
           
-          {["SERVICES", "PRODUCT","ABOUT", "CONTACT", "COLLECTIONS"].map((item, index) => (
+          {["ABOUT","SERVICES","COLLECTIONS"].map((item, index) => (
             <NavLink 
               key={index} 
               to={`/${item.toLowerCase()}`} 

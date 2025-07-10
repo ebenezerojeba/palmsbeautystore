@@ -13,6 +13,7 @@ import Product from './pages/Product'
 import Cart from './pages/Cart'
 import PlaceOrder from './pages/PlaceOrder'
 import Collection from './pages/Collection'
+import ServicesPage from './pages/ServicesPage'
 
 
 
@@ -24,7 +25,10 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/services" element={<Services />} />
+        <Route path="/servicespage" element={<ServicesPage />} />
         <Route path="/about" element={<About />} />
+        {/* <Route path="/cart" element={<Cart />} /> */}
+
         <Route path="/contact" element={<Contact />} />
         <Route path="/collections" element={<Collection />} />
         <Route path="/appointment/:id" element={<Appointment />} />

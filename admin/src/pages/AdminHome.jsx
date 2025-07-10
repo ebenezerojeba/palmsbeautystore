@@ -29,14 +29,14 @@ const AdminHome = ({token}) => {
     //   color: "bg-pink-50 text-pink-600",
     //   borderColor: "border-pink-200"
     // },
-    // {
-    //   title: "Services",
-    //   description: "Configure and manage service offerings",
-    //   icon: <Clock className="w-6 h-6" />,
-    //   path: "/services",
-    //   color: "bg-green-50 text-green-600",
-    //   borderColor: "border-green-200"
-    // }
+    {
+      title: "Services",
+      description: "Configure and manage service offerings",
+      icon: <Clock className="w-6 h-6" />,
+      path: "/services",
+      color: "bg-green-50 text-green-600",
+      borderColor: "border-green-200"
+    }
   ];
 
   return (

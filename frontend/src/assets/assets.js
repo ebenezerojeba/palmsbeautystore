@@ -24,11 +24,16 @@ import pic2 from './pic2.png'
 import pic3 from './pic3.png'
 import pic4 from './pic4.jpeg'
 import pic5 from './pic5.jpeg'
+import visa from './visa.jpg'
+import americanexpress from './americanexpress.jpg'
+import mastercard from './mastercard.png'
 
 import { Scissors, Star, Gift } from "lucide-react";
 
 export const assets = {
-  
+  americanexpress,
+  mastercard,
+  visa,
   pic1,
   pic2,
   pic3,
