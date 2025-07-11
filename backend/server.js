@@ -75,7 +75,7 @@ app.use('/api/services', serviceRouter)
 // Serve .ics files for download
 
 app.get("/", (req, res) => {
-  res.send("API Working");
+  res.send("API Working Perfctly");
 });
 
 app.listen(port, () => {
