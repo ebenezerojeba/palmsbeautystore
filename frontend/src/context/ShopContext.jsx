@@ -177,7 +177,7 @@ const backendUrl = "https://palmsbeautystore-backend.onrender.com"
     
     try {
       const response = await axios.post(
-        `${backendUrl}api/subscribe/send-welcome`,
+        `${backendUrl}/api/subscribe/send-welcome`,
         { email }
       );
 
