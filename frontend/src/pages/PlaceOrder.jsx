@@ -461,7 +461,7 @@ const PlaceOrder = async () => {
   // };
 
 
-  const stripe = await loadStripe('pk_test_51RjXEb2L6kwlI8erZDYyzSzqtSMlhjLmCCCkX87YqibvuVugaWCgWQNA7abSWqgbLdL5hdz2ua3q7trKX6LEGUH3002ECnsRHJ');
+  const stripe = await loadStripe('your-publishable-key');
 await stripe.confirmCardPayment(response.data.clientSecret, {
   payment_method: {
     card: cardElement,
@@ -510,8 +510,8 @@ await stripe.confirmCardPayment(response.data.clientSecret, {
         },
         items: orderItems,
         subtotal: getCartAmount(),
-        // deliveryFee: formData.deliveryFee,
-        amount: getCartAmount() ,
+        deliveryFee: formData.deliveryFee,
+        amount: getCartAmount() + formData.deliveryFee,
         currency: "CAD",
         taxes: calculateTaxes(getCartAmount(), formData.province),
       };
