@@ -2,16 +2,7 @@
 import userModel from "../models/userModel.js";
 import dotenv from "dotenv";
 import Stripe from 'stripe';
-// import { orderConfirmation } from "../emails/orderConfirmation.js";
-// import { transporter } from "../emails/transporter.js";
-
-dotenv.config();
-
-// Placing order from frontend
-// import orderModel from "../models/orderModel.js";
-// import dotenv from "dotenv";
-
-// dotenv.config();
+dotenv.config()
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
