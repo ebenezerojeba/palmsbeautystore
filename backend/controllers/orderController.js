@@ -12,144 +12,140 @@ const placeOrder = async (req, res) => {
       items, 
       amount,  
       address, 
-      paymentMethod 
+      paymentMethod,
+      subtotal,
+      taxes,
+      deliveryFee
     } = req.body;
 
-    const userName = `${address.firstName} ${address.lastName}`;
-    const userEmail = address.email;
-    const userPhone = address.phone;
-    const fullAddress = `${address.address}, ${address.lga}, ${address.state}`;
+    const origin = req.get('origin') || 'http://localhost:3000';
 
-    const orderData = {
-      userId: null, // Guest order
-      items,
-      amount,
-      address,
-      paymentMethod,
-      payment: paymentMethod === 'stripe',
-      date: Date.now(),
-    };
-
-    let paymentIntent;
-
-    // Create Stripe PaymentIntent for card payments
-    if (paymentMethod === 'stripe') {
-    paymentIntent = await stripe.paymentIntents.create({
-  amount: Math.round((amount) * 100), // amount in cents
-  currency: 'cad',
-  metadata: {
-    name: userName,
-    email: userEmail,
-  },
-  receipt_email: userEmail,
-});
-
-
-      orderData.paymentIntentId = paymentIntent.id;
+    // Validate required fields
+    if (!items || items.length === 0) {
+      return res.status(400).json({ success: false, message: "No items in cart" });
     }
+
+    if (!address || !address.firstName || !address.email) {
+      return res.status(400).json({ success: false, message: "Address information is required" });
+    }
+
+    // Prepare line items for Stripe Checkout
+    const lineItems = items.map(item => {
+      const unitPrice = parseFloat(item.price);
+      if (isNaN(unitPrice)) {
+        throw new Error(`Invalid price for item: ${item.name}`);
+      }
+      
+      return {
+        price_data: {
+          currency: 'cad',
+          product_data: {
+            name: item.name,
+            description: `${item.size} | ${item.description || ''}`.trim(),
+          },
+          unit_amount: Math.round(unitPrice * 100), // Convert to cents
+        },
+        quantity: item.quantity,
+      };
+    });
+
+    // Add delivery fee as a line item if it exists
+    const deliveryAmount = parseFloat(deliveryFee) || parseFloat(address.deliveryFee) || 0;
+    if (deliveryAmount > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'cad',
+          product_data: {
+            name: 'Delivery Fee',
+            description: `Shipping to ${address.city}, ${address.state}`,
+          },
+          unit_amount: Math.round(deliveryAmount * 100), // Convert to cents
+        },
+        quantity: 1,
+      });
+    }
+
+    // Add taxes as a line item if they exist
+    const taxAmount = parseFloat(taxes) || 0;
+    if (taxAmount > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'cad',
+          product_data: {
+            name: 'Taxes',
+            description: `Tax for ${address.state}`,
+          },
+          unit_amount: Math.round(taxAmount * 100), // Convert to cents
+        },
+        quantity: 1,
+      });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: lineItems,
+      mode: 'payment',
+      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/cart`,
+      customer_email: address.email,
+      metadata: {
+        firstName: address.firstName,
+        lastName: address.lastName,
+        address: `${address.address}, ${address.city}, ${address.state} ${address.postalCode}`,
+        phone: address.phone,
+        isGuestOrder: 'true' // Mark as guest order
+      }
+    });
+
+    // Save order to database for guest users
+    const orderData = {
+      userId: null, // Guest order - no user ID required
+      items: items.map(item => ({
+        product: item._id,
+        quantity: item.quantity,
+        size: item.size,
+        price: item.price,
+        name: item.name // Store name for reference
+      })),
+      amount: parseFloat(amount),
+      address: {
+        firstName: address.firstName,
+        lastName: address.lastName,
+        email: address.email,
+        phone: address.phone,
+        addressLine: address.address, // Match schema field name
+        city: address.city,
+        state: address.state,
+        lga: address.lga,
+        postalCode: address.postalCode,
+        country: address.country
+      },
+      paymentMethod,
+      isPaid: false,
+      status: 'Order Placed',
+      payment: false,
+      date: Date.now(),
+      stripeSessionId: session.id,
+      isGuestOrder: true // Flag for guest orders
+    };
 
     const newOrder = new orderModel(orderData);
     await newOrder.save();
 
     res.json({
       success: true,
-      message: "Order placed",
+      message: "Proceed to payment",
+      url: session.url,
       orderId: newOrder._id,
-      ...(paymentIntent && { clientSecret: paymentIntent.client_secret }),
     });
   } catch (error) {
     console.error("Error placing order:", error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || "An error occurred while processing your order"
+    });
   }
 };
-
-  
-
-   // Send Email to user
-    // const sendOrder = async () => {
-    //   console.log("Sending confirmation email to user");
-    //   try {
-    //     const info = await transporter.sendMail({
-    //       from: '"Paragon Hub" <no-reply@paragonhub.com>',
-    //       to: userEmail,
-    //       subject: "Order Confirmation - Paragon Hub",
-    //       html: emailHtml,
-    //     });
-    //     console.log("Confirmation email sent:", info.messageId);
-    //   } catch (error) {
-    //     console.error("Error sending confirmation email:", error);
-    //     // Don't return here, continue with the function
-    //   }
-    // };
-
-    // console.log("Calling sendOrder function");
-    // await sendOrder();
-
-    // Send Email to Admin
-//     const sendAdmin = async () => {
-//       console.log("Sending notification email to admin");
-//       try {
-//         const info = await transporter.sendMail({
-//           from: '"Paragon Hub" <no-reply@paragonhub.com>',
-//           to: "ojebaebenezer@gmail.com",
-//           subject: `New Order Placed - Order ID: ${newOrder._id}`,
-//           html: `
-//   <div style="font-family: Arial, sans-serif; color: #333; padding: 20px; background-color: #f9f9f9; border-radius: 8px; max-width: 600px; margin: auto;">
-//     <h1 style="color: #4CAF50; font-size: 24px;">New Order Received</h1>
-//     <p style="font-size: 16px;">A new order has been placed with the following details:</p>
-    
-//     <p><strong>Order ID:</strong> <span style="color: #333;">${
-//       newOrder._id
-//     }</span></p>
-//     <p><strong>Name:</strong> <span style="color: #555;">${userName}</span></p>
-//     <p><strong>Email:</strong> <span style="color: #555;">${userEmail}</span></p>
-//     <p><strong>Address:</strong> <span style="color: #555;">${userAddress}</span></p>
-    
-//     <p><strong>Total Amount:</strong> <span style="color: #4CAF50;">₦${amount.toLocaleString()}</span></p>
-//     <p><strong>Delivery Fee:</strong> <span style="color: #FF5722;">₦${deliveryFee.toLocaleString()}</span></p>
-//     <p><strong>Payment Method:</strong> <span style="color: #555;">${
-//       orderData.paymentMethod
-//     }</span></p>
-    
-//     <p style="margin-top: 20px; font-size: 16px;"><strong>Items:</strong></p>
-//     <ul style="list-style-type: none; padding: 0; margin: 0;">
-//       ${items
-//         .map(
-//           (item) => `
-//             <li style="border-bottom: 1px solid #eee; padding: 8px 0;">
-//               <strong>${item.size}</strong> — ${item.name} 
-//               (x${
-//                 item.quantity
-//               }) — <span style="color: #4CAF50;">₦${item.price.toLocaleString()}</span>
-//             </li>`
-//         )
-//         .join("")}
-//     </ul>
-    
-//     <p style="margin-top: 20px; font-size: 16px; color: #555;">Thank you for your attention to this order.</p>
-//   </div>
-// `,
-//         });
-//         console.log("Admin notification email sent:", info.messageId);
-//       } catch (error) {
-//         console.error("Error sending admin notification email:", error);
-//         // Don't return here, continue with the function
-//       }
-//     };
-
-//     console.log("Calling sendAdmin function");
-//     await sendAdmin();
-
-//     console.log("Order process completed successfully");
-//     res.json({ success: true, message: "Order Placed" });
-    
-//   }
-//   catch (error) {
-//     console.error("Error in placeOrder function:", error);
-//     res.status(500).json({ success: false, message: error.message });
-//   }
-
-
 
 
 // All Orders data for Admin Panel

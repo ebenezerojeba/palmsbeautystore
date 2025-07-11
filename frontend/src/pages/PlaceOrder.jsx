@@ -1,378 +1,22 @@
-// import React, { useMemo, useContext, useState, useEffect } from "react";
-// import axios from "axios";
-
-// import { toast } from "react-toastify";
-
-// import {
-//   Loader2,
-//   CreditCard,
-//   Truck,
-//   ArrowDown,
-//   ArrowRight,
-// } from "lucide-react";
-
-// import { ShopContext } from "../context/ShopContext.jsx";
-
-
-// const PlaceOrder = () => {
-//   const {
-//     navigate,
-//     cartItems,
-//     token,
-//     setCartItems,
-//     getCartAmount,
-//     products,
-//     formatNaira,
-//     backendUrl,
-//   } = useContext(ShopContext);
-//   const [showSummary, setShowSummary] = useState(false);
-
-//   const [paymentMethod, setPaymentMethod] = useState();
-//   const [formData, setFormData] = useState({
-//     firstName: "",
-//     lastName: "",
-//     email: "",
-//     address: "",
-//     phone: "",
-//     deliveryFee: "",
-//   });
-//   const [isLoading, setIsLoading] = useState(false);
-//   const [selectedState, setSelectedState] = useState("");
-//   const [selectedLGA, setSelectedLGA] = useState("");
-//   const [lgas, setLGAs] = useState([]);
-
-//   useEffect(() => {
-//     if (selectedState && selectedState !== "0") {
-//       setLGAs(lgasByState[selectedState] || []);
-//     } else {
-//       setLGAs([]);
-//     }
-//     setSelectedLGA("");
-//   }, [selectedState]);
-
-//   // const handleStateChange = (e) => {
-//   //   setSelectedState(e.target.value);
-//   // };
-//   // const handleLGAChange = (e) => {
-//   //   setSelectedLGA(e.target.value);
-//   // };
- 
-//   const toggleSummary = () => {
-//     setShowSummary((prev) => !prev);
-//   };
-  
-//   const onChangeHandler = (event) => {
-//     event.preventDefault();
-//     const { name, value } = event.target;
-//     setFormData((data) => ({ ...data, [name]: value }));
-//   };
-
-//   const onSubmitHandler = async (event) => {
-//     event.preventDefault();
-//     setIsLoading(true);
-//     try {
-//       let orderItems = [];
-//       for (const items in cartItems) {
-//         for (const item in cartItems[items]) {
-//           if (cartItems[items][item] > 0) {
-//             const itemInfo = structuredClone(
-//               products.find((product) => product._id === items)
-//             );
-//             if (itemInfo) {
-//               itemInfo.size = item;
-//               itemInfo.quantity = cartItems[items][item];
-//               orderItems.push(itemInfo);
-//             }
-//           }
-//         }
-//       }
-
-//       let orderData = {
-//         address: {
-//           ...formData,
-//           state: selectedState,
-//           lga: selectedLGA,
-//         },
-//         items: orderItems,
-//         subtotal: getCartAmount(),
-//         deliveryFee: formData.deliveryFee,
-//         amount: getCartAmount() + formData.deliveryFee,
-//         shippingMethod: formData.shippingMethod,
-//       };
-
-//       const initPaystack = async (orderData) => {
-//         if (typeof PaystackPop === "undefined") {
-//           console.error("Paystack library not loaded.");
-//           toast.error("Payment service unavailable. Please try again later.");
-//           return;
-//         }
-
-//         const paystackPublicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY; // Replace with your actual Paystack public key
-//         const totalAmount = getCartAmount() + formData.deliveryFee;
-
-//         const handler = new PaystackPop({
-//           key: paystackPublicKey,
-//           email: formData.email, // Customer's email
-//           amount: totalAmount * 100, // Amount is in kobo
-//           onSuccess: async (response) => {
-//             // Handle successful payment
-//             if (response.status === "success") {
-//               // Check if the payment is successful
-//               try {
-//                 const verificationResponse = await axios.get(
-//                   backendUrl + "api/order/verify",
-//                   { orderId: orderData.orderId, reference: response.reference }
-//                 );
-//                 // navigate(`/verify?success=true&orderId=${orderData.orderId}`);
-
-//                 // If verification is successful
-//                 if (verificationResponse.data.success) {
-//                   // Clear the cart
-//                   setCartItems({});
-
-//                   // Navigate to the orders page
-//                   navigate("/orders");
-//                 } else {
-//                   toast.error("Payment verification failed. Please try again.");
-//                 }
-//               } catch (verificationError) {
-//                 console.error("Verification error:", verificationError);
-//                 toast.error(
-//                   "An error occurred during payment verification. Please try again."
-//                 );
-//               }
-//             } else {
-//               toast.error("Payment was not successful");
-//               navigate("/");
-//             }
-//           },
-//           onClose: () => {
-//             console.log("Payment popup closed.");
-//             toast.info("Payment process canceled.");
-//           },
-//         });
-
-//         // Open the Paystack payment modal
-//         handler.open();
-//       };
-
-//       switch (paymentMethod) {
-//         case "paystack":
-//           const response = await axios.post(
-//             backendUrl + "api/order/paystack",
-//             orderData,
-//             { headers: { token } }
-//           );
-//           if (response.data.success) {
-//             initPaystack(response.data.order);
-//           } else {
-//             toast.error(response.data.message);
-//           }
-//           break;
-//         case "cash-on-delivery":
-//           const codResponse = await axios.post(
-//             backendUrl + "api/order/place",
-//             orderData,
-//             { headers: { token } }
-//           );
-//           if (codResponse.data.success) {
-//             setCartItems({});
-//             navigate("/orders");
-//           } else {
-//             toast.error(codResponse.data.message);
-//           }
-//           break;
-//         default:
-//           toast.error("Please select a valid payment method");
-//           break;
-//       }
-//     } catch (error) {
-//       console.error(error);
-//       toast.error(
-//         error.message || "An error occurred while processing your order."
-//       );
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-
-//   return (
-//     <div className="container mx-auto px-4 py-8">
-//       <div className="text-xl sm:text-2xl my-3">
-//        <p>Delivery Information</p> {/* <Title text1={"DELIVERY"} text2={"INFORMATION"} /> */}
-//       </div>
-//       <form
-//         onSubmit={onSubmitHandler}
-//         className="flex flex-col gap-6 pt-5 min-h-[80vh] border-t bg-neutral-50"
-//       >
-//         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//           <input
-//             className="border border-gray-300 rounded-md py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-//             type="text"
-//             name="firstName"
-//             value={formData.firstName}
-//             onChange={onChangeHandler}
-//             placeholder="First name"
-//             required
-//           />
-//           <input
-//             className="border border-gray-300 rounded-md py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-//             type="text"
-//             name="lastName"
-//             value={formData.lastName}
-//             onChange={onChangeHandler}
-//             placeholder="Last name"
-//             required
-//           />
-
-//           <input
-//             className="border border-gray-300 rounded-md py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-//             type="email"
-//             name="email"
-//             value={formData.email}
-//             onChange={onChangeHandler}
-//             placeholder="Email"
-//             required
-//           />
-//           <input
-//             className="border border-gray-300 rounded-md py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-//             type="tel"
-//             name="phone"
-//             value={formData.phone}
-//             onChange={onChangeHandler}
-//             placeholder="Phone number"
-//             required
-//           />
-//           {/* <Autocomplete onLoad={onLoad} onPlaceChanged={onPlaceChanged}> */}
-//             <input
-//               className="border border-gray-300 rounded-md py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-//               type="text"
-//               name="address"
-//               value={formData.address}
-//               onChange={onChangeHandler}
-//               placeholder="Address"
-//               required
-//             />
-        
-
-//         {/* Payment Method */}
-
-//         <div className="mt-8">
-//           <div className="text-xl sm:text-2xl my-3">
-//             {/* <Title text1={"PAYMENT"} text2={"METHOD"} /> */}
-//             <p>Payment Method</p>
-//           </div>
-//           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-//             <label className="flex items-center gap-2 p-4 border rounded-md cursor-pointer hover:bg-gray-50 transition-colors">
-//               <input
-//                 type="radio"
-//                 name="paymentMethod"
-//                 value="paystack"
-//                 checked={paymentMethod === "paystack"}
-//                 onChange={() => setPaymentMethod("paystack")}
-//                 className="w-5 h-5"
-//               />
-//               <CreditCard className="w-6 h-6" />
-//               <span>Pay Online</span>
-//             </label>
-            
-//           </div>
-//         </div>
-
-//         {/* Order Summary */}
-//         <div></div>
-//         <div className="mt-8">
-//           {/* <Title text1={"ORDER"} text2={"TOTAL"} /> */}
-//           <p>Order Total</p>
-//           <span
-//             type="button"
-//             onClick={toggleSummary}
-//             className="text-lg ml-3 absolute font-semibold "
-//           >
-//             {showSummary ? <ArrowRight /> : <ArrowDown />}
-//           </span>
-
-//           {showSummary && (
-//             <div className="bg-gray-50 p-6 rounded-lg">
-//               {/* <h3 className="text-2xl font-semibold mb-4">Order Summary</h3> */}
-//               <div className="flex justify-between mb-2">
-//                 <span>Subtotal:</span>
-//                 <span className="font-medium">
-//                   {formatNaira(getCartAmount())}
-//                 </span>
-//               </div>
-//               <div className="flex justify-between mb-2">
-//                 <span>Shipping Fee:</span>
-//                 <span className="font-medium">
-//                   <p>
-//                     {getCartAmount() === 0
-//                       ? 0
-//                       : formatNaira(formData.deliveryFee)}
-//                   </p>
-//                 </span>
-//               </div>
-//               <div className="flex justify-between font-bold text-lg mt-4 pt-4 border-t">
-//                 <span>Total:</span>
-//                 <span>
-//                   {getCartAmount() === 0
-//                     ? 0
-//                     : formatNaira(getCartAmount() + formData.deliveryFee)}
-//                 </span>
-//               </div>
-//             </div>
-//           )}
-//         </div>
-
-//         <button
-//           type="submit"
-//           className="bg-green-600 text-white px-6 py-3 rounded-md font-semibold hover:bg-green-700 transition-colors mt-8 flex items-center justify-center"
-//           disabled={isLoading}
-//         >
-//           {isLoading ? (
-//             <>
-//               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-//               Processing...
-//             </>
-//           ) : (
-//             "Place Order"
-//           )}
-//         </button>
-//       </form>
-
-//       <p className="mt-4">
-//         {" "}
-//         Don't have an account yet? Kindly{" "}
-//         <a className="cursor-pointer text-blue-400" href={"/login"}>
-//           Sign Up
-//         </a>
-//       </p>
-//     </div>
-//   );
-// };
-
-// export default PlaceOrder;
-
-
-
-import React, { useMemo, useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
-// import { loadStripe } from "@stripe/stripe-js";
-
-import {
-  Loader2,
-  CreditCard,
-  Truck,
-  ArrowDown,
-  ArrowRight,
+import { 
+  Loader2, 
+  CreditCard, 
+  Truck, 
+  Shield, 
+  CheckCircle, 
+  MapPin, 
+  User, 
+  Mail, 
+  Phone,
+  ShoppingCart,
+  ArrowLeft,
+  Trash2
 } from "lucide-react";
-
 import { ShopContext } from "../context/ShopContext.jsx";
 import { assets } from "../assets/assets.js";
-
-// Initialize Stripe
-// const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 // Canadian provinces and territories
 const canadianProvinces = [
@@ -391,19 +35,17 @@ const canadianProvinces = [
   { code: "YT", name: "Yukon" },
 ];
 
-const PlaceOrder = async () => {
+const PlaceOrder = () => {
   const {
     navigate,
     cartItems,
-    token,
     setCartItems,
     getCartAmount,
     products,
-    formatCAD, // Assuming you have a Canadian dollar formatter
-    backendUrl,
+    updateQuantity,
   } = useContext(ShopContext);
-  
-  const [showSummary, setShowSummary] = useState(false);
+
+  const backendUrl = "http://localhost:3000/";
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -416,11 +58,52 @@ const PlaceOrder = async () => {
     deliveryFee: 0,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+
+  // Calculate taxes based on Canadian province
+  const calculateTaxes = (amount, province) => {
+    const taxRates = {
+      'ON': 0.13, // HST
+      'QC': 0.14975, // GST + QST
+      'BC': 0.12, // GST + PST
+      'AB': 0.05, // GST only
+      'MB': 0.12, // GST + PST
+      'SK': 0.11, // GST + PST
+      'NS': 0.15, // HST
+      'NB': 0.15, // HST
+      'NL': 0.15, // HST
+      'PE': 0.15, // HST
+      'NT': 0.05, // GST only
+      'NU': 0.05, // GST only
+      'YT': 0.05, // GST only
+    };
+
+    const rate = taxRates[province] || 0;
+    return amount * rate;
+  };
+
+  // Get tax name based on province
+  const getTaxName = (province) => {
+    const taxNames = {
+      'ON': 'HST',
+      'QC': 'GST + QST',
+      'BC': 'GST + PST',
+      'AB': 'GST',
+      'MB': 'GST + PST',
+      'SK': 'GST + PST',
+      'NS': 'HST',
+      'NB': 'HST',
+      'NL': 'HST',
+      'PE': 'HST',
+      'NT': 'GST',
+      'NU': 'GST',
+      'YT': 'GST',
+    };
+    return taxNames[province] || 'Tax';
+  };
 
   useEffect(() => {
-    // Calculate delivery fee based on province (example logic)
     const calculateDeliveryFee = () => {
-      const baseFee = 10; // Base delivery fee in CAD
       const provinceFees = {
         'ON': 10,
         'QC': 12,
@@ -436,8 +119,8 @@ const PlaceOrder = async () => {
         'NU': 35,
         'YT': 30,
       };
-      
-      const fee = provinceFees[formData.province] || baseFee;
+
+      const fee = provinceFees[formData.province] || 15;
       setFormData(prev => ({ ...prev, deliveryFee: fee }));
     };
 
@@ -446,388 +129,436 @@ const PlaceOrder = async () => {
     }
   }, [formData.province]);
 
-  const toggleSummary = () => {
-    setShowSummary((prev) => !prev);
-  };
-  
-  const onChangeHandler = (event) => {
-    const { name, value } = event.target;
-    setFormData((data) => ({ ...data, [name]: value }));
-  };
-
-  // const validateCanadianPostalCode = (postalCode) => {
-  //   const regex = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
-  //   return regex.test(postalCode);
-  // };
-
-
-  const stripe = await loadStripe('your-publishable-key');
-await stripe.confirmCardPayment(response.data.clientSecret, {
-  payment_method: {
-    card: cardElement,
-    billing_details: {
-      name: `${firstName} ${lastName}`,
-      email: email,
-    },
-  },
-});
-
-
-  const onSubmitHandler = async (event) => {
-    event.preventDefault();
-    setIsLoading(true);
-
-    // Validate Canadian postal code   +
-
-    try {
-      let orderItems = [];
-      for (const items in cartItems) {
-        for (const item in cartItems[items]) {
-          if (cartItems[items][item] > 0) {
-            const itemInfo = structuredClone(
-              products.find((product) => product._id === items)
-            );
-            if (itemInfo) {
-              itemInfo.size = item;
-              itemInfo.quantity = cartItems[items][item];
-              orderItems.push(itemInfo);
-            }
+  // Get cart items for display
+  const getCartItems = () => {
+    const items = [];
+    for (const itemId in cartItems) {
+      for (const size in cartItems[itemId]) {
+        if (cartItems[itemId][size] > 0) {
+          const itemInfo = products.find((product) => product._id === itemId);
+          if (itemInfo) {
+            items.push({
+              ...itemInfo,
+              size,
+              quantity: cartItems[itemId][size]
+            });
           }
         }
       }
+    }
+    return items;
+  };
 
-      let orderData = {
+  const cartItemsDisplay = getCartItems();
+
+  const onChangeHandler = (event) => {
+    const { name, value } = event.target;
+    setFormData((data) => ({ ...data, [name]: value }));
+    
+    // Clear error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  // Validate postal code format
+  const validatePostalCode = (postalCode) => {
+    const canadianPostalRegex = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
+    return canadianPostalRegex.test(postalCode);
+  };
+
+  // Validate form
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!formData.firstName.trim()) errors.firstName = 'First name is required';
+    if (!formData.lastName.trim()) errors.lastName = 'Last name is required';
+    if (!formData.email.trim()) errors.email = 'Email is required';
+    if (!formData.phone.trim()) errors.phone = 'Phone number is required';
+    if (!formData.address.trim()) errors.address = 'Address is required';
+    if (!formData.city.trim()) errors.city = 'City is required';
+    if (!formData.province) errors.province = 'Province is required';
+    if (!formData.postalCode.trim()) {
+      errors.postalCode = 'Postal code is required';
+    } else if (!validatePostalCode(formData.postalCode)) {
+      errors.postalCode = 'Invalid postal code format';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const processStripePayment = async (orderData) => {
+    try {
+      const response = await axios.post(
+        `${backendUrl}api/order/place`,
+        orderData
+      );
+
+      if (response.data.url) {
+        window.location.href = response.data.url;
+      } else {
+        toast.error(response.data.message || "Payment processing failed");
+      }
+    } catch (error) {
+      console.error("Stripe payment error:", error);
+      toast.error(error.response?.data?.message || "An error occurred while processing your payment.");
+    }
+  };
+
+  const onSubmitHandler = async (event) => {
+    event.preventDefault();
+    
+    if (!validateForm()) {
+      toast.error("Please fill in all required fields correctly");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      if (cartItemsDisplay.length === 0) {
+        toast.error("Your cart is empty");
+        setIsLoading(false);
+        return;
+      }
+
+      const subtotal = getCartAmount();
+      const taxes = calculateTaxes(subtotal, formData.province);
+      const deliveryFee = formData.deliveryFee || 0;
+      const total = subtotal + deliveryFee + taxes;
+
+      const orderData = {
         address: {
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
           address: formData.address,
           city: formData.city,
-          province: formData.province,
+          lga: formData.city,
+          state: formData.province,
           postalCode: formData.postalCode.toUpperCase(),
           phone: formData.phone,
           country: "Canada",
+          deliveryFee: deliveryFee
         },
-        items: orderItems,
-        subtotal: getCartAmount(),
-        deliveryFee: formData.deliveryFee,
-        amount: getCartAmount() + formData.deliveryFee,
-        currency: "CAD",
-        taxes: calculateTaxes(getCartAmount(), formData.province),
+        items: cartItemsDisplay,
+        amount: total,
+        subtotal: subtotal,
+        taxes: taxes,
+        deliveryFee: deliveryFee,
+        paymentMethod: "stripe",
       };
 
       await processStripePayment(orderData);
-      
+
     } catch (error) {
-      console.error(error);
-      toast.error(
-        error.message || "An error occurred while processing your order."
-      );
+      console.error("Order submission error:", error);
+      toast.error(error.message || "An error occurred while processing your order.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // const calculateTaxes = (subtotal, province) => {
-  //   // Canadian tax rates (simplified - you should use a proper tax calculation service)
-  //   const taxRates = {
-  //     'ON': { hst: 0.13 }, // HST
-  //     'QC': { gst: 0.05, pst: 0.09975 }, // GST + PST
-  //     'BC': { gst: 0.05, pst: 0.07 }, // GST + PST
-  //     'AB': { gst: 0.05 }, // GST only
-  //     'MB': { gst: 0.05, pst: 0.07 }, // GST + PST
-  //     'SK': { gst: 0.05, pst: 0.06 }, // GST + PST
-  //     'NS': { hst: 0.15 }, // HST
-  //     'NB': { hst: 0.15 }, // HST
-  //     'NL': { hst: 0.15 }, // HST
-  //     'PE': { hst: 0.15 }, // HST
-  //     'NT': { gst: 0.05 }, // GST only
-  //     'NU': { gst: 0.05 }, // GST only
-  //     'YT': { gst: 0.05 }, // GST only
-  //   };
-
-  //   const rates = taxRates[province] || { gst: 0.05 };
-  //   let totalTax = 0;
-
-  //   if (rates.hst) {
-  //     totalTax = subtotal * rates.hst;
-  //   } else {
-  //     totalTax = subtotal * (rates.gst || 0) + subtotal * (rates.pst || 0);
-  //   }
-
-  //   return {
-  //     amount: totalTax,
-  //     rate: rates,
-  //   };
-  // };
-
-  // const processStripePayment = async (orderData) => {
-  //   try {
-  //     // Create payment intent on your backend
-  //     const response = await axios.post(
-  //       backendUrl + "api/order/create-payment-intent",
-  //       {
-  //         ...orderData,
-  //         paymentMethod: "stripe",
-  //       },
-  //       { headers: { token } }
-  //     );
-
-  //     if (!response.data.success) {
-  //       toast.error(response.data.message);
-  //       return;
-  //     }
-
-  //     const { clientSecret, orderId } = response.data;
-  //     // const stripe = await stripePromise;
-
-  //     // Redirect to Stripe Checkout or use Elements
-  //     const result = await stripe.confirmCardPayment(clientSecret, {
-  //       payment_method: {
-  //         card: {
-  //           // This would typically be collected via Stripe Elements
-  //           // For now, we'll redirect to Stripe Checkout
-  //         },
-  //         billing_details: {
-  //           name: `${formData.firstName} ${formData.lastName}`,
-  //           email: formData.email,
-  //           phone: formData.phone,
-  //           address: {
-  //             line1: formData.address,
-  //             city: formData.city,
-  //             state: formData.province,
-  //             postal_code: formData.postalCode,
-  //             country: "CA",
-  //           },
-  //         },
-  //       },
-  //     });
-
-  //     if (result.error) {
-  //       toast.error(result.error.message);
-  //     } else {
-  //       // Payment succeeded
-  //       if (result.paymentIntent.status === "succeeded") {
-  //         // Verify payment on backend
-  //         const verifyResponse = await axios.post(
-  //           backendUrl + "api/order/verify-stripe-payment",
-  //           {
-  //             paymentIntentId: result.paymentIntent.id,
-  //             orderId: orderId,
-  //           },
-  //           { headers: { token } }
-  //         );
-
-  //         if (verifyResponse.data.success) {
-  //           setCartItems({});
-  //           toast.success("Order placed successfully!");
-  //           navigate("/orders");
-  //         } else {
-  //           toast.error("Payment verification failed. Please contact support.");
-  //         }
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error("Stripe payment error:", error);
-  //     toast.error("Payment processing failed. Please try again.");
-  //   }
-  // };
+  const subtotal = getCartAmount();
+  const taxes = calculateTaxes(subtotal, formData.province);
+  const deliveryFee = formData.deliveryFee || 0;
+  const total = subtotal + deliveryFee + taxes;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="text-xl sm:text-2xl my-3">
-        <p>Shipping Information</p>
-      </div>
-      <form
-        onSubmit={onSubmitHandler}
-        className="flex flex-col gap-6 pt-5 min-h-[80vh] border-t bg-neutral-50"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input
-            className="border border-gray-300 rounded-md py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-            type="text"
-            name="firstName"
-            value={formData.firstName}
-            onChange={onChangeHandler}
-            placeholder="First name"
-            required
-          />
-          <input
-            className="border border-gray-300 rounded-md py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-            type="text"
-            name="lastName"
-            value={formData.lastName}
-            onChange={onChangeHandler}
-            placeholder="Last name"
-            required
-          />
-
-          <input
-            className="border border-gray-300 rounded-md py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={onChangeHandler}
-            placeholder="Email"
-            required
-          />
-          <input
-            className="border border-gray-300 rounded-md py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-            type="tel"
-            name="phone"
-            value={formData.phone}
-            onChange={onChangeHandler}
-            placeholder="Phone number"
-            required
-          />
-
-          <input
-            className="border border-gray-300 rounded-md py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 md:col-span-2"
-            type="text"
-            name="address"
-            value={formData.address}
-            onChange={onChangeHandler}
-            placeholder="Street address"
-            required
-          />
-
-          <input
-            className="border border-gray-300 rounded-md py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-            type="text"
-            name="city"
-            value={formData.city}
-            onChange={onChangeHandler}
-            placeholder="City"
-            required
-          />
-
-          <select
-            className="border border-gray-300 rounded-md py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-            name="province"
-            value={formData.province}
-            onChange={onChangeHandler}
-            required
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={() => navigate('/cart')}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4"
           >
-            <option value="">Select Province/Territory</option>
-            {canadianProvinces.map((province) => (
-              <option key={province.code} value={province.code}>
-                {province.name}
-              </option>
-            ))}
-          </select>
-
-          <input
-            className="border border-gray-300 rounded-md py-2 px-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-            type="text"
-            name="postalCode"
-            value={formData.postalCode}
-            onChange={onChangeHandler}
-            placeholder="Postal Code (e.g., K1A 0A6)"
-            required
-          />
+            <ArrowLeft className="w-4 h-4" />
+            Back to Cart
+          </button>
+          <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
+          <p className="text-gray-600 mt-2">Complete your order information below</p>
         </div>
 
-        {/* Payment Method */}
-        <div className="mt-8">
-          <div className="text-xl sm:text-2xl my-3">
-            <p>Payment Method</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Forms */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Contact Information */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <User className="w-5 h-5 text-blue-600" />
+                <h2 className="text-xl font-semibold">Contact Information</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <input
+                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.firstName ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={onChangeHandler}
+                    placeholder="First name"
+                    required
+                  />
+                  {formErrors.firstName && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.firstName}</p>
+                  )}
+                </div>
+                <div>
+                  <input
+                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.lastName ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={onChangeHandler}
+                    placeholder="Last name"
+                    required
+                  />
+                  {formErrors.lastName && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.lastName}</p>
+                  )}
+                </div>
+                <div>
+                  <input
+                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.email ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={onChangeHandler}
+                    placeholder="Email address"
+                    required
+                  />
+                  {formErrors.email && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>
+                  )}
+                </div>
+                <div>
+                  <input
+                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.phone ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={onChangeHandler}
+                    placeholder="Phone number"
+                    required
+                  />
+                  {formErrors.phone && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.phone}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Shipping Address */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <MapPin className="w-5 h-5 text-blue-600" />
+                <h2 className="text-xl font-semibold">Shipping Address</h2>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <input
+                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.address ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={onChangeHandler}
+                    placeholder="Street address"
+                    required
+                  />
+                  {formErrors.address && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.address}</p>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <input
+                      className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.city ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      type="text"
+                      name="city"
+                      value={formData.city}
+                      onChange={onChangeHandler}
+                      placeholder="City"
+                      required
+                    />
+                    {formErrors.city && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.city}</p>
+                    )}
+                  </div>
+                  <div>
+                    <select
+                      className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.province ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      name="province"
+                      value={formData.province}
+                      onChange={onChangeHandler}
+                      required
+                    >
+                      <option value="">Select Province/Territory</option>
+                      {canadianProvinces.map((province) => (
+                        <option key={province.code} value={province.code}>
+                          {province.name}
+                        </option>
+                      ))}
+                    </select>
+                    {formErrors.province && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.province}</p>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <input
+                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.postalCode ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    type="text"
+                    name="postalCode"
+                    value={formData.postalCode}
+                    onChange={onChangeHandler}
+                    placeholder="Postal Code (e.g., K1A 0A6)"
+                    required
+                  />
+                  {formErrors.postalCode && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.postalCode}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Method */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <CreditCard className="w-5 h-5 text-blue-600" />
+                <h2 className="text-xl font-semibold">Payment Method</h2>
+              </div>
+              <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Shield className="w-6 h-6 text-blue-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">Secure Payment with Stripe</p>
+                      <p className="text-sm text-gray-600">Your payment information is encrypted and secure</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <img src={assets.visa} alt="Visa" className="h-8" />
+                    <img src={assets.mastercard} alt="Mastercard" className="h-8" />
+                    <img src={assets.americanexpress} alt="American Express" className="h-8" />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-1 gap-4">
-            <div className="flex items-center gap-2 p-4 border rounded-md bg-blue-50 border-blue-200">
-              <CreditCard className="w-6 h-6 text-blue-600" />
-              <span className="font-medium">Secure Payment with Stripe</span>
-              <div className="ml-auto flex gap-2">
-                <img src={assets.mastercard} alt="Mastercard" className="h-6" />
-                <img src={assets.visa} alt="Visa" className="h-6 " />
-                {/* <img src={assets.americanexpress} alt="American Express" className="h-6" /> */}
+
+          {/* Right Column - Order Summary */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-6">
+              <div className="flex items-center gap-2 mb-4">
+                <ShoppingCart className="w-5 h-5 text-blue-600" />
+                <h2 className="text-xl font-semibold">Order Summary</h2>
+              </div>
+
+              {/* Cart Items */}
+              <div className="space-y-4 mb-6 max-h-60 overflow-y-auto">
+                {cartItemsDisplay.map((item, index) => (
+                  <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <img
+                      src={item.image?.[0] || '/placeholder.png'}
+                      alt={item.name}
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{item.name}</p>
+                      <p className="text-xs text-gray-600">Size: {item.size}</p>
+                      <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
+                    </div>
+                    <p className="font-medium text-sm">
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pricing Breakdown */}
+              <div className="space-y-3 border-t pt-4">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-medium">${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Shipping</span>
+                  <span className="font-medium">
+                    {subtotal === 0 ? 'Free' : `$${deliveryFee.toFixed(2)}`}
+                  </span>
+                </div>
+                {formData.province && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">{getTaxName(formData.province)}</span>
+                    <span className="font-medium">${taxes.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-lg font-bold border-t pt-3">
+                  <span>Total</span>
+                  <span>${total.toFixed(2)} CAD</span>
+                </div>
+              </div>
+
+              {/* Checkout Button */}
+              <button
+                onClick={onSubmitHandler}
+                className="w-full bg-gray-600 text-white py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors mt-6 flex items-center justify-center"
+                disabled={isLoading || cartItemsDisplay.length === 0}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Shield className="w-5 h-5 mr-2" />
+                    Complete Secure Payment
+                  </>
+                )}
+              </button>
+
+              {/* Security Features */}
+              <div className="mt-6 space-y-2">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <span>SSL Encrypted Checkout</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <span>Money-back Guarantee</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <span>Secure Payment Processing</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Order Summary */}
-        <div className="mt-8">
-          <div className="flex items-center gap-2">
-            <p className="text-xl sm:text-2xl">Order Summary</p>
-            <button
-              type="button"
-              onClick={toggleSummary}
-              className="text-lg font-semibold"
-            >
-              {showSummary ? <ArrowDown /> : <ArrowRight />}
-            </button>
-          </div>
-
-          {showSummary && (
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <div className="flex justify-between mb-2">
-                <span>Subtotal:</span>
-                <span className="font-medium">
-                  ${(getCartAmount()).toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CAD
-
-                </span>
-              </div>
-              <div className="flex justify-between mb-2">
-                <span>Shipping:</span>
-                <span className="font-medium">
-                  {getCartAmount() === 0
-                    ? "$0.00 CAD"
-                    : 10.00   /* Assuming a default delivery fee of $10 CAD */}
-                    {/* // : `$${formData.deliveryFee.toFixed(2)} CAD`} */}
-                </span>
-              </div>
-              {/* <div className="flex justify-between mb-2">
-                <span>Taxes:</span>
-                <span className="font-medium">
-                  {getCartAmount() === 0
-                    ? "$0.00 CAD"
-                    : `$${calculateTaxes(getCartAmount(), formData.province).amount.toFixed(2)} CAD`}
-                </span>
-              </div> */}
-              <div className="flex justify-between font-bold text-lg mt-4 pt-4 border-t">
-                <span>Total:</span>
-                <span>
-               {
-  getCartAmount() === 0
-    ? "$0.00 CAD"
-    : `$${(getCartAmount() + 10)
-          .toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-      } CAD`
-}
-
-                </span>
-              </div>
-            </div>
-          )}
+        {/* Footer */}
+        <div className="mt-8 text-center text-sm text-gray-500">
+          <p>Need help? Contact our customer support at support@palmsbeauty.com</p>
         </div>
-
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-6 py-3 rounded-md font-semibold hover:bg-blue-700 transition-colors mt-8 flex items-center justify-center"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Processing Payment...
-            </>
-          ) : (
-            <>
-              <CreditCard className="w-5 h-5 mr-2" />
-              Pay with Stripe
-            </>
-          )}
-        </button>
-      </form>
-
-      <div className="mt-6 text-center text-sm text-gray-600">
-        <p>🔒 Your payment information is secure and encrypted</p>
-        <p className="mt-2">
-          Don't have an account yet?{" "}
-          <a className="cursor-pointer text-blue-600 hover:text-blue-800" href="/register">
-            Create Account
-          </a>
-        </p>
       </div>
     </div>
   );
