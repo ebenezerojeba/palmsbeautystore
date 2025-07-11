@@ -14,6 +14,7 @@ import serviceRouter from "./routes/serviceRoute.js";
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import job from "./config/cron.js";
 
 // Get __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
@@ -29,6 +30,7 @@ if (!fs.existsSync(uploadsDir)) {
 const app = express();
 
 const port = process.env.PORT || 3000;
+job.start();
 connectDB();
 connectCloudinary();
 
