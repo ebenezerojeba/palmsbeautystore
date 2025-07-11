@@ -667,6 +667,8 @@
 import React, { useState, useCallback } from "react";
 import { Upload, X, Save, AlertCircle, Check, ImageIcon } from "lucide-react";
 import axios from "axios";
+import { useContext } from "react";
+import { AdminContexts } from "../context/AdminContexts";
 
 const Add = ({ token }) => {
   const [images, setImages] = useState([null, null, null, null]);
@@ -674,6 +676,7 @@ const Add = ({ token }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errors, setErrors] = useState({});
+  const {backendUrl} = useContext(AdminContexts)
 
   const [formData, setFormData] = useState({
     name: "",
@@ -799,8 +802,8 @@ const Add = ({ token }) => {
       }
     });
 
-    const backendUrl = "http://localhost:3000/"; // Replace with your actual backend URL
-    const response = await axios.post(`${backendUrl}api/product/add`, formDataObj, {
+  
+    const response = await axios.post(`${backendUrl}/api/product/add`, formDataObj, {
       headers: {
         token, // Make sure `token` is defined in your component scope
       },

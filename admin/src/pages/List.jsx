@@ -237,13 +237,16 @@
 import React, { useEffect, useState } from "react";
 import { Trash2, Package, AlertCircle, Loader2 } from "lucide-react";
 import axios from 'axios'
+import { useContext } from "react";
+import { AdminContexts } from "../context/AdminContexts";
 // Mock data for demonstration
-const backendUrl = 'http://localhost:3000/'
+// const backendUrl = 'http://localhost:3000/'
 const List = ({ token }) => {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [removing, setRemoving] = useState(null);
   const [error, setError] = useState(null);
+  const { backendUrl } = useContext(AdminContexts);
 
   const fetchList = async () => {
     try {
@@ -255,7 +258,7 @@ const List = ({ token }) => {
       setList(list);
       
       // Uncomment and modify this for actual API call:
-      const response = await axios.get(backendUrl + "api/product/list");
+      const response = await axios.get(backendUrl + "/api/product/list");
       if (response.data.success) {
         setList(response.data.products);
       } else {

@@ -2,15 +2,18 @@ import { useCallback } from "react";
 
 import { useState } from "react";
 import axios from "axios";
+import { useContext } from "react";
+import { AdminContexts } from "../context/AdminContexts";
+const {backendUrl} = useContext(AdminContexts);
 
 const CONFIG = {
-  backendUrl: 'http://localhost:3000',
+  backendUrl: backendUrl,
   maxImageSize: 5 * 1024 * 1024, // 5MB
   allowedImageTypes: ['image/jpeg', 'image/png', 'image/webp'],
   requestTimeout: 30000, // 30 seconds
   maxRetries: 3
 };
-const backendUrl = 'http://localhost:3000';
+
 // / Custom hook for API calls with retry logic
 export const useApi = () => {
   const [loading, setLoading] = useState(false);
