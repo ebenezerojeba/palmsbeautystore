@@ -249,7 +249,7 @@ const Cart = () => {
 
                         <div className="flex items-center gap-4 mb-4">
                           <span className="text-lg font-semibold text-gray-900">
-                            {formatNaira(productData?.price)}
+                            {productData?.price}
                           </span>
                           <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
                             Size: {item.size}
@@ -324,14 +324,6 @@ const Cart = () => {
                   <span>🔒</span>
                   <span>Secure checkout</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                  <span>📦</span>
-                  <span>Free shipping on orders over ₦10,000</span>
-                </div>
-                {/* <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <span>↩️</span>
-                  <span>30-day return policy</span>
-                </div> */}
               </div>
             </div>
           </div>

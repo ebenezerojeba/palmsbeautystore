@@ -2,10 +2,10 @@ import React, { useContext } from "react";
 import { Link } from "react-router-dom";
 
 const ProductItem = ({ id, image, name, price }) => {
-  const formatNaira = (number) => {
-    return new Intl.NumberFormat("en-NG", {
+  const formatCad = (number) => {
+    return new Intl.NumberFormat("cad", {
       style: "currency",
-      currency: "NGN",
+      currency: "cad",
       minimumFractionDigits: 0,
     }).format(number);
   };
@@ -24,7 +24,7 @@ const ProductItem = ({ id, image, name, price }) => {
         />
       </div>
       <p className="pt-3 pb-1 text-sm">{name}</p>
-      <p className="text-sm font-medium">{formatNaira(price)}</p>
+      <p className="text-sm font-medium"> {formatCad(price)}</p>
     </Link>
   );
 };

@@ -1,15 +1,15 @@
 import axios from 'axios';
-import { useState, useEffect } from 'react';
-// import ServiceCard from '../components/ServiceCard';
+import { useState, useEffect, useContext } from 'react';
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
 import ServiceCard from '../components/ServiceCard';
-const backendUrl = 'http://localhost:3000'; // Replace with your deployed backend URL
+import { AppContext } from '../context/AppContext';
 
 const Services = () => {
   const [services, setServices] = useState([]); // array of categories
   const [expanded, setExpanded] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { backendUrl } = useContext(AppContext); // Assuming you have a context for the backend URL
 
   useEffect(() => {
     fetchServices();

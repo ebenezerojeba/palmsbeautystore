@@ -32,9 +32,9 @@ const ShopContextProvider = (props) => {
   }, [token]);  
 
   const formatNaira = (number) => {
-    return new Intl.NumberFormat("en-NG", {
+    return new Intl.NumberFormat("cad", {
       style: "currency",
-      currency: "NGN",
+      currency: "cad",
       minimumFractionDigits: 0,
     }).format(number);
   };
