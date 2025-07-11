@@ -12,7 +12,7 @@ dotenv.config();
 // import dotenv from "dotenv";
 
 // dotenv.config();
-// const stripe = new Stripe('sk_test_51RjXEb2L6kwlI8er0J1qObayleLNRtK9RTUlV8CibAcVowuYTKAipRDg71i5tMjSt09CtXBnhuxpKJHcIlhDqFIW00uRz9bzVA');
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 const placeOrder = async (req, res) => {
