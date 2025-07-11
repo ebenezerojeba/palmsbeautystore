@@ -1,6 +1,6 @@
 import express from 'express'
 import { cancelAppointment } from '../controllers/appointmentController.js'
-import { addService, adminDashboard, allServices, completeAppointment, deleteService, deleteServiceImage, getAllAppointment, getCompletedAppointments, toggleServiceStatus } from '../controllers/adminController.js'
+import { addCategory, addService, adminDashboard, allServices, completeAppointment, deleteCategory, deleteService, deleteServiceImage, getAllAppointment, getCompletedAppointments, toggleServiceStatus, updateCategory, updateService } from '../controllers/adminController.js'
 import upload from '../middlewares/multer.js'
 // import { bookAppointment } from '../controllers/appointmentController.js'
 
@@ -13,11 +13,16 @@ adminRouter.post('/completed', getCompletedAppointments)
 adminRouter.get('/all-appointments', getAllAppointment)
 adminRouter.get('/dashboard', adminDashboard)
 
+// Category
+adminRouter.post('/addcategory',upload.single('image'), addCategory)
+adminRouter.put('/updatecategory/:id', upload.single('image'), updateCategory)
+adminRouter.delete('/deletecategory/:id', deleteCategory)
 
 // Services
 adminRouter.get('/services', allServices)
 adminRouter.post('/addservices', upload.single('image'), addService)
-adminRouter.put('/:id/toggle', toggleServiceStatus)
+adminRouter.put('/updateservice/:id', upload.single('image'), updateService)
+adminRouter.patch('/:id/toggle', toggleServiceStatus)
 adminRouter.delete('/:id', deleteService)
 adminRouter.delete('/:id/image', deleteServiceImage)
 

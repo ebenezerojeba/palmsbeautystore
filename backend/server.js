@@ -11,6 +11,19 @@ import orderRouter from "./routes/orderRoute.js";
 import subscribeRouter from "./routes/subscribeRoute.js";
 import connectCloudinary from "./config/cloudinary.js";
 import serviceRouter from "./routes/serviceRoute.js";
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+// Get __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Ensure uploads folder exists
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir);
+}
 
 // App Config
 const app = express();
@@ -41,6 +54,12 @@ app.use(cors());
 app.use(express.json());
 
 // API Endpoint
+// Make sure this is BEFORE routes
+// app.use('/uploads', express.static('uploads'));
+
+// Serve uploads folder publicly
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.use("/api/appointment", appointmentRouter);
 app.use("/api/admin", adminRouter);
 

@@ -3,23 +3,19 @@ import mongoose from "mongoose";
 const serviceSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true,
     trim: true,
     maxLength: 255,
   },
   description: {
     type: String,
-    required: true,
     trim: true,
   },
   duration: {
     type: String,
-    required: true,
     trim: true,
   },
   price: {
     type: String,
-    required: true,
     trim: true,
   },
   image: {

@@ -29,5 +29,25 @@ const getServiceById = async (req, res) => {
 }
 
 
+// Public Services
+// In your serviceController.js
+const publicServices = async (req, res) => {
+  try {
+    const categories = await serviceModel.find({ isCategory: true, isActive: true });
+    const services = await serviceModel.find({ isCategory: false, isActive: true });
 
-export {getAllServices, getServiceById};
+    const grouped = categories.map(category => ({
+      ...category._doc,
+      subServices: services.filter(s => s.parentService?.toString() === category._id.toString())
+    }));
+
+    res.json(grouped);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch services' });
+  }
+};
+
+
+
+
+export {getAllServices, getServiceById, publicServices};
