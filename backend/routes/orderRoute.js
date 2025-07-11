@@ -14,7 +14,8 @@ orderRouter.post('/list',adminAuth,allOrders)
 orderRouter.post('/status',adminAuth,updateStatus)
 
 // Paymetn Features
-orderRouter.post('/place',authUser,placeOrder)
+orderRouter.post('/place', placeOrder)
+// orderRouter.post('/stripe',authUser,placeOrder)
 
 // User Feature
 orderRouter.post('/userorders',authUser,userOrders)

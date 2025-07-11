@@ -1,9 +1,13 @@
 import mongoose from 'mongoose';
 
 const orderSchema = new mongoose.Schema({
-    userId: {type: String, requried: true},
-    items: { type: Array, required: true },
-    deliveryFee: { type: Number, required: true },
+    // userId: {type: String, requried: true},
+    items: [{
+        product: {type: String, required: true, ref: 'product'},
+        quantity: {type: Number, required: true},
+    
+    }],
+       
     amount: { type: Number, required: true },
     address: {
         type: Object, 
@@ -18,6 +22,7 @@ const orderSchema = new mongoose.Schema({
             lga: { type: String, required: true }, // New field for LGA
         }
     },
+    isPaid: { type: Boolean, required: true, default: false },
     status: { type: String, required: true, default: 'Order Placed' },
     paymentMethod: { type: String, required: true },
     payment: { type: Boolean, required: true, default: false },

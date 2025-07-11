@@ -391,7 +391,7 @@ const canadianProvinces = [
   { code: "YT", name: "Yukon" },
 ];
 
-const PlaceOrder = () => {
+const PlaceOrder = async () => {
   const {
     navigate,
     cartItems,
@@ -460,6 +460,19 @@ const PlaceOrder = () => {
   //   return regex.test(postalCode);
   // };
 
+
+  const stripe = await loadStripe('pk_test_51RjXEb2L6kwlI8erZDYyzSzqtSMlhjLmCCCkX87YqibvuVugaWCgWQNA7abSWqgbLdL5hdz2ua3q7trKX6LEGUH3002ECnsRHJ');
+await stripe.confirmCardPayment(response.data.clientSecret, {
+  payment_method: {
+    card: cardElement,
+    billing_details: {
+      name: `${firstName} ${lastName}`,
+      email: email,
+    },
+  },
+});
+
+
   const onSubmitHandler = async (event) => {
     event.preventDefault();
     setIsLoading(true);
@@ -497,8 +510,8 @@ const PlaceOrder = () => {
         },
         items: orderItems,
         subtotal: getCartAmount(),
-        deliveryFee: formData.deliveryFee,
-        amount: getCartAmount() + formData.deliveryFee,
+        // deliveryFee: formData.deliveryFee,
+        amount: getCartAmount() ,
         currency: "CAD",
         taxes: calculateTaxes(getCartAmount(), formData.province),
       };

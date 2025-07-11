@@ -1,170 +1,121 @@
-// import { Clock, DollarSign, Info, Loader2 } from 'lucide-react';
-// import { useState } from 'react';
-// import {motion }from 'framer-motion'
-// import {useNavigate} from "react-router-dom"
+import React, { useState } from 'react';
+import {
+  Clock,
+  Calendar,
+  ArrowRight
+} from 'lucide-react';
 
-// const ServiceCard = ({ title, description, duration, price, image, id }) => {
-//   const [isHovered, setIsHovered] = useState(false);
+const ServiceCard = ({
+  title,
+  description,
+  duration,
+  price,
+  image,
+  isActive = true,
+  onBook,
+  discount = null,
+  originalPrice = null,
+  availability = "Available Today"
+}) => {
+  const [isHovered, setIsHovered] = useState(false);
 
-//   const navigate = useNavigate()
-//   return (
-//     <motion.div
-//       initial={{ opacity: 0, y: 20 }}
-//       animate={{ opacity: 1, y: 0 }}
-//       whileHover={{ y: -5 }}
-//       className="bg-white rounded-lg shadow-md overflow-hidden"
-//       onMouseEnter={() => setIsHovered(true)}
-//       onMouseLeave={() => setIsHovered(false)}
-//     >
-//       <div className="relative h-48 overflow-hidden">
-//         <img
-//           src={image || "/api/placeholder/400/300"}
-//           alt={title}
-//           className={`w-full h-full object-cover transition-transform duration-300 ${
-//             isHovered ? 'scale-110' : 'scale-100'
-//           }`}
-//         />
-//         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-//       </div>
+  const handleBooking = (e) => {
+    e.stopPropagation();
+    onBook?.();
+  };
 
-//       <div className="p-6">
-//         <h3 className="text-xl font-semibold text-gray-800 mb-3">{title}</h3>
-//         <p className="text-gray-600 mb-4">{description}</p>
-        
-//         <div className="space-y-2">
-//           <div className="flex items-center text-gray-600">
-//             <Clock className="w-4 h-4 mr-2" />
-//             <span>{duration}</span>
-//           </div>
-//           <div className="flex items-center text-gray-600">
-//             <DollarSign className="w-4 h-4 mr-2" />
-//             <span>{price}</span>
-//           </div>
-//         </div>
-
-        
-        
-//     <button
-//      onClick={() => {
-//       navigate(`/appointment/${id}`);
-//       scrollTo(0, 0);
-//     }}
-//         className="mt-4 w-full bg-pink-600 text-white py-2 px-4 rounded-md hover:bg-pink-700 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2">
-//           Book Now
-//         </button>
-//       </div>
-//     </motion.div>
-//   );
-
-// };
-
-// export default ServiceCard
-
-
-
-
-// ServiceCard.jsx - Updated component
-// import { Clock, DollarSign, Info, Loader2 } from 'lucide-react';
-// import { useState } from 'react';
-// import { motion } from 'framer-motion';
-// import { useNavigate } from "react-router-dom";
-
-// const ServiceCard = ({ title, description, duration, price, image, id, isActive = true }) => {
-//   const [isHovered, setIsHovered] = useState(false);
-//   const navigate = useNavigate();
-
-//   // Don't render if service is not active
-//   if (!isActive) return null;
-
-//   return (
-//     <motion.div
-//       initial={{ opacity: 0, y: 20 }}
-//       animate={{ opacity: 1, y: 0 }}
-//       whileHover={{ y: -5 }}
-//       className="bg-white rounded-lg shadow-md overflow-hidden"
-//       onMouseEnter={() => setIsHovered(true)}
-//       onMouseLeave={() => setIsHovered(false)}
-//     >
-//       <div className="relative h-48 overflow-hidden">
-//         <img
-//           src={image || "/api/placeholder/400/300"}
-//           alt={title}
-//           className={`w-full h-full object-cover transition-transform duration-300 ${
-//             isHovered ? 'scale-110' : 'scale-100'
-//           }`}
-//         />
-//         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-//       </div>
-
-//       <div className="p-6">
-//         <h3 className="text-xl font-semibold text-gray-800 mb-3">{title}</h3>
-//         <p className="text-gray-600 mb-4">{description}</p>
-        
-//         <div className="space-y-2">
-//           <div className="flex items-center text-gray-600">
-//             <Clock className="w-4 h-4 mr-2" />
-//             <span>{duration}</span>
-//           </div>
-//           <div className="flex items-center text-gray-600">
-//             <DollarSign className="w-4 h-4 mr-2" />
-//             <span>{price}</span>
-//           </div>
-//         </div>
-
-//         <button
-//           onClick={() => {
-//             navigate(`/appointment/${id}`);
-//             scrollTo(0, 0);
-//           }}
-//           className="mt-4 w-full bg-pink-600 text-white py-2 px-4 rounded-md hover:bg-pink-700 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
-//         >
-//           Book Now
-//         </button>
-//       </div>
-//     </motion.div>
-//   );
-// };
-// export default ServiceCard;
-
-
-
-
-import React from 'react';
-import { Clock, DollarSign } from 'lucide-react';
-
-const ServiceCard = ({ title, description, duration, price, image, onBook }) => {
   return (
-    <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition duration-300 overflow-hidden">
-      {image && (
-        <img
-          src={image}
-          alt={title}
-          className="w-full h-48 object-cover"
-        />
-      )}
+    <div
+      className="group relative bg-white rounded-3xl shadow-md hover:shadow-xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-gray-200"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
 
-      <div className="p-4 space-y-2">
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-        <p className="text-sm text-gray-600 line-clamp-3">{description}</p>
 
-        <div className="flex items-center justify-between text-sm mt-2">
-          <span className="flex items-center gap-1 text-gray-700">
-            <Clock className="w-4 h-4" />
-            {duration || '—'}
-          </span>
-          <span className="flex items-center gap-1 text-gray-700">
-            <DollarSign className="w-4 h-4" />
-            {price || '—'}
-          </span>
+      {/* Image */}
+      <div className="relative h-56 overflow-hidden">
+        {image ? (
+          <img
+            src={image}
+            alt={title}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center text-6xl opacity-30">
+            💅
+          </div>
+        )}
+
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+
+        {/* Discount Badge */}
+        {discount && (
+          <div className="absolute bottom-4 left-4 bg-green-600 text-white text-xs font-medium px-3 py-1 rounded-full shadow-md">
+            {discount}% OFF
+          </div>
+        )}
+      </div>
+
+      {/* Card Content */}
+      <div className="p-6 space-y-4">
+
+        {/* Title */}
+        <h3 className="text-xl font-semibold text-gray-900 leading-snug group-hover:text-purple-700 transition-colors">
+          {title}
+        </h3>
+
+        {/* Description */}
+        <p className="text-gray-600 text-sm leading-relaxed line-clamp-2">
+          {description}
+        </p>
+
+        {/* Duration & Price */}
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100 text-sm">
+          <div className="flex items-center gap-1 text-gray-700">
+            <Clock className="w-4 h-4 text-gray-500" />
+            {duration || '45 min'}
+          </div>
+          <div className="flex items-center gap-2">
+            {originalPrice && (
+              <span className="line-through text-gray-400">${originalPrice}</span>
+            )}
+            <span className="text-lg font-bold text-gray-600">
+              ${price || '85'}
+            </span>
+          </div>
         </div>
 
+        {/* Availability */}
+        <div className="flex items-center gap-2 text-sm text-green-600">
+          <span className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
+          {/* <span className="font-medium">{availability}</span> */}
+          <span className="font-medium">{isActive ? "Available Now" : "Not Avaialble"}</span>
+        </div>
+
+        
+
+        {/* Book Button */}
         <button
-          onClick={onBook}
-          className="w-full mt-4 bg-pink-600 text-white text-sm py-2 rounded-md hover:bg-pink-700 transition"
+          onClick={handleBooking}
+          className={`mt-2 w-full py-3 px-4 rounded-xl cursor-pointer font-semibold text-white transition-all duration-300 flex items-center justify-center gap-2 group/btn ${
+            isHovered
+              ? 'bg-gray-800'
+              : 'bg-gray-700'
+          }`}
         >
-          Book Now
+          <Calendar className="w-4 h-4" />
+          Book Appointment
+          <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
         </button>
       </div>
+
+      {/* Hover Overlay */}
+      <div
+        className={`absolute inset-0 pointer-events-none transition-all duration-500 ${
+          isHovered ? 'bg-gradient-to-t from-purple-50/60 to-transparent' : ''
+        }`}
+      />
     </div>
   );
 };
