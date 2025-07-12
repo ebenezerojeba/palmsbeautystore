@@ -49,7 +49,10 @@ const generateServices = (count = 5) =>
     imagePublicId: faker.string.uuid(),
     isActive: true,
     isCategory: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   }));
+
 
 const generateAppointments = (services, count = 10) =>
   Array.from({ length: count }).map(() => {
@@ -122,7 +125,7 @@ const seedData = async () => {
     await orderModel.deleteMany();
 
     const products = await productModel.insertMany(generateProducts(30));
-    const services = await serviceModel.insertMany(generateServices(10));
+    const services = await serviceModel.insertMany(generateServices(15));
     await appointmentModel.insertMany(generateAppointments(services, 15));
     await orderModel.insertMany(generateOrders(products, 15));
 
