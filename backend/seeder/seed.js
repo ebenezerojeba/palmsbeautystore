@@ -2,22 +2,28 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { faker } from "@faker-js/faker";
 import productModel from "../models/productModel.js";
+import serviceModel from "../models/serviceModel.js";
 import appointmentModel from "../models/appointment.js";
 import orderModel from "../models/orderModel.js";
-import serviceModel from "../models/serviceModel.js";
 import connectDB from "../config/mongodb.js";
 
 
 dotenv.config();
-await connectDB(); // If connectDB returns a promise
+await connectDB();
 
-const generateProducts = (count = 20) => {
+const generateProducts = (count = 30) => {
   const categories = {
-    Clothing: ["T-Shirts", "Jackets", "Jeans", "Shoes"],
-    Accessories: ["Bags", "Watches", "Sunglasses"],
-    Beauty: ["Skincare", "Makeup", "Perfume"],
-  };
-  const sizes = ["S", "M", "L", "XL", "XXL"];
+  Skincare: ["Cleansers", "Moisturizers", "Serums", "Sunscreens", "Treatments"],
+  Makeup: ["Foundation", "Lipstick", "Eyeshadow", "Mascara", "Blush"],
+  Fragrance: ["Perfume", "Cologne", "Body Spray", "Essential Oils"],
+  HairCare: ["Shampoo", "Conditioner", "Styling", "Treatments"],
+  Bodycare: ["Lotions", "Scrubs", "Oils", "Cleansers"],
+};
+
+
+
+  const sizes = ["30ml", "50ml", "100ml", "200ml", "500ml"];
+
 
   return Array.from({ length: count }).map(() => {
     const category = faker.helpers.objectKey(categories);
@@ -39,7 +45,7 @@ const generateProducts = (count = 20) => {
   });
 };
 
-const generateServices = (count = 5) =>
+const generateServices = (count = 10) =>
   Array.from({ length: count }).map(() => ({
     title: faker.person.jobTitle(),
     description: faker.lorem.sentences(2),
@@ -53,8 +59,7 @@ const generateServices = (count = 5) =>
     updatedAt: new Date(),
   }));
 
-
-const generateAppointments = (services, count = 10) =>
+const generateAppointments = (services, count = 15) =>
   Array.from({ length: count }).map(() => {
     const service = faker.helpers.arrayElement(services);
     return {
@@ -73,7 +78,7 @@ const generateAppointments = (services, count = 10) =>
     };
   });
 
-const generateOrders = (products, count = 8) =>
+const generateOrders = (products, count = 15) =>
   Array.from({ length: count }).map(() => {
     const items = faker.helpers.arrayElements(products, faker.number.int({ min: 1, max: 3 }))
       .map(p => {
@@ -93,19 +98,18 @@ const generateOrders = (products, count = 8) =>
       userId: null,
       items,
       amount,
-   address: {
-  firstName: faker.person.firstName(),
-  lastName: faker.person.lastName(),
-  email: faker.internet.email(),
-  phone: faker.phone.number(),
-  addressLine: faker.location.streetAddress(),
-  city: faker.location.city(),
-  state: faker.location.state(),
-  lga: faker.location.city(), // ✅ Fixed
-  postalCode: faker.location.zipCode(),
-  country: "Canada",
-},
-
+      address: {
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
+        email: faker.internet.email(),
+        phone: faker.phone.number(),
+        addressLine: faker.location.streetAddress(),
+        city: faker.location.city(),
+        state: faker.location.state(),
+        lga: faker.location.city(), // Fixed from citySuffix
+        postalCode: faker.location.zipCode(),
+        country: "Canada",
+      },
       isPaid: true,
       status: "Order Placed",
       paymentMethod: faker.helpers.arrayElement(["Stripe", "Paystack", "Cash"]),
@@ -125,8 +129,11 @@ const seedData = async () => {
     await orderModel.deleteMany();
 
     const products = await productModel.insertMany(generateProducts(30));
-    const services = await serviceModel.insertMany(generateServices(15));
+    const services = await serviceModel.insertMany(generateServices(10));
+
+    if (!services.length) throw new Error("No services inserted!");
     await appointmentModel.insertMany(generateAppointments(services, 15));
+
     await orderModel.insertMany(generateOrders(products, 15));
 
     console.log("✅ Dummy data seeded successfully!");
