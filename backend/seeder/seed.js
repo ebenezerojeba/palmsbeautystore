@@ -57,14 +57,10 @@ const generateProducts = (count = 30) => {
 
 const generateServices = (count = 10) => {
   const serviceTitles = [
-    "Facial Treatment",
     "Hair Styling",
-    "Nail Polish",
-    "Body Massage",
     "Makeup Session",
     "Beard Trim",
     "Hair Coloring",
-    "Skin Care Consultation",
     "Waxing",
     "Eyelash Extension",
   ];
