@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Edit, Trash2, Loader2, ChevronDown, ChevronRight, AlertCircle, CheckCircle, XCircle, X } from 'lucide-react';
 import { LoadingOverlay } from '../components/Loader';
@@ -373,7 +374,7 @@ const Services = () => {
         </div>
 
         {/* Only show description for categories or if editing/adding service */}
-        {!formData.isCategory && (
+       {!formData.isCategory && (
   <div>
     <label htmlFor="description" className="block text-sm font-medium mb-1">
       Description *
