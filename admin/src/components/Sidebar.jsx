@@ -144,14 +144,8 @@ const Sidebar = ({
   ], []);
 
   const handleLogout = useCallback(() => {
-    if (onLogout) {
-      onLogout();
-    } else {
-      console.log('Logging out...');
-      // You might want to clear local storage, redirect, etc.
-      // navigate('/login');
-    }
-  }, [onLogout]);
+  setToken("")
+  })
 
   const toggleMobileMenu = useCallback(() => {
     setIsMobileMenuOpen(prev => !prev);
@@ -303,38 +297,7 @@ const Sidebar = ({
 
         {/* User Profile Section */}
         <div className="pt-3 border-t border-gray-200">
-          <div className="flex items-center gap-3 px-3 py-2.5 hover:bg-white hover:shadow-sm rounded-xl transition-all duration-200 cursor-pointer group">
-            <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ring-2 ring-white">
-              <span className="text-white font-medium text-sm">ES</span>
-            </div>
-            {isExpanded && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">Esther Success</p>
-                <p className="text-xs text-gray-500 truncate">CEO</p>
-              </div>
-            )}
-          </div>
-          
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 group relative mt-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 focus:ring-offset-2 focus:ring-offset-gray-50 hover:shadow-sm"
-            aria-label="Logout"
-            title={!isExpanded ? 'Logout' : ''}
-          >
-            <LogOut className="w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-105" />
-            {isExpanded && (
-              <span className="text-sm font-medium">Logout</span>
-            )}
-            
-            {/* Tooltip for collapsed state */}
-            {!isExpanded && (
-              <div className="absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                Logout
-                <div className="absolute top-1/2 -left-1 w-2 h-2 bg-gray-900 rotate-45 transform -translate-y-1/2"></div>
-              </div>
-            )}
-          </button>
+        
         </div>
       </div>
     </>

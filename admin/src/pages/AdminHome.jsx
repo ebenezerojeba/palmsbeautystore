@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart2, Calendar, Users, Clock, ExternalLink } from 'lucide-react';
+import { BarChart2, Calendar, Box, Clock, ExternalLink } from 'lucide-react';
 
 
 const AdminHome = ({token}) => {
@@ -21,14 +21,14 @@ const AdminHome = ({token}) => {
       color: "bg-purple-50 text-purple-600",
       borderColor: "border-purple-200"
     },
-    // {
-    //   title: "Clients",
-    //   description: "Access client information and histories",
-    //   icon: <Users className="w-6 h-6" />,
-    //   path: "/clients",
-    //   color: "bg-pink-50 text-pink-600",
-    //   borderColor: "border-pink-200"
-    // },
+    {
+      title: "Orders",
+      description: "Track and manage customer orders",
+      icon: <Box className="w-6 h-6" />,
+      path: "/orders",
+      color: "bg-gray-50 text-gray-600",
+      borderColor: "border-pink-200"
+    },
     {
       title: "Services",
       description: "Configure and manage service offerings",
