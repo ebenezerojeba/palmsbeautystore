@@ -1,13 +1,14 @@
 import axios from 'axios'
 import React, { useState } from 'react'
 import { toast } from 'react-toastify'
-import { AdminContexts } from '../context/AdminContexts'
-import { useContext } from 'react'
+
+
+const backendUrl = "https://palmsbeautystore-backend.onrender.com"
 
 const Login = ({setToken}) => {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
-    const {backendUrl} = useContext(AdminContexts);
+    // const {backendUrl} = useContext(AdminContexts);
     const onSubmitHandler = async (e) => {
         try {
             e.preventDefault();
@@ -18,8 +19,6 @@ const Login = ({setToken}) => {
 else{
     toast.error(response.data.message)
 }
-
-
         } catch (error) {
             console.log(error);
             toast.error(error.message)
