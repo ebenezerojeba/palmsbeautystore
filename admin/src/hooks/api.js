@@ -2,9 +2,8 @@ import { useCallback } from "react";
 
 import { useState } from "react";
 import axios from "axios";
-import { useContext } from "react";
-import { AdminContexts } from "../context/AdminContexts";
-const {backendUrl} = useContext(AdminContexts);
+
+const backendUrl = "https://palmsbeautystore-backend.onrender.com"
 
 const CONFIG = {
   backendUrl: backendUrl,
@@ -14,10 +13,13 @@ const CONFIG = {
   maxRetries: 3
 };
 
+
+
 // / Custom hook for API calls with retry logic
 export const useApi = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
 
   const makeRequest = useCallback(async (requestFn, retries = CONFIG.maxRetries) => {
     setLoading(true);

@@ -237,16 +237,19 @@
 import React, { useEffect, useState } from "react";
 import { Trash2, Package, AlertCircle, Loader2 } from "lucide-react";
 import axios from 'axios'
-import { useContext } from "react";
-import { AdminContexts } from "../context/AdminContexts";
+
+
 // Mock data for demonstration
-// const backendUrl = 'http://localhost:3000/'
+const backendUrl = 'https://palmsbeautystore-backend.onrender.com';
 const List = ({ token }) => {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [removing, setRemoving] = useState(null);
   const [error, setError] = useState(null);
-  const { backendUrl } = useContext(AdminContexts);
+  // const { backendUrl } = useContext(AdminContexts);
+
+
+  
 
   const fetchList = async () => {
     try {
@@ -282,7 +285,7 @@ const List = ({ token }) => {
       
       // Uncomment and modify this for actual API call:
       const response = await axios.post(
-        backendUrl + "api/product/remove",
+        backendUrl + "/api/product/remove",
         { id },
         { headers: { token } }
       );

@@ -618,7 +618,7 @@ const Services = () => {
               });
               setShowAddForm(true);
             }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2"
+            className="bg-gray-600 text-white px-4 py-2 rounded-md flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Add Category
@@ -636,7 +636,7 @@ const Services = () => {
               });
               setShowAddForm(true);
             }}
-            className="bg-pink-600 text-white px-4 py-2 rounded-md hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 flex items-center gap-2"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md  flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Add Service

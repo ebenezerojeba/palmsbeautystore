@@ -3,12 +3,14 @@ import { useState, useEffect, useContext } from 'react';
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
 import ServiceCard from '../components/ServiceCard';
 import { AppContext } from '../context/AppContext';
+import { useNavigate } from 'react-router-dom';
 
 const Services = () => {
   const [services, setServices] = useState([]); // array of categories
   const [expanded, setExpanded] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
   const { backendUrl } = useContext(AppContext); // Assuming you have a context for the backend URL
 
   useEffect(() => {
@@ -34,11 +36,9 @@ const Services = () => {
     }));
   };
 
-  const handleBook = (service) => {
-    // Navigate to booking page or open a modal
-    alert(`You clicked Book Now for: ${service.title}`);
-  };
-
+const handleBook = (service) => {
+    navigate(`/appointment/${service._id}`);
+  }
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">

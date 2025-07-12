@@ -16,8 +16,8 @@ const Navbar = ({setToken}) => {
         <p className="border px-2 py-1 rounded-full border-gray-500 text-gray-600 text-[10px] sm:text-xs">
           Admin Panel
         </p>
-      </div>
-      <button onClick={()=>setToken("")} className="cursor-pointer bg-gray-800 text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 rounded-full">
+      </div>      
+<button onClick={()=>setToken("")} className="cursor-pointer bg-gray-800 text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 rounded-full">
         Logout
       </button>
     </nav>

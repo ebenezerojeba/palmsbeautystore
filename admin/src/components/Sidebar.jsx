@@ -1,154 +1,11 @@
-// import React, { useState, useEffect } from 'react';
-// import { NavLink, useLocation } from 'react-router-dom';
-// import {useNavigate} from "react-router-dom"
-// import { Calendar, Users, BarChart2, Clock, Menu, X, Plus, PlusCircle, List, Box } from 'lucide-react';
-// import { assets } from '../assets/assets';
 
-// const Sidebar = () => {
-//   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-//   const [isMounted, setIsMounted] = useState(false);
-//   const location = useLocation();
-//   const navigate = useNavigate()
 
-//   // Close mobile menu when route changes
-//   useEffect(() => {
-//     setIsMobileMenuOpen(false);
-//   }, [location]);
 
-//   // Prevent hydration issues
-//   useEffect(() => {
-//     setIsMounted(true);
-//   }, []);
 
-//   const menuItems = [
-//     {
-//       path: '/dashboard',
-//       icon: <BarChart2 className="w-5 h-5" />,
-//       label: 'Dashboard',
-//       ariaLabel: 'Navigate to Dashboard'
-//     },
-//     {
-//       path: '/appointments',
-//       icon: <Calendar className="w-5 h-5" />,
-//       label: 'Appointments',
-//       ariaLabel: 'Navigate to Appointments'
-//     },
-//     {
-//            path: '/add',
-//       icon: <PlusCircle className="w-5 h-5" />,
-//       label: 'Add Product',
-//       ariaLabel: 'Navigate to Add Product'
-//     },
-//     {
-//            path: '/list',
-//       icon: <List className="w-5 h-5" />,
-//       label: 'List Products',
-//       ariaLabel: 'Navigate to List Products'
-//     },
-//     {
-//            path: '/orders',
-//       icon: <Box className="w-5 h-5" />,
-//       label: 'Orders',
-//       ariaLabel: 'Navigate to Orders'
-//     },
-//     {
-      
-//            path: '/services',
-//       // icon: <Box className="w-5 h-5" />,
-//       icon: <Users className="w-5 h-5" />,
-//       label: 'Services',
-//       ariaLabel: 'Navvigate to Services'
-//     }
-//   ];
 
-//   if (!isMounted) {
-//     return null;
-//   }
 
-//   return (
-//     <>
-//       {/* Mobile Menu Button */}
-//       <button
-//         type="button"
-//         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-//         className="md:hidden top-20 left-2 z-50 p-2 rounded-lg bg-white shadow-lg border"
-//         aria-expanded={isMobileMenuOpen}
-//         aria-controls="sidebar-menu"
-//         aria-label="Toggle navigation menu"
-//       >
-//         {isMobileMenuOpen ? (
-//           <X className="w-6 h-6 text-gray-600" />
-//         ) : (
-//           <Menu className="w-6 h-6 text-gray-600" />
-//         )}
-//       </button>
 
-//       {/* Backdrop for mobile */}
-//       {isMobileMenuOpen && (
-//         <div 
-//           className="fixed inset-0 bg-white bg-opacity-50 z-40 md:hidden"
-//           onClick={() => setIsMobileMenuOpen(false)}
-//           aria-hidden="true"
-//         />
-//       )}
 
-//       {/* Sidebar */}
-//     <div
-//   id="sidebar-menu"
-//   role="navigation"
-//   aria-label="Main navigation"
-//   className={`fixed top-0 left-0 h-screen w-64 bg-white border-r transition-transform duration-200 ease-in-out z-50
-//     ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:sticky`}
-
-//       >
-//         {/* Logo/Header */}
-//         <div
-//         onClick={()=> navigate('/')} className="p-4 bg-gray-800 border-b">
-//           <h1 className="sfont-normal text-gray-50">Palmsbeauty Admin Panel</h1>
-//         </div>
-
-//         {/* Navigation */}
-//         <nav className="mt-5 px-2">
-//           <ul className="space-y-1">
-//             {menuItems.map((item) => (
-//               <li key={item.path}>
-//                 <NavLink
-//                   to={item.path}
-//                   className={({ isActive }) =>
-//                     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
-//                     ${isActive 
-//                       ? 'bg-[#f2F3FF] text-gray-900 shadow-sm' 
-//                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-//                     }`
-//                   }
-//                   aria-label={item.ariaLabel}
-//                   aria-current={({ isActive }) => isActive ? 'page' : undefined}
-//                 >
-//                   {item.icon}
-//                   <span className="text-sm font-medium">{item.label}</span>
-//                 </NavLink>
-//               </li>
-//             ))}
-//           </ul>
-//         </nav>
-
-//         {/* Optional: User Profile Section */}
-//         <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-white">
-//           <div className="flex items-center gap-3">
-//             {/* <img className="w-8 h-8 rounded-full bg-gray-900" /> */}
-//             {/* <img src={assets.ceo} alt="Profile Picture" className='w-8 h-8 rounded-full '/> */}
-//             <div>
-//               {/* <p className="text-sm font-medium text-gray-900">CEO  - Esther Success</p> */}
-//               {/* <p className="text-xs text-gray-500">admin@palmsbeauty.com</p> */}
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </>
-//   );
-// };
-
-// export default Sidebar;
 
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -164,7 +21,6 @@ import {
   Box, 
   ChevronLeft,
   ChevronRight,
-  Home,
   Settings,
   LogOut,
   Bell,
@@ -173,7 +29,6 @@ import {
 
 const Sidebar = ({ 
   onLogout,
-  userProfile = { name: 'Esther Success', role: 'CEO', avatar: 'ES' },
   notifications = 0,
   className = ''
 }) => {
@@ -292,7 +147,6 @@ const Sidebar = ({
     if (onLogout) {
       onLogout();
     } else {
-      // Default logout behavior
       console.log('Logging out...');
       // You might want to clear local storage, redirect, etc.
       // navigate('/login');
@@ -314,11 +168,11 @@ const Sidebar = ({
 
   if (!isMounted) {
     return (
-      <div className="w-16 lg:w-64 h-screen bg-gray-50 border-r border-gray-200 animate-pulse">
-        <div className="h-16 bg-gray-200 border-b border-gray-300"></div>
+      <div className="w-16 lg:w-64 h-screen bg-white border-r border-gray-200 animate-pulse shadow-sm">
+        <div className="h-16 bg-gray-100 border-b border-gray-200"></div>
         <div className="p-4 space-y-3">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-10 bg-gray-200 rounded-lg"></div>
+            <div key={i} className="h-10 bg-gray-100 rounded-lg"></div>
           ))}
         </div>
       </div>
@@ -332,27 +186,28 @@ const Sidebar = ({
     <NavLink
       to={item.path}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group relative focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50
+        `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 focus:ring-offset-2 focus:ring-offset-white hover:shadow-sm
         ${isActive 
-          ? 'bg-blue-50 text-blue-700 shadow-sm border-l-4 border-blue-500' 
-          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+          ? 'bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 shadow-sm ring-1 ring-blue-100' 
+          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
         }`
       }
       aria-label={item.ariaLabel}
       title={!isExpanded ? item.label : ''}
       onClick={() => setIsMobileMenuOpen(false)}
     >
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 transition-transform duration-200 group-hover:scale-105">
         {item.icon}
       </div>
       {isExpanded && (
-        <span className="text-sm font-medium truncate">{item.label}</span>
+        <span className="text-sm font-medium truncate tracking-wide">{item.label}</span>
       )}
       
       {/* Tooltip for collapsed state */}
       {!isExpanded && (
-        <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+        <div className="absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
           {item.label}
+          <div className="absolute top-1/2 -left-1 w-2 h-2 bg-gray-900 rotate-45 transform -translate-y-1/2"></div>
         </div>
       )}
     </NavLink>
@@ -361,10 +216,11 @@ const Sidebar = ({
   const SidebarContent = () => (
     <>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-gray-900 border-b border-gray-700">
+      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border-b border-gray-700 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10"></div>
         <div
           onClick={handleLogoClick}
-          className="flex items-center gap-3 cursor-pointer group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-lg p-1"
+          className="flex items-center gap-3 cursor-pointer group focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 rounded-lg p-1 relative z-10 transition-all duration-200 hover:scale-105"
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
@@ -375,35 +231,38 @@ const Sidebar = ({
           }}
           aria-label="Go to home page"
         >
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+          <div className="w-9 h-9 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg ring-2 ring-white/20">
             <span className="text-white font-bold text-sm">
               {logoText === 'PB' ? 'PB' : 'P'}
             </span>
           </div>
           {isExpanded && (
-            <h1 className="text-white font-semibold text-lg truncate group-hover:text-blue-200 transition-colors">
-              {logoText}
-            </h1>
+            <div className="flex flex-col">
+              <h1 className="text-white font-bold text-lg truncate group-hover:text-blue-200 transition-colors leading-tight">
+                Palmsbeauty
+              </h1>
+              <span className="text-gray-300 text-xs font-medium">Admin Panel</span>
+            </div>
           )}
         </div>
         
         {/* Toggle button - only show on desktop */}
         <button
           onClick={toggleSidebar}
-          className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+          className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg bg-gray-700/50 hover:bg-gray-600/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 backdrop-blur-sm hover:scale-105 relative z-10"
           aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
         >
           {isExpanded ? (
-            <ChevronLeft className="w-4 h-4 text-gray-300" />
+            <ChevronLeft className="w-4 h-4 text-gray-200" />
           ) : (
-            <ChevronRight className="w-4 h-4 text-gray-300" />
+            <ChevronRight className="w-4 h-4 text-gray-200" />
           )}
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-4 overflow-y-auto" role="navigation" aria-label="Main navigation">
-        <ul className="space-y-1" role="list">
+      <nav className="flex-1 px-3 py-5 overflow-y-auto" role="navigation" aria-label="Main navigation">
+        <ul className="space-y-2" role="list">
           {menuItems.map((item) => (
             <li key={item.path} role="listitem">
               <NavItem item={item} />
@@ -413,7 +272,26 @@ const Sidebar = ({
       </nav>
 
       {/* Bottom Section */}
-      <div className="border-t border-gray-200 p-2">
+      <div className="border-t border-gray-200 p-3 bg-gray-50/50">
+        {/* Notifications */}
+        {notifications > 0 && (
+          <div className="flex items-center gap-3 px-3 py-2.5 mb-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl shadow-sm">
+            <div className="relative">
+              <Bell className="w-5 h-5 text-amber-600 flex-shrink-0" />
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium shadow-sm">
+                {notifications > 9 ? '9+' : notifications}
+              </span>
+            </div>
+            {isExpanded && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-amber-800">
+                  {notifications} new notification{notifications > 1 ? 's' : ''}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Bottom Menu Items */}
         <ul className="space-y-1 mb-3" role="list">
           {bottomMenuItems.map((item) => (
@@ -423,35 +301,16 @@ const Sidebar = ({
           ))}
         </ul>
 
-        {/* Notifications */}
-        {notifications > 0 && (
-          <div className="flex items-center gap-3 px-3 py-2 mb-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="relative">
-              <Bell className="w-5 h-5 text-yellow-600 flex-shrink-0" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                {notifications > 9 ? '9+' : notifications}
-              </span>
-            </div>
-            {isExpanded && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-yellow-800">
-                  {notifications} new notification{notifications > 1 ? 's' : ''}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* User Profile Section */}
         <div className="pt-3 border-t border-gray-200">
-          <div className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer">
-            <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-medium text-sm">{userProfile.avatar}</span>
+          <div className="flex items-center gap-3 px-3 py-2.5 hover:bg-white hover:shadow-sm rounded-xl transition-all duration-200 cursor-pointer group">
+            <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ring-2 ring-white">
+              <span className="text-white font-medium text-sm">ES</span>
             </div>
             {isExpanded && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{userProfile.name}</p>
-                <p className="text-xs text-gray-500 truncate">{userProfile.role}</p>
+                <p className="text-sm font-semibold text-gray-900 truncate">Esther Success</p>
+                <p className="text-xs text-gray-500 truncate">CEO</p>
               </div>
             )}
           </div>
@@ -459,19 +318,20 @@ const Sidebar = ({
           {/* Logout Button */}
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 group relative mt-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+            className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 group relative mt-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 focus:ring-offset-2 focus:ring-offset-gray-50 hover:shadow-sm"
             aria-label="Logout"
             title={!isExpanded ? 'Logout' : ''}
           >
-            <LogOut className="w-5 h-5 flex-shrink-0" />
+            <LogOut className="w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-105" />
             {isExpanded && (
               <span className="text-sm font-medium">Logout</span>
             )}
             
             {/* Tooltip for collapsed state */}
             {!isExpanded && (
-              <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              <div className="absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
                 Logout
+                <div className="absolute top-1/2 -left-1 w-2 h-2 bg-gray-900 rotate-45 transform -translate-y-1/2"></div>
               </div>
             )}
           </button>
@@ -485,20 +345,20 @@ const Sidebar = ({
       {/* Mobile Menu Button */}
       <button
         onClick={toggleMobileMenu}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-gray-900 text-white rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-gray-900 text-white rounded-xl shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all duration-200 hover:scale-105 hover:shadow-xl backdrop-blur-sm"
         aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
       >
         {isMobileMenuOpen ? (
-          <X className="w-6 h-6" />
+          <X className="w-5 h-5" />
         ) : (
-          <Menu className="w-6 h-6" />
+          <Menu className="w-5 h-5" />
         )}
       </button>
 
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300"
+          className="lg:hidden fixed inset-0 bg-black/60 z-40 transition-all duration-300 backdrop-blur-sm"
           onClick={() => setIsMobileMenuOpen(false)}
           aria-hidden="true"
         />
@@ -507,7 +367,7 @@ const Sidebar = ({
       {/* Sidebar */}
       <div
         className={`
-          fixed top-0 left-0 h-screen bg-white border-r border-gray-200 transition-all duration-300 ease-in-out z-50 shadow-lg flex flex-col
+          fixed top-0 left-0 h-screen bg-white border-r border-gray-200 transition-all duration-300 ease-in-out z-50 shadow-xl flex flex-col
           ${sidebarWidth}
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           ${className}
@@ -525,263 +385,3 @@ const Sidebar = ({
 };
 
 export default Sidebar;
-
-
-// import React, { useState, useEffect } from 'react';
-// import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-// import { 
-//   Calendar, 
-//   Users, 
-//   BarChart2, 
-//   Menu, 
-//   X, 
-//   PlusCircle, 
-//   List, 
-//   Box, 
-//   ChevronLeft,
-//   ChevronRight,
-//   Home,
-//   Settings,
-//   LogOut
-// } from 'lucide-react';
-
-// const Sidebar = () => {
-//   const [isExpanded, setIsExpanded] = useState(false);
-//   const [isMounted, setIsMounted] = useState(false);
-//   const location = useLocation();
-//   const navigate = useNavigate();
-
-//   // Handle responsive behavior
-//   useEffect(() => {
-//     const handleResize = () => {
-//       if (window.innerWidth >= 1024) {
-//         setIsExpanded(true);
-//       } else {
-//         setIsExpanded(false);
-//       }
-//     };
-
-//     handleResize();
-//     window.addEventListener('resize', handleResize);
-//     return () => window.removeEventListener('resize', handleResize);
-//   }, []);
-
-//   // Prevent hydration issues
-//   useEffect(() => {
-//     setIsMounted(true);
-//   }, []);
-
-//   const menuItems = [
-//     {
-//       path: '/dashboard',
-//       icon: <BarChart2 className="w-5 h-5" />,
-//       label: 'Dashboard',
-//       ariaLabel: 'Navigate to Dashboard'
-//     },
-//     {
-//       path: '/appointments',
-//       icon: <Calendar className="w-5 h-5" />,
-//       label: 'Appointments',
-//       ariaLabel: 'Navigate to Appointments'
-//     },
-//     {
-//       path: '/add',
-//       icon: <PlusCircle className="w-5 h-5" />,
-//       label: 'Add Product',
-//       ariaLabel: 'Navigate to Add Product'
-//     },
-//     {
-//       path: '/list',
-//       icon: <List className="w-5 h-5" />,
-//       label: 'List Products',
-//       ariaLabel: 'Navigate to List Products'
-//     },
-//     {
-//       path: '/orders',
-//       icon: <Box className="w-5 h-5" />,
-//       label: 'Orders',
-//       ariaLabel: 'Navigate to Orders'
-//     },
-//     {
-//       path: '/services',
-//       icon: <Users className="w-5 h-5" />,
-//       label: 'Services',
-//       ariaLabel: 'Navigate to Services'
-//     }
-//   ];
-
-//   const bottomMenuItems = [
-//     {
-//       path: '/settings',
-//       icon: <Settings className="w-5 h-5" />,
-//       label: 'Settings',
-//       ariaLabel: 'Navigate to Settings'
-//     }
-//   ];
-
-//   if (!isMounted) {
-//     return null;
-//   }
-
-//   const sidebarWidth = isExpanded ? 'w-64' : 'w-16';
-//   const logoText = isExpanded ? 'Palmsbeauty Admin' : 'PB';
-
-//   return (
-//     <>
-//       {/* Sidebar */}
-//       <div
-//         className={`fixed top-0 left-0 h-screen ${sidebarWidth} bg-white border-r border-gray-200 transition-all duration-300 ease-in-out z-50 shadow-lg flex flex-col`}
-//         role="navigation"
-//         aria-label="Main navigation"
-//       >
-//         {/* Header */}
-//         <div className="flex items-center justify-between p-4 bg-gray-900 border-b border-gray-700">
-//           <div
-//             onClick={() => navigate('/')}
-//             className="flex items-center gap-3 cursor-pointer group"
-//           >
-//             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-//               <span className="text-white font-bold text-sm">
-//                 {logoText === 'PB' ? 'PB' : 'P'}
-//               </span>
-//             </div>
-//             {isExpanded && (
-//               <h1 className="text-white font-semibold text-lg truncate group-hover:text-blue-200 transition-colors">
-//                 {logoText}
-//               </h1>
-//             )}
-//           </div>
-          
-//           {/* Toggle button - only show on desktop */}
-//           <button
-//             onClick={() => setIsExpanded(!isExpanded)}
-//             className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
-//             aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
-//           >
-//             {isExpanded ? (
-//               <ChevronLeft className="w-4 h-4 text-gray-300" />
-//             ) : (
-//               <ChevronRight className="w-4 h-4 text-gray-300" />
-//             )}
-//           </button>
-//         </div>
-
-//         {/* Navigation */}
-//         <nav className="flex-1 px-2 py-4 overflow-y-auto">
-//           <ul className="space-y-1">
-//             {menuItems.map((item) => (
-//               <li key={item.path}>
-//                 <NavLink
-//                   to={item.path}
-//                   className={({ isActive }) =>
-//                     `flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group relative
-//                     ${isActive 
-//                       ? 'bg-blue-50 text-blue-700 shadow-sm border-l-4 border-blue-500' 
-//                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-//                     }`
-//                   }
-//                   aria-label={item.ariaLabel}
-//                   title={!isExpanded ? item.label : ''}
-//                 >
-//                   <div className="flex-shrink-0">
-//                     {item.icon}
-//                   </div>
-//                   {isExpanded && (
-//                     <span className="text-sm font-medium truncate">{item.label}</span>
-//                   )}
-                  
-//                   {/* Tooltip for collapsed state */}
-//                   {!isExpanded && (
-//                     <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-//                       {item.label}
-//                     </div>
-//                   )}
-//                 </NavLink>
-//               </li>
-//             ))}
-//           </ul>
-//         </nav>
-
-//         {/* Bottom Section */}
-//         <div className="border-t border-gray-200 p-2">
-//           {/* Bottom Menu Items */}
-//           <ul className="space-y-1 mb-3">
-//             {bottomMenuItems.map((item) => (
-//               <li key={item.path}>
-//                 <NavLink
-//                   to={item.path}
-//                   className={({ isActive }) =>
-//                     `flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group relative
-//                     ${isActive 
-//                       ? 'bg-blue-50 text-blue-700 shadow-sm border-l-4 border-blue-500' 
-//                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-//                     }`
-//                   }
-//                   aria-label={item.ariaLabel}
-//                   title={!isExpanded ? item.label : ''}
-//                 >
-//                   <div className="flex-shrink-0">
-//                     {item.icon}
-//                   </div>
-//                   {isExpanded && (
-//                     <span className="text-sm font-medium truncate">{item.label}</span>
-//                   )}
-                  
-//                   {/* Tooltip for collapsed state */}
-//                   {!isExpanded && (
-//                     <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-//                       {item.label}
-//                     </div>
-//                   )}
-//                 </NavLink>
-//               </li>
-//             ))}
-//           </ul>
-
-//           {/* User Profile Section */}
-//           <div className="pt-3 border-t border-gray-200">
-//             <div className="flex items-center gap-3 px-3 py-2">
-//               <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-//                 <span className="text-white font-medium text-sm">ES</span>
-//               </div>
-//               {isExpanded && (
-//                 <div className="flex-1 min-w-0">
-//                   <p className="text-sm font-medium text-gray-900 truncate">Esther Success</p>
-//                   <p className="text-xs text-gray-500 truncate">CEO</p>
-//                 </div>
-//               )}
-//             </div>
-            
-//             {/* Logout Button */}
-//             <button
-//               onClick={() => {
-//                 // Add logout logic here
-//                 console.log('Logging out...');
-//               }}
-//               className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 group relative mt-2"
-//               aria-label="Logout"
-//               title={!isExpanded ? 'Logout' : ''}
-//             >
-//               <LogOut className="w-5 h-5 flex-shrink-0" />
-//               {isExpanded && (
-//                 <span className="text-sm font-medium">Logout</span>
-//               )}
-              
-//               {/* Tooltip for collapsed state */}
-//               {!isExpanded && (
-//                 <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-//                   Logout
-//                 </div>
-//               )}
-//             </button>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Main content spacer */}
-//       <div className={`${sidebarWidth} flex-shrink-0 transition-all duration-300 ease-in-out`} />
-//     </>
-//   );
-// };
-
-// export default Sidebar;
