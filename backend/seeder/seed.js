@@ -13,24 +13,32 @@ await connectDB();
 
 const generateProducts = (count = 30) => {
   const categories = {
-  Skincare: ["Cleansers", "Moisturizers", "Serums", "Sunscreens", "Treatments"],
-  Makeup: ["Foundation", "Lipstick", "Eyeshadow", "Mascara", "Blush"],
-  Fragrance: ["Perfume", "Cologne", "Body Spray", "Essential Oils"],
-  HairCare: ["Shampoo", "Conditioner", "Styling", "Treatments"],
-  Bodycare: ["Lotions", "Scrubs", "Oils", "Cleansers"],
-};
+    Skincare: ["Cleansers", "Moisturizers", "Serums", "Sunscreens", "Treatments"],
+    Makeup: ["Foundation", "Lipstick", "Eyeshadow", "Mascara", "Blush"],
+    Fragrance: ["Perfume", "Cologne", "Body Spray", "Essential Oils"],
+    HairCare: ["Shampoo", "Conditioner", "Styling", "Treatments"],
+    Bodycare: ["Lotions", "Scrubs", "Oils", "Cleansers"],
+  };
 
+  const categorySizeMap = {
+    Skincare: ["30ml", "50ml", "100ml"],
+    Makeup: ["Small", "Medium", "Palette", "Full Size"],
+    Fragrance: ["10ml", "30ml", "50ml", "100ml"],
+    HairCare: ["250ml", "500ml", "1L"],
+    Bodycare: ["100ml", "200ml", "500ml"],
+  };
 
+  const categoryKeys = Object.keys(categories);
 
-  const sizes = ["30ml", "50ml", "100ml", "200ml", "500ml"];
-
-
-  return Array.from({ length: count }).map(() => {
-    const category = faker.helpers.objectKey(categories);
+  return Array.from({ count }).map(() => {
+    const category = faker.helpers.arrayElement(categoryKeys);
     const subCategory = faker.helpers.arrayElement(categories[category]);
+    const sizeOptions = categorySizeMap[category] || ["Standard"];
+    const size = faker.helpers.arrayElement(sizeOptions);
+
     return {
-      name: faker.commerce.productName(),
-      description: faker.commerce.productDescription(),
+      name: `${faker.commerce.productAdjective()} ${subCategory}`,
+      description: faker.lorem.sentences(2),
       price: faker.number.int({ min: 3000, max: 25000 }),
       image: [
         faker.image.urlPicsumPhotos(),
@@ -39,11 +47,12 @@ const generateProducts = (count = 30) => {
       ],
       category,
       subCategory,
-      sizes: faker.helpers.arrayElements(sizes, faker.number.int({ min: 1, max: 3 })),
+      size,
       bestSeller: faker.datatype.boolean(),
     };
   });
 };
+
 
 const generateServices = (count = 10) =>
   Array.from({ length: count }).map(() => ({
