@@ -54,19 +54,41 @@ const generateProducts = (count = 30) => {
 };
 
 
-const generateServices = (count = 10) =>
-  Array.from({ length: count }).map(() => ({
-    title: faker.person.jobTitle(),
-    description: faker.lorem.sentences(2),
-    duration: `${faker.number.int({ min: 30, max: 120 })} mins`,
-    price: faker.commerce.price(5000, 20000, 0),
-    image: faker.image.urlPicsumPhotos(),
-    imagePublicId: faker.string.uuid(),
-    isActive: true,
-    isCategory: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }));
+
+const generateServices = (count = 10) => {
+  const serviceTitles = [
+    "Facial Treatment",
+    "Hair Styling",
+    "Nail Polish",
+    "Body Massage",
+    "Makeup Session",
+    "Beard Trim",
+    "Hair Coloring",
+    "Skin Care Consultation",
+    "Waxing",
+    "Eyelash Extension",
+  ];
+
+  return Array.from({ length: count }).map(() => {
+    const title = faker.helpers.arrayElement(serviceTitles);
+    const duration = `${faker.number.int({ min: 30, max: 120 })} mins`;
+    const price = faker.commerce.price(5000, 20000, 0).toString();
+
+    return {
+      title,
+      description: faker.lorem.sentences(2),
+      duration,
+      price,
+      image: faker.image.urlPicsumPhotos({ width: 640, height: 480 }),
+      imagePublicId: faker.string.uuid(),
+      isActive: true,
+      isCategory: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  });
+};
+
 
 const generateAppointments = (services, count = 15) =>
   Array.from({ length: count }).map(() => {
