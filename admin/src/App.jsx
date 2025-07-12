@@ -15,7 +15,8 @@ import { useState } from 'react'
 import { useEffect } from 'react'
 import Login from './pages/Login'
 
-export const backendUrl = 'http://localhost:3000/'
+// export const backendUrl = 'http://localhost:3000/'
+
 const App = () => {
 
     const [token, setToken] = useState(localStorage.getItem('token')?localStorage.getItem('token'):"");
