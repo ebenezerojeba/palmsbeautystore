@@ -10,6 +10,8 @@ const Services = () => {
   const [expanded, setExpanded] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
   const navigate = useNavigate();
   const { backendUrl } = useContext(AppContext); // Assuming you have a context for the backend URL
 
@@ -65,44 +67,63 @@ const handleBook = (service) => {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-center mb-8">Book a Service</h1>
 
+      <div className="max-w-md mx-auto mb-6">
+  <input
+    type="text"
+    placeholder="Search services..."
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none "
+  />
+</div>
+
+
       {services.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-600">No services available at the moment.</p>
         </div>
       ) : (
-        <div className="space-y-8">
-          {services.map((category) => (
-            <div key={category._id}>
-              <button
-                onClick={() => toggleCategory(category._id)}
-                className="flex items-center justify-between w-full text-left text-2xl font-semibold mb-4 text-gray-900 focus:outline-none"
-              >
-                <span>{category.title}</span>
-                {expanded[category._id] ? (
-                  <ChevronDown className="w-5 h-5" />
-                ) : (
-                  <ChevronRight className="w-5 h-5" />
-                )}
-              </button>
+           <div className="space-y-8">
+          {services.map((category) => {
+            const filteredSubServices = category.subServices.filter((service) =>
+              service.title.toLowerCase().includes(searchQuery.toLowerCase())
+            );
 
-              {expanded[category._id] && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {category.subServices.map((service) => (
-                    <ServiceCard
-                      key={service._id}
-                      title={service.title}
-                      description={service.description}
-                      duration={service.duration}
-                      price={service.price}
-                      image={service.image}
-                      isActive={service.isActive}
-                      onBook={() => handleBook(service)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+            if (filteredSubServices.length === 0) return null;
+
+            return (
+              <div key={category._id}>
+                <button
+                  onClick={() => toggleCategory(category._id)}
+                  className="flex items-center justify-between w-full text-left text-2xl font-semibold mb-4 text-gray-900 focus:outline-none"
+                >
+                  <span>{category.title}</span>
+                  {expanded[category._id] ? (
+                    <ChevronDown className="w-5 h-5" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5" />
+                  )}
+                </button>
+
+                {expanded[category._id] && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredSubServices.map((service) => (
+                      <ServiceCard
+                        key={service._id}
+                        title={service.title}
+                        description={service.description}
+                        duration={service.duration}
+                        price={service.price}
+                        image={service.image}
+                        isActive={service.isActive}
+                        onBook={() => handleBook(service)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
