@@ -253,19 +253,41 @@ const addService = async (req, res) => {
   }
 };
 // Update service
+
 const updateService = async (req, res) => {
   try {
-    const service = await serviceModel.findByIdAndUpdate(
+    const service = await serviceModel.findById(req.params.id);
+    if (!service) {
+      return res.status(404).json({ message: "Service not found" });
+    }
+
+    // If there's a new image file, remove the old one and set new path
+    if (req.file) {
+      // Remove old image file if it exists
+      if (service.image) {
+        const imagePath = path.join('uploads', path.basename(service.image));
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+      }
+
+      // Add the new image path to the update data
+      req.body.image = `/uploads/${req.file.filename}`;
+    }
+
+    // Update service with new data
+    const updatedService = await serviceModel.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true }
     );
-    if (!service) return res.status(404).json({ message: "Service not found" });
-    res.json({ success: true, service });
+
+    res.json({ success: true, service: updatedService });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error updating service", error: err.message });
+    res.status(500).json({
+      message: "Error updating service",
+      error: err.message,
+    });
   }
 };
 
