@@ -1,17 +1,14 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { ShopContext } from "../context/ShopContext";
+import { useContext } from "react";
 
 const ProductItem = ({ id, image, name, price }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const { formatNaira } = useContext(ShopContext);
 
-  const formatCad = (number) => {
-    return new Intl.NumberFormat("cad", {
-      style: "currency",
-      currency: "CAD",
-      minimumFractionDigits: 0,
-    }).format(number);
-  };
+  
 
   const handleImageLoad = () => {
     setImageLoaded(true);
@@ -90,7 +87,7 @@ const ProductItem = ({ id, image, name, price }) => {
           </h3>
           <div className="flex items-center justify-between text-gray-700">
             <span className="text-lg font-semibold text-gray-900">
-              {formatCad(price)}
+              {formatNaira(price)}
             </span>
             <div className="flex items-center space-x-1">
               {/* Rating Stars (placeholder) */}

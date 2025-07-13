@@ -32,13 +32,16 @@ const backendUrl = "https://palmsbeautystore-backend.onrender.com"
     // }
   }, [token]);  
 
-  const formatNaira = (number) => {
-    return new Intl.NumberFormat("cad", {
-      style: "currency",
-      currency: "cad",
-      minimumFractionDigits: 0,
-    }).format(number);
-  };
+ const formatNaira = (amount) => {
+  return new Intl.NumberFormat('en-CA', {
+    style: 'currency',
+    currency: 'CAD',
+     currencyDisplay: 'narrowSymbol',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+};
+
 
   const addToCart = async (itemId, size) => {
     if (!size) {
