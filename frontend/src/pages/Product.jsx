@@ -225,18 +225,18 @@ const Product = () => {
                 </svg>
                 <span className="text-sm text-gray-700">100% Original Product</span>
               </div>
-              <div className="flex items-center space-x-3">
+              {/* <div className="flex items-center space-x-3">
                 <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 <span className="text-sm text-gray-700">Free Shipping on orders over $50</span>
-              </div>
-              <div className="flex items-center space-x-3">
+              </div> */}
+              {/* <div className="flex items-center space-x-3">
                 <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 <span className="text-sm text-gray-700">Easy 30-day returns</span>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
@@ -279,12 +279,12 @@ const Product = () => {
         <div className="py-8">
           {activeTab === 'description' && (
             <div className="prose max-w-none">
-              <p className="text-gray-700 leading-relaxed mb-4">
-                This sleek fitted design is crafted to contour your body while providing all-day comfort. Made from breathable cotton, it's perfect for both casual and formal occasions.
-              </p>
-              <p className="text-gray-700 leading-relaxed">
-                Customers love the flattering fit and versatility of this piece, making it a staple in their wardrobes. "The quality is outstanding, and it looks great with everything!" says one happy buyer.
-              </p>
+               <p className="text-gray-700 leading-relaxed mb-4">
+        Elevate your beauty routine with this luxurious, high-performance product designed to enhance your natural glow. Infused with skin-loving ingredients, it delivers lasting hydration, smooth application, and a radiant finish.
+      </p>
+      <p className="text-gray-700 leading-relaxed">
+        Suitable for all skin types, this versatile formula blends seamlessly and layers effortlessly—perfect for both everyday wear and special occasions. "I noticed a difference from the first use. It’s now my go-to must-have!" — a satisfied customer.
+      </p>
             </div>
           )}
 

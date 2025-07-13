@@ -45,7 +45,7 @@ const PlaceOrder = () => {
     updateQuantity,
   } = useContext(ShopContext);
 
-  const backendUrl = "http://localhost:3000/";
+  const backendUrl = "https://palmsbeautystore.onrender.com/";
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -59,6 +59,14 @@ const PlaceOrder = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+
+  
+  const scrollToTop = () => {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth', // for a smooth scroll effect
+  });
+};
 
   // Calculate taxes based on Canadian province
   const calculateTaxes = (amount, province) => {
@@ -127,7 +135,12 @@ const PlaceOrder = () => {
     if (formData.province) {
       calculateDeliveryFee();
     }
+
+    scrollToTop();
   }, [formData.province]);
+
+
+
 
   // Get cart items for display
   const getCartItems = () => {

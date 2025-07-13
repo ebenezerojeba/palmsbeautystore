@@ -155,12 +155,12 @@ const Home = () => {
                   </Link>
 
                   <Link
-                    to="/services"
+                    to="/collections"
                     className="group inline-flex items-center justify-center px-6 py-3 
                              border border-gray-300 text-gray-700 rounded-lg font-medium 
                              hover:bg-gray-50 transition-all duration-200"
                   >
-                    Explore Services
+                    Shop Products
                     <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </div>
