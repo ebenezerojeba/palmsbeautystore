@@ -19,26 +19,27 @@ const addProduct = async (req, res) => {
             })
         )
 
+        let parsedSizes = [];
+try {
+  const temp = JSON.parse(req.body.sizes);
+  if (Array.isArray(temp)) {
+    parsedSizes = temp;
+  } else {
+    throw new Error("Sizes must be an array");
+  }
+} catch (err) {
+  return res.json({ success: false, message: "Invalid sizes format" });
+}
+
+
         const productData ={
             name,
             description,
             category,
             price: Number(price),
             subCategory,
-            bestSeller: bestSeller  = "true",
-            sizes: (() => {
-                try {
-                    const parsedSizes = JSON.parse(sizes);
-                    if (!Array.isArray(parsedSizes)) {
-                        throw new Error("Sizes is not an array");
-                    }
-                    return parsedSizes
-                
-                } catch (error) {
-                    console.error("Error parsing sizes JSON:", error);
-                    return []; // Return a default value or handle the error as needed
-                }
-            })(),
+            bestSeller: bestSeller  === "true",
+            sizes: parsedSizes,
             image: imagesUrl,
             date: Date.now()
         }
