@@ -25,10 +25,15 @@ const addProduct = async (req, res) => {
             category,
             price: Number(price),
             subCategory,
-            bestSeller: bestSeller === "true" ? "true" : false,
+            bestSeller: bestSeller  = "true",
             sizes: (() => {
                 try {
-                    return JSON.parse(sizes);
+                    const parsedSizes = JSON.parse(sizes);
+                    if (!Array.isArray(parsedSizes)) {
+                        throw new Error("Sizes is not an array");
+                    }
+                    return parsedSizes
+                
                 } catch (error) {
                     console.error("Error parsing sizes JSON:", error);
                     return []; // Return a default value or handle the error as needed
