@@ -256,12 +256,12 @@ const Orders = ({ token }) => {
                         </div>
                         <div className="flex items-center gap-2">
                           <Truck className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">
+                          {/* <span className="text-sm text-gray-600">
                             Delivery: ₦{order.deliveryFee}
-                          </span>
+                          </span> */}
                         </div>
                         <div className="text-lg font-bold text-gray-900">
-                          Total: ₦{order.amount}
+                          Total: ${order.amount}
                         </div>
                       </div>
                     </div>
