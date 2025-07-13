@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart2, Calendar, Box, Clock, ExternalLink } from 'lucide-react';
+import { BarChart2, Calendar, Box, Clock, ExternalLink, BaggageClaim } from 'lucide-react';
 
 
 const AdminHome = ({token}) => {
@@ -36,6 +36,14 @@ const AdminHome = ({token}) => {
       path: "/services",
       color: "bg-green-50 text-green-600",
       borderColor: "border-green-200"
+    },
+    {
+      title: "Products",
+      description: "Manage products and inventory",
+      icon: <BaggageClaim className="w-6 h-6" />,
+      path: "/list",
+      color: "bg-gray-50 text-gray-600",
+      borderColor: "border-gray-100"
     }
   ];
 

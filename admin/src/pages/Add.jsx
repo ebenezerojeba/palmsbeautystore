@@ -669,6 +669,8 @@ import { Upload, X, Save, AlertCircle, Check, ImageIcon } from "lucide-react";
 import axios from "axios";
 import { useContext } from "react";
 import { AdminContexts } from "../context/AdminContexts";
+import { toast } from "react-toastify";
+import { backendUrl } from "../App";
 
 const Add = ({ token }) => {
   const [images, setImages] = useState([null, null, null, null]);
@@ -676,7 +678,7 @@ const Add = ({ token }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errors, setErrors] = useState({});
-  const {backendUrl} = useContext(AdminContexts)
+  
 
   const [formData, setFormData] = useState({
     name: "",
