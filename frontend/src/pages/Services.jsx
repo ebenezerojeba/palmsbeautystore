@@ -80,7 +80,7 @@ const handleBook = (service) => {
 
       {services.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-600">No services available at the moment.</p>
+          <p className="text-gray-600">No service available at the moment.</p>
         </div>
       ) : (
            <div className="space-y-8">
