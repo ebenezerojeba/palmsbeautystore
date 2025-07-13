@@ -14,8 +14,8 @@ adminRouter.get('/all-appointments', getAllAppointment)
 adminRouter.get('/dashboard', adminDashboard)
 
 // Category
-adminRouter.post('/addcategory',upload.single('image'), addCategory)
-adminRouter.put('/updatecategory/:id', upload.single('image'), updateCategory)
+adminRouter.post('/addcategory', addCategory)
+adminRouter.put('/updatecategory/:id',updateCategory)
 adminRouter.delete('/deletecategory/:id', deleteCategory)
 
 // Services
