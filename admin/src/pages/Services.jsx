@@ -217,6 +217,7 @@ const Services = () => {
     setFormData({
       title: service.title,
       description: service.description,
+      image: service.image || '',
       duration: service.duration || '',
       price: service.price || '',
       isActive: service.isActive,
