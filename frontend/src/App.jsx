@@ -19,9 +19,12 @@ import ServicesPage from './pages/ServicesPage'
 
 const App = () => {
   return (
-    <div className='mx-4 sm:mx-[-2%]'>
+    <div className=''>
        <ToastContainer />
       <Navbar />
+        <div className='mx-4 sm:mx-[-2%]'>
+          
+        
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/services" element={<Services />} />
@@ -38,6 +41,7 @@ const App = () => {
         <Route path='/place-order' element={<PlaceOrder />}/>
         <Route path="/my-appointments" element={<MyAppointment />} />
       </Routes>
+      </div>
       <Footer />
     </div>
   )

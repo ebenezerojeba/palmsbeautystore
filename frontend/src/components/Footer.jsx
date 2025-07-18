@@ -17,21 +17,21 @@ const Footer = () => {
   return (
     <footer className="bg-gray-900 text-gray-300">
       {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-7xl px-2 sm:px-6 lg:px-8 py-0">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Company Info */}
-          <div className="space-y-6">
+          <div className="">
             <img 
-              src={assets.palm_logo2} 
+              src={assets.plog} 
               alt="PalmsBeauty Logo" 
-              className="h-12 w-auto brightness-0 invert"
+              className="w-36 md:w-34 object-contain cursor-pointer"
             />
             <p className="text-sm leading-relaxed">
               Your premier destination for beauty services in St. John's, 
               Newfoundland and Labrador. Specializing in hair styling, 
               natural hair care, and professional makeup services.
             </p>
-            <div className="flex space-x-4">
+            <div className="flex space-x-4 mt-4">
               <a href="#" className="hover:text-white transition-colors">
                 <Facebook size={20} />
               </a>
