@@ -27,10 +27,16 @@ import pic5 from './pic5.jpeg'
 import visa from './visa.jpg'
 import americanexpress from './americanexpress.jpg'
 import mastercard from './mastercard.png'
+import palmslogo from './palmslogo.jpg'
+import plogo from './plogo.jpg'
+import plog from './plog.png'
 
-import { Scissors, Star, Gift } from "lucide-react";
+
 
 export const assets = {
+  plog,
+  plogo,
+  palmslogo,
   americanexpress,
   mastercard,
   visa,

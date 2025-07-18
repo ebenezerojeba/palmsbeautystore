@@ -1,0 +1,187 @@
+.first-scrren,
+.first-scrren * {
+  box-sizing: border-box;
+}
+.first-scrren {
+  background: #000000;
+  width: 100%;
+  height: 932px;
+  position: relative;
+  overflow: hidden;
+}
+.frame-10 {
+  padding: 5px 10px 5px 10px;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  position: absolute;
+  left: 17px;
+  top: 59px;
+}
+.mobile-backend-database {
+  color: #ffffff ;
+  text-align: left;
+  font-family: "Poppins-Medium", sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  text-decoration: underline;
+  position: relative;
+}
+.vector {
+  height: auto;
+  position: absolute;
+  right: 40.7%;
+  left: 40.7%;
+  width: 18.6%;
+  bottom: 39.27%;
+  top: 40%;
+  height: 10.73%;
+  overflow: visible;
+}
+.frame-1 {
+  background: #ffffff ;
+  border-radius: 5px;
+  padding: 15px 10px 15px 10px;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  width: 80%;
+  margin-inline: 10%;
+  position: absolute;
+  top: 719px;
+}
+.proceed {
+  color: #000000;
+  text-align: left;
+  font-family: "LibreFranklin-Bold", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  position: relative;
+}
+.frame-16 {
+  background: #ffffff ;
+  width: 430px;
+  height: 366px;
+  position: absolute;
+  left: 0px;
+  top: 938px;
+  overflow: hidden;
+}
+.frame-22 {
+  width: 409px;
+  height: 283px;
+  position: absolute;
+  left: 8px;
+  top: 20px;
+}
+.frame-19 {
+  padding: 5px 10px 5px 10px;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  position: absolute;
+  left: -1px;
+  top: 41px;
+}
+.unauthorized-or-malicious-access-to-the-phone-database-can-introduce-system-level-changes-that-may-cause-permanent-damage-to-the-device-s-firmware-leading-to-catastrophic-failures-or-complete-system-crashes-in-addition-database-tampering-or-corruption-can-compromise-the-phone-s-security-and-data-confidentiality-potentially-exposing-sensitive-information-to-unauthorized-parties {
+  color: #000000;
+  text-align: left;
+  font-family: "LibreFranklin-Medium", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  position: relative;
+  width: 379px;
+  height: 107px;
+}
+.frame-18 {
+  padding: 5px 10px 5px 10px;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  position: absolute;
+  left: -1px;
+  top: 159px;
+}
+.to-prevent-data-loss-and-ensure-the-availability-of-critical-information-it-is-recommended-to-back-up-the-phone-s-data-regularly-and-keep-it-in-a-secure-and-isolated-storage-location-this-backup-should-include-all-essential-files-documents-call-logs-and-message-history-as-well-as-system-configuration-files-application-data-and-other-relevant-information-it-is-also-essential-to-implement-strong-access-controls-such-as-passwords-encryption-and-biometric-authentication-to-prevent-unauthorized-access-to-the-phone-and-its-data {
+  color: #000000;
+  text-align: left;
+  font-family: "LibreFranklin-Medium", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  position: relative;
+  width: 389px;
+}
+.frame-17 {
+  padding: 5px 10px 5px 10px;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  position: absolute;
+  left: -1px;
+  top: 0px;
+}
+.warning {
+  color: #000000;
+  text-align: left;
+  font-family: "LibreFranklin-ExtraBold", sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  position: relative;
+}
+.vector2 {
+  height: auto;
+  position: absolute;
+  right: 0.98%;
+  left: 96.09%;
+  width: 2.94%;
+  bottom: 93.28%;
+  top: 2.47%;
+  height: 4.24%;
+  overflow: visible;
+}
+.rectangle-2 {
+  background: #000000;
+  width: 2px;
+  height: 20px;
+  position: absolute;
+  left: 382px;
+  top: 2px;
+}
+.frame-99 {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-inline: 10%;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  width: 80%;
+  top: 175px;
+}
+.accessing-1-717-440-2322-mobile-device-cloud-data {
+  color: #ffffff ;
+  text-align: center;
+  font-family: "Poppins-Bold", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 30px;
+}
+
+
+
+
