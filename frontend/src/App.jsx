@@ -19,6 +19,7 @@ import MyProfile from './pages/MyProfile'
 import Orders from './pages/MyOrders'
 import VerifyAppointment from './pages/VerifyAppointment'
 import SuccessPage from './pages/SuccessPage'
+import VerifyPayment from './pages/VerifyPayment'
 
 
 
