@@ -170,22 +170,12 @@ export default function VerifyAppointment() {
               </button>
               
               <button
-                onClick={() => navigate('/appointments')}
+                onClick={() => navigate('/my-appointments')}
                 className="w-full px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition"
               >
                 View My Appointments
               </button>
             </div>
-
-            {/* Debug info (remove in production) */}
-            {debugInfo && process.env.NODE_ENV === 'development' && (
-              <details className="mt-4 text-left text-xs">
-                <summary className="cursor-pointer">Debug Info</summary>
-                <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
-                  {JSON.stringify(debugInfo, null, 2)}
-                </pre>
-              </details>
-            )}
           </div>
         )}
       </div>
