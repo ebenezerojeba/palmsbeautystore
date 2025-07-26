@@ -42,14 +42,11 @@ const App = () => {
           <Route path="/contact" element={<Contact />} />
           <Route path="/collections" element={<Collection />} />
           <Route path="/appointment/:id" element={<Appointment />} />
+          
           <Route
-  path="/verify-appointment/:appointmentId"
-  element={<VerifyAppointment />}
-/>
-          {/* <Route
             path="/appointment/verify/:appointmentId"
             element={<VerifyAppointment />}
-          /> */}
+          />
           
 <Route path="/success/:appointmentId" element={<SuccessPage />} />
 
