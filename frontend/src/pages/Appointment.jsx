@@ -989,7 +989,7 @@ const Appointment = () => {
                 </div>
               )}
               
-              <div className="p-6">
+              {/* <div className="p-6">
                 <div className="flex flex-wrap gap-6">
                   <div className="flex items-center space-x-4 bg-blue-50/50 p-4 rounded-lg flex-1 min-w-[200px]">
                     <div className="p-3 bg-blue-100 rounded-full">
@@ -1015,7 +1015,7 @@ const Appointment = () => {
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* Mobile Tabs */}

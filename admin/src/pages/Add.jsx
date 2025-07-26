@@ -54,6 +54,8 @@ const Add = ({ token }) => {
     }
   };
 
+
+
   const handleImageUpload = useCallback((file, index) => {
     if (file && file.type.startsWith('image/')) {
       const newImages = [...images];
@@ -387,6 +389,8 @@ const Add = ({ token }) => {
             Mark as bestseller
           </label>
         </div>
+
+
 
         {/* Upload Progress */}
         {isUploading && (
