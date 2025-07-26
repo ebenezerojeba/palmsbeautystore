@@ -20,151 +20,79 @@ export default function VerifyAppointment() {
   const isValidId = (id) => typeof id === 'string' && id.length === 24;
   const isValidSessionId = (id) => typeof id === 'string' && id.trim() !== '';
 
-  // const config = {
-  //   headers: {
-  //     Authorization: `Bearer ${localStorage.getItem('token')}`,
-  //     'Content-Type': 'application/json',
-  //     'X-Requested-With': 'XMLHttpRequest',
-  //   },
-  //   validateStatus: (status) => status >= 200 && status < 500,
-  // };
-
+  const config = {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+    validateStatus: (status) => status >= 200 && status < 500,
+  };
 
   const verifyPayment = async (attempts = 0) => {
-  console.log(`🔄 Verification attempt ${attempts + 1}`);
-
-  try {
-    const response = await fetch(`${backendUrl}/api/appointment/verify`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-      body: JSON.stringify({
-        sessionId,
-        appointmentId,
-      }),
-    });
-
-    const data = await response.json();
-    const httpStatus = response.status;
-
-    console.log('Response status:', httpStatus);
-    console.log('Response data:', data);
-
-    setDebugInfo({
-      httpStatus,
-      responseData: data,
-      attempt: attempts + 1,
-      timestamp: new Date().toISOString()
-    });
-
-    // Retry logic for processing/unpaid
-    if (data.status === 'processing' || (data.payment_status === 'unpaid' && attempts < 8)) {
-      console.log('⏳ Payment still processing, retrying...');
-      if (attempts < 8) {
-        setRetryCount(attempts + 1);
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-        return verifyPayment(attempts + 1);
-      }
-      throw new Error('Verification timeout after 8 attempts');
-    }
-
-    if (data.success) {
-      console.log('✅ Payment verification successful');
-      setStatus('success');
-      setMessage(data.message);
-      setTimeout(() => {
-        navigate(`/success/${appointmentId}`, {
-          state: { appointment: data.appointment },
-        });
-      }, 3000);
-    } else {
-      console.log('❌ Payment verification failed');
-      setStatus('error');
-      setMessage(data.message || 'Verification failed. Please try again.');
-    }
-
-  } catch (error) {
-    console.error('💥 Verification error:', error);
-
-    setStatus('error');
-    let errorMessage = 'Payment verification failed. Please contact support.';
-
-    if (error.message.includes('timeout')) {
-      errorMessage = 'Verification is taking longer than expected. Please check your appointment status or contact support.';
-    }
-
-    setMessage(errorMessage);
-  }
-};
-
-
-  // const verifyPayment = async (attempts = 0) => {
-  //   console.log(`🔄 Verification attempt ${attempts + 1}`);
+    console.log(`🔄 Verification attempt ${attempts + 1}`);
     
-  //   try {
-  //     const { data, status: httpStatus } = await axios.post(backendUrl +
-  //       '/api/appointment/verify',
-  //       { sessionId, appointmentId },
-  //       config
-  //     );
+    try {
+      const { data, status: httpStatus } = await axios.post(backendUrl +
+        '/api/appointment/verify',
+        { sessionId, appointmentId },
+        config
+      );
 
-  //     console.log('Response status:', httpStatus);
-  //     console.log('Response data:', data);
+      console.log('Response status:', httpStatus);
+      console.log('Response data:', data);
 
-  //     // Store debug info
-  //     setDebugInfo({
-  //       httpStatus,
-  //       responseData: data,
-  //       attempt: attempts + 1,
-  //       timestamp: new Date().toISOString()
-  //     });
+      // Store debug info
+      setDebugInfo({
+        httpStatus,
+        responseData: data,
+        attempt: attempts + 1,
+        timestamp: new Date().toISOString()
+      });
 
-  //     // Handle processing status (retry)
-  //     if (data.status === 'processing' || (data.payment_status === 'unpaid' && attempts < 8)) {
-  //       console.log('⏳ Payment still processing, retrying...');
-  //       if (attempts < 8) {
-  //         setRetryCount(attempts + 1);
-  //         await new Promise((resolve) => setTimeout(resolve, 3000));
-  //         return verifyPayment(attempts + 1);
-  //       }
-  //       throw new Error('Verification timeout after 8 attempts');
-  //     }
+      // Handle processing status (retry)
+      if (data.status === 'processing' || (data.payment_status === 'unpaid' && attempts < 8)) {
+        console.log('⏳ Payment still processing, retrying...');
+        if (attempts < 8) {
+          setRetryCount(attempts + 1);
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          return verifyPayment(attempts + 1);
+        }
+        throw new Error('Verification timeout after 8 attempts');
+      }
 
-  //     if (data.success) {
-  //       console.log('✅ Payment verification successful');
-  //       setStatus('success');
-  //       setMessage(data.message);
-  //       setTimeout(() => {
-  //         navigate(`/success/${appointmentId}`, {
-  //           state: { appointment: data.appointment },
-  //         });
-  //       }, 3000);
-  //     } else {
-  //       console.log('❌ Payment verification failed');
-  //       setStatus('error');
-  //       setMessage(data.message || 'Verification failed. Please try again.');
-  //     }
-  //   } catch (error) {
-  //     console.error('💥 Verification error:', error);
+      if (data.success) {
+        console.log('✅ Payment verification successful');
+        setStatus('success');
+        setMessage(data.message);
+        setTimeout(() => {
+          navigate(`/success/${appointmentId}`, {
+            state: { appointment: data.appointment },
+          });
+        }, 3000);
+      } else {
+        console.log('❌ Payment verification failed');
+        setStatus('error');
+        setMessage(data.message || 'Verification failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('💥 Verification error:', error);
       
-  //     setStatus('error');
-  //     let errorMessage = 'Payment verification failed. Please contact support.';
+      setStatus('error');
+      let errorMessage = 'Payment verification failed. Please contact support.';
       
-  //     if (error.response?.data?.message) {
-  //       errorMessage = error.response.data.message;
-  //       if (error.response.data.details) {
-  //         errorMessage += ` (${error.response.data.details})`;
-  //       }
-  //     } else if (error.message.includes('timeout')) {
-  //       errorMessage = 'Verification is taking longer than expected. Please check your appointment status or contact support.';
-  //     }
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+        if (error.response.data.details) {
+          errorMessage += ` (${error.response.data.details})`;
+        }
+      } else if (error.message.includes('timeout')) {
+        errorMessage = 'Verification is taking longer than expected. Please check your appointment status or contact support.';
+      }
       
-  //     setMessage(errorMessage);
-  //   }
-  // };
+      setMessage(errorMessage);
+    }
+  };
 
   useEffect(() => {
     console.log('🏁 Starting verification process');
