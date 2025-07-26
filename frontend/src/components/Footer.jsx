@@ -131,25 +131,7 @@ const Footer = () => {
             <div className="text-sm">
               © {currentYear} PalmsBeauty. All rights reserved.
             </div>
-            {/* <div className="mt-4 md:mt-0">
-              <ul className="flex space-x-6 text-sm">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Privacy Policy
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Terms of Service
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Sitemap
-                  </a>
-                </li>
-              </ul>
-            </div> */}
+    
           </div>
         </div>
       </div>

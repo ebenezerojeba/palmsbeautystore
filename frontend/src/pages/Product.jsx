@@ -19,8 +19,6 @@ const Product = () => {
 
   const { productId } = useParams();
 
-  // For demo purposes, using a sample product ID
-  // const demoProductId = productId || "sample-product-1";
 
   const fetchProductData = async () => {
     products.map((item) => {
@@ -225,18 +223,7 @@ const Product = () => {
                 </svg>
                 <span className="text-sm text-gray-700">100% Original Product</span>
               </div>
-              {/* <div className="flex items-center space-x-3">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span className="text-sm text-gray-700">Free Shipping on orders over $50</span>
-              </div> */}
-              {/* <div className="flex items-center space-x-3">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span className="text-sm text-gray-700">Easy 30-day returns</span>
-              </div> */}
+
             </div>
           </div>
         </div>

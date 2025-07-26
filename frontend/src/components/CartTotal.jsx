@@ -48,8 +48,9 @@
 
 
 import React, { useContext } from 'react';
-import { ShopContext } from '../context/ShopContext';
+// import { ShopContext } from '../context/ShopContext';
 import { ArrowLeft } from 'lucide-react'; // Assuming you're using Lucide React icons
+import { ShopContext } from '../context/ShopContext';
 
 const CartTotal = () => {
     const { formatNaira, getCartAmount } = useContext(ShopContext);

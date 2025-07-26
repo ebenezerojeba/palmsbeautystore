@@ -1,13 +1,17 @@
+
 import React, { useState, useEffect, useContext } from "react";
 import { assets } from "../assets/assets";
-import { Link, NavLink, useLocation } from "react-router-dom";
-import { Menu, X, ShoppingCart } from "lucide-react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, ShoppingCart, ChevronDown } from "lucide-react";
 import { ShopContext } from "../context/ShopContext";
+import { AppContext } from "../context/AppContext";
 
 const Navbar = () => {
   const [showMenu, setShowMenu] = useState(false);
   const { getCartCount } = useContext(ShopContext);
+  const { token, setToken, userData } = useContext(AppContext);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setShowMenu(false);
@@ -24,6 +28,12 @@ const Navbar = () => {
     setShowMenu(!showMenu);
   };
 
+  const logout = () => {
+    setToken(false);
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
   return (
     <nav className="bg-gray-900 shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-8 sm:px-6 lg:px-8">
@@ -37,19 +47,16 @@ const Navbar = () => {
             >
               {showMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
-<NavLink
-  to="/"
-  className="flex justify-center md:justify-start flex-shrink-0"
->
-  <img
-    src={assets.plog}
-    alt="PalmsBeauty Logo"
-    className="w-32 md:w-48 object-contain cursor-pointer"
-  />
-</NavLink>
-
-
-          
+            <NavLink
+              to="/"
+              className="flex justify-center md:justify-start flex-shrink-0"
+            >
+              <img
+                src={assets.plog}
+                alt="PalmsBeauty Logo"
+                className="w-32 md:w-48 object-contain cursor-pointer"
+              />
+            </NavLink>
           </div>
 
           {/* Desktop Nav */}
@@ -59,7 +66,9 @@ const Navbar = () => {
                 to="/"
                 className={({ isActive }) =>
                   `text-sm font-medium transition duration-200 ${
-                    isActive ? "text-white font-semibold" : "text-gray-300 hover:text-white"
+                    isActive
+                      ? "text-white font-semibold"
+                      : "text-gray-300 hover:text-white"
                   }`
                 }
               >
@@ -72,7 +81,9 @@ const Navbar = () => {
                   to={`/${item.toLowerCase()}`}
                   className={({ isActive }) =>
                     `text-sm font-medium transition duration-200 ${
-                      isActive ? "text-white font-semibold" : "text-gray-300 hover:text-white"
+                      isActive
+                        ? "text-white font-semibold"
+                        : "text-gray-300 hover:text-white"
                     }`
                   }
                 >
@@ -84,6 +95,7 @@ const Navbar = () => {
 
           {/* Right side */}
           <div className="flex items-center space-x-4">
+            {/* Cart Icon */}
             <Link
               to="/cart"
               className="p-2 rounded-full hover:bg-gray-800 transition duration-200 relative"
@@ -97,14 +109,56 @@ const Navbar = () => {
               )}
             </Link>
 
-            <div className="hidden md:block ml-4">
-              <NavLink
-                to="/services"
-                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md shadow-sm text-gray-900 bg-white hover:bg-gray-100 focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition"
+            {/* Profile Dropdown */}
+            {token && userData  ? (
+              <div className="relative group">
+                <div className="flex items-center gap-2 cursor-pointer">
+                  <img
+                    src={userData.image}
+                    alt="Profile"
+                    className="w-10 h-10 rounded-full border-2 border-primary object-cover hover:scale-105 transition-transform"
+                  />
+                  <ChevronDown
+                    className="w-4 bg-white transition-transform transform group-hover:rotate-180"
+        
+                    alt="dropdown_icon"
+                  />
+                </div>
+                <div className="absolute top-full right-0 mt-2 min-w-[160px] bg-white text-gray-700 rounded-lg shadow-md p-3 z-50 hidden group-hover:block">
+                  <p
+                    onClick={() => navigate("/my-profile")}
+                    className="cursor-pointer hover:text-primary py-1"
+                  >
+                    My Profile
+                  </p>
+                  <p
+                    onClick={() => navigate("/my-appointments")}
+                    className="cursor-pointer hover:text-primary py-1"
+                  >
+                    My Appointments
+                  </p>
+                  <p
+                    onClick={() => navigate("/my-orders")}
+                    className="cursor-pointer hover:text-primary py-1"
+                  >
+                    My Orders
+                  </p>
+                  <p
+                    onClick={logout}
+                    className="cursor-pointer hover:text-primary py-1"
+                  >
+                    Logout
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate("/login")}
+                className="bg-primary text-white px-5 py-2 rounded-full font-light hover:bg-primary-dark transition duration-300 hidden md:block"
               >
-                Book now
-              </NavLink>
-            </div>
+                Create Account
+              </button>
+            )}
           </div>
         </div>
       </div>

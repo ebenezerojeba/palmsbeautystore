@@ -117,8 +117,11 @@
 // export default ServiceCard;
 
 
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { Clock, Calendar, ArrowRight } from 'lucide-react';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { AppContext } from '../context/AppContext';
+import { toast } from 'react-toastify';
 
 const ServiceCard = ({
   title,
@@ -133,11 +136,22 @@ const ServiceCard = ({
   availability = "Available Today"
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const{token} =useContext(AppContext)
 
-  const handleBooking = (e) => {
-    e.stopPropagation();
-    onBook?.();
-  };
+  const navigate = useNavigate()
+
+const handleBooking = (e) => {
+  e.stopPropagation();
+
+  if (!token) {
+    toast.warn("Kindly login to book this service");
+    navigate('/login');
+    return; // Prevent onBook from being called
+  }
+
+  onBook?.(); // Only run if the user is authenticated
+};
+;
 
   const hasImage = Boolean(image);
 

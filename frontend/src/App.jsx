@@ -14,33 +14,52 @@ import Cart from './pages/Cart'
 import PlaceOrder from './pages/PlaceOrder'
 import Collection from './pages/Collection'
 import ServicesPage from './pages/ServicesPage'
+import Login from './pages/Login'
+import MyProfile from './pages/MyProfile'
+import Orders from './pages/MyOrders'
+import VerifyAppointment from './pages/VerifyAppointment'
+import SuccessPage from './pages/SuccessPage'
 
 
 
 const App = () => {
   return (
     <div className=''>
-       <ToastContainer />
+      <ToastContainer />
       <Navbar />
-        <div className='mx-4 sm:mx-[-2%]'>
-          
-        
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/services" element={<Services />} />
-        <Route path="/servicespage" element={<ServicesPage />} />
-        <Route path="/about" element={<About />} />
-        {/* <Route path="/cart" element={<Cart />} /> */}
+      <div className='mx-4 sm:mx-[-2%]'>
 
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/collections" element={<Collection />} />
-        <Route path="/appointment/:id" element={<Appointment />} />
-        
-        <Route path='/product/:productId' element={<Product />}/>
-        <Route path='/cart' element={<Cart />}/>
-        <Route path='/place-order' element={<PlaceOrder />}/>
-        <Route path="/my-appointments" element={<MyAppointment />} />
-      </Routes>
+
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+
+          <Route path="/services" element={<Services />} />
+          <Route path="/servicespage" element={<ServicesPage />} />
+          <Route path="/about" element={<About />} />
+          {/* <Route path="/cart" element={<Cart />} /> */}
+
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/collections" element={<Collection />} />
+          <Route path="/appointment/:id" element={<Appointment />} />
+          
+          <Route
+            path="/appointment/verify/:appointmentId"
+            element={<VerifyAppointment />}
+          />
+          
+<Route path="/success/:appointmentId" element={<SuccessPage />} />
+
+          {/* <Route path="/success/:appointmentId" element={<SuccessPage />} /> */}
+
+          <Route path='/product/:productId' element={<Product />} />
+          <Route path='/cart' element={<Cart />} />
+          <Route path='/place-order' element={<PlaceOrder />} />
+
+          <Route path='/my-profile' element={<MyProfile />} />
+          <Route path='/my-orders' element={<Orders />} />
+          <Route path="/my-appointments" element={<MyAppointment />} />
+        </Routes>
       </div>
       <Footer />
     </div>

@@ -45,7 +45,7 @@ const PlaceOrder = () => {
     updateQuantity,
   } = useContext(ShopContext);
 
-  const backendUrl = "https://palmsbeautystore.onrender.com/";
+  // const backendUrl = "https://palmsbeautystore.onrender.com/";
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -59,6 +59,7 @@ const PlaceOrder = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const {backendUrl} = useContext(ShopContext)
 
   
   const scrollToTop = () => {
@@ -204,7 +205,7 @@ const PlaceOrder = () => {
   const processStripePayment = async (orderData) => {
     try {
       const response = await axios.post(
-        `${backendUrl}api/order/place`,
+        `${backendUrl}/api/order/place`,
         orderData
       );
 
