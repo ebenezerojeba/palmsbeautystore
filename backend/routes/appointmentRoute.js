@@ -7,7 +7,10 @@ const appointmentRouter = express.Router()
 appointmentRouter.get('/available-slots', getAvailableSlots);
 appointmentRouter.get('/:id', authUser, getSingleAppointment);
 appointmentRouter.post('/book-appointment', authUser, bookAppointment);
-appointmentRouter.post('/verify', verifyAppointmentPayment);
+appointmentRouter.post('/verify', authUser, verifyAppointmentPayment);
+// Add GET route to handle Stripe redirect
+appointmentRouter.get('/verify/:appointmentId', authUser, handleStripeRedirect);
+
 appointmentRouter.get('/download-calendar/:appointmentId', authUser, downloadCalendar);
 
 // Protected appointmentRouter (add auth middleware as needed)

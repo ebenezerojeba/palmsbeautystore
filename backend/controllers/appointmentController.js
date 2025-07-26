@@ -472,7 +472,34 @@ const bookAppointment = async (req, res) => {
   }
 };
 
+
+
+
+// NEW FUNCTION - Handle Stripe redirect (GET request)
+const handleStripeRedirect = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const { session_id } = req.query;
+
+    if (!session_id) {
+      return res.redirect(`${process.env.FRONTEND_URL}/appointment/error?message=Invalid session`);
+    }
+
+    // Redirect to your frontend verification page with the data
+    const redirectUrl = `${process.env.FRONTEND_URL}/verify-payment?appointmentId=${appointmentId}&sessionId=${session_id}`;
+    res.redirect(redirectUrl);
+
+  } catch (error) {
+    console.error("Error handling Stripe redirect:", error);
+    res.redirect(`${process.env.FRONTEND_URL}/appointment/error?message=Verification failed`);
+  }
+};
+
+
+
+
 // BACKEND - Enhanced error handling and logging
+// UPDATED VERIFY FUNCTION - Fixed the user field issue
 const verifyAppointmentPayment = async (req, res) => {
   try {
     console.log("🔍 Starting payment verification...");
@@ -490,11 +517,11 @@ const verifyAppointmentPayment = async (req, res) => {
       });
     }
 
-    // Find appointment with detailed logging
+    // Find appointment with FIXED field name - use userId instead of user
     console.log("🔍 Looking for appointment:", appointmentId, "for user:", req.userId);
     const appointment = await appointmentModel.findOne({
       _id: appointmentId,
-      user: req.userId
+      userId: req.userId // FIXED: Changed from 'user' to 'userId'
     });
 
     if (!appointment) {
@@ -543,7 +570,7 @@ const verifyAppointmentPayment = async (req, res) => {
       console.log("⏳ Payment still unpaid");
       return res.status(200).json({
         success: false,
-        status: 'processing', // This triggers retry in frontend
+        status: 'processing',
         message: "Payment is being processed",
         payment_status: session.payment_status
       });
@@ -607,41 +634,6 @@ const verifyAppointmentPayment = async (req, res) => {
       message,
       details,
       error_type: error.name || error.type
-    });
-  }
-};
-
-const getSingleAppointment = async (req, res) => {
-   try {
-    console.log("🔍 Fetching appointment by ID:", req.params.id);
-    console.log("👤 User ID:", req.userId);
-    
-    const appointment = await appointmentModel.findOne({
-      _id: req.params.id,
-      user: req.userId // Ensure user can only access their own appointments
-    });
-
-    if (!appointment) {
-      console.log("❌ Appointment not found");
-      return res.status(404).json({
-        success: false,
-        message: "Appointment not found or access denied"
-      });
-    }
-
-    console.log("✅ Appointment found:", appointment._id);
-    
-    res.json({
-      success: true,
-      appointment
-    });
-
-  } catch (error) {
-    console.error("💥 Error fetching appointment:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch appointment",
-      details: error.message
     });
   }
 };
