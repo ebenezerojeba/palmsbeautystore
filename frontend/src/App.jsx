@@ -33,9 +33,7 @@ const App = () => {
   
   if (sessionId && appointmentId) {
     window.location.href = `/verify-payment?appointmentId=${appointmentId}&sessionId=${sessionId}`;
-  } else {
-    window.location.href = '/appointment/error?message=Invalid verification URL';
-  }
+  } 
 }
 
 
