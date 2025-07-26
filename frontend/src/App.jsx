@@ -23,6 +23,23 @@ import SuccessPage from './pages/SuccessPage'
 
 
 const App = () => {
+
+
+  const handleOldVerifyRoute = () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const sessionId = urlParams.get('session_id');
+  const pathParts = window.location.pathname.split('/');
+  const appointmentId = pathParts[pathParts.length - 1];
+  
+  if (sessionId && appointmentId) {
+    window.location.href = `/verify-payment?appointmentId=${appointmentId}&sessionId=${sessionId}`;
+  } else {
+    window.location.href = '/appointment/error?message=Invalid verification URL';
+  }
+}
+
+
+  
   return (
     <div className=''>
       <ToastContainer />
@@ -42,11 +59,15 @@ const App = () => {
           <Route path="/contact" element={<Contact />} />
           <Route path="/collections" element={<Collection />} />
           <Route path="/appointment/:id" element={<Appointment />} />
+          <Route path="/appointment/verify/:appointmentId" element={<div>{handleOldVerifyRoute()}</div>} />
+
+          
           
           <Route
             path="/appointment/verify/:appointmentId"
             element={<VerifyAppointment />}
           />
+           <Route path="/verify-payment" element={<VerifyPayment />} />
           
 <Route path="/success/:appointmentId" element={<SuccessPage />} />
 
@@ -60,6 +81,7 @@ const App = () => {
           <Route path='/my-orders' element={<Orders />} />
           <Route path="/my-appointments" element={<MyAppointment />} />
         </Routes>
+        
       </div>
       <Footer />
     </div>
