@@ -18,7 +18,7 @@ orderRouter.post('/place', placeOrder)
 // orderRouter.post('/stripe',authUser,placeOrder)
 
 // User Feature
-orderRouter.post('/userorders',authUser,userOrders)
+orderRouter.get('/userorders',authUser,userOrders)
 
 
 

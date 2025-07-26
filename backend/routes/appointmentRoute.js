@@ -1,11 +1,19 @@
 import express from 'express'
-import { bookAppointment, downloadCalendar, getBookedSlots } from '../controllers/appointmentController.js'
+import { bookAppointment, cancelAppointment, completeAppointment, downloadCalendar, getAvailableSlots, getSingleAppointment, getUserAppointments, updateAppointmentNotes, verifyAppointmentPayment,  } from '../controllers/appointmentController.js'
+import authUser from '../middlewares/auth.js';
 
 const appointmentRouter = express.Router()
 
-appointmentRouter.post('/book-appointment', bookAppointment)
-appointmentRouter.get('/booked-slots', getBookedSlots)
-appointmentRouter.get('/download-calendar/:appointmentId', downloadCalendar)
+appointmentRouter.get('/available-slots', getAvailableSlots);
+appointmentRouter.get('/:id', authUser, getSingleAppointment);
+appointmentRouter.post('/book-appointment', authUser, bookAppointment);
+appointmentRouter.post('/verify', verifyAppointmentPayment);
+appointmentRouter.get('/download-calendar/:appointmentId', authUser, downloadCalendar);
 
+// Protected appointmentRouter (add auth middleware as needed)
+appointmentRouter.get('/user/:userId',authUser, getUserAppointments);
+appointmentRouter.put('/cancel', authUser, cancelAppointment);
+appointmentRouter.put('/notes/:appointmentId', authUser, updateAppointmentNotes);
+appointmentRouter.put('/complete/:appointmentId',authUser, completeAppointment);
 
 export default appointmentRouter

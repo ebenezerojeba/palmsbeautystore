@@ -1,138 +1,1074 @@
-import appointmentModel from "../models/appointment.js";
+// import appointmentModel from "../models/appointment.js";
+// import createCalendarEvent from "../utils/calendarGenerator.js";
+// import path from "path"; // Add this import
+// import fs from "fs";
+// import { fileURLToPath } from "url";
+// // import sendAppointmentNotification from "../utils/emailSender.js";
+
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+
+// const bookAppointment = async (req, res) => {
+//   try {
+//     const { serviceId, serviceTitle, date, time, userId } = req.body;
+
+
+//     // Check if slot is already booked
+//     const existingAppointment = await appointmentModel.findOne({
+//       date: new Date(date),
+//       time,
+//       isCompleted: false
+//     });
+
+//     if (existingAppointment) {
+//       return res.status(409).json({ 
+//         message: "This slot is already booked. Please select another time." 
+//       });
+//     }
+
+//     // Save the appointment to the database
+//     const newAppointment = new appointmentModel({
+//       serviceId,
+//       serviceTitle,
+//       date,
+//       time,
+//       userId,
+//     });
+//     await newAppointment.save();
+
+//     const icsFilePath = await createCalendarEvent(newAppointment);
+
+//     // Send email notification
+//     // sendAppointmentNotification(newAppointment);
+
+//     res.status(201).json({
+//       message: "Booking successful!",
+//       appointment: newAppointment,
+//       calendarLink: `/download-calendar/${newAppointment._id}`,
+//     });
+//   } catch (error) {
+//     console.error("Error creating booking:", error);
+//     res.status(500).json({ message: "Failed to create booking" });
+//   }
+// };
+
+
+// // New function to get booked slots
+// const getBookedSlots = async (req, res) => {
+//   try {
+//     const appointments = await appointmentModel.find(
+//       { isCompleted: false }, // Only get active appointments
+//       'date time' // Only select needed fields
+//     );
+    
+//     // Format the appointments for the frontend
+//     const bookedSlots = appointments.map(appointment => ({
+//       date: appointment.date.toISOString().split('T')[0],
+//       time: appointment.time,
+//       serviceId: appointment.serviceId
+//     }));
+
+//     res.status(200).json(bookedSlots);
+//   } catch (error) {
+//     console.error("Error fetching booked slots:", error);
+//     res.status(500).json({ message: "Failed to fetch booked slots" });
+//   }
+// };
+
+
+
+
+
+// const downloadCalendar = async (req, res) => {
+//   try {
+//     const { appointmentId } = req.params;
+//     const filePath = path.join(
+//       __dirname,
+//       "..",
+//       "calendar",
+//       `event-${appointmentId}.ics`
+//     );
+
+//     if (!fs.existsSync(filePath)) {
+//       return res.status(404).send("File not found");
+//     }
+
+//     res.setHeader("Content-Type", "text/calendar");
+
+//     res.setHeader(
+//       "Content-Disposition",
+//       `attachment; filename=event-${appointmentId}.ics`
+//     );
+
+//     fs.createReadStream(filePath).pipe(res);
+//   } catch (error) {
+//     console.error("Error downloading calendar:", error);
+
+//     res.status(500).send("Internal server error");
+//   }
+// };
+
+
+// // New function to cancel appointment
+// const cancelAppointment = async (req, res) => {
+//   try {
+//     const { appointmentId } = req.body;
+
+//     console.log("Cancelling appointment with ID", appointmentId)
+
+//     const appointment = await appointmentModel.findByIdAndUpdate(appointmentId, {isCancelled: true, cancelledAt: new Date()}, {new: true}
+//     );
+
+//     if (!appointment) {
+//       return res.status(404).json({ message: "Appointment not found" });
+//     }
+
+//     res.status(200).json({ 
+//       success: true,
+//       message: "Appointment cancelled successfully",
+//       appointment 
+//     });
+//   } catch (error) {
+//     console.error("Error cancelling appointment:", error);
+//     res.status(500).json({ message: "Failed to cancel appointment" });
+//   }
+// };
+
+
+// export { bookAppointment, downloadCalendar, getBookedSlots, cancelAppointment };
+
+
+
+
+// import { appointmentModel, businessHoursModel } from "../models/appointment.js";
 import createCalendarEvent from "../utils/calendarGenerator.js";
-import path from "path"; // Add this import
+import { initializePayment, verifyPayment } from "../utils/paymentService.js";
+import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-// import sendAppointmentNotification from "../utils/emailSender.js";
 
+import appointmentModel from "../models/appointment.js";
+import serviceModel from "../models/serviceModel.js";
+import userModel from "../models/userModel.js";
+import businessHoursModel from "../models/businessModel.js";
+import Stripe from 'stripe';
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+
+
+// Get user appointments
+const getUserAppointments = async (req, res) => {
+  try {
+    // Verify the requested userId matches the authenticated user
+    if (req.params.userId !== req.userId) {
+      return res.status(403).json({ 
+        success: false,
+        message: "Unauthorized access to appointments" 
+      });
+    }
+
+    const appointments = await appointmentModel.find({ userId: req.params.userId })
+      .sort({ date: 1, time: 1 })  // Sort by upcoming first
+      .lean();
+
+    if (!appointments.length) {
+      return res.status(200).json({ 
+        success: true,
+        message: "No appointments found",
+        appointments: []
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      appointments
+    });
+
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Failed to fetch appointments" 
+    });
+  }
+};
+
+// Cancel appointment
+const cancelAppointment = async (req, res) => {
+  try {
+    const { appointmentId, reason, cancelledBy } = req.body;
+
+    // Validate input
+    if (!appointmentId || !reason) {
+      return res.status(400).json({
+        success: false,
+        message: "Appointment ID and reason are required"
+      });
+    }
+
+    // Fetch the appointment
+    const appointment = await appointmentModel.findById(appointmentId);
+
+    // Check if appointment exists
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: "Appointment not found"
+      });
+    }
+
+    // Check if appointment has a userId
+    if (!appointment.userId) {
+      return res.status(400).json({
+        success: false,
+        message: "Appointment is missing user ID"
+      });
+    }
+
+    // Confirm user is authorized to cancel the appointment
+    if (appointment.userId.toString() !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized to cancel this appointment"
+      });
+    }
+
+    // Prevent duplicate cancellations
+    if (appointment.status === 'cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: "Appointment is already cancelled"
+      });
+    }
+
+    // Calculate refund eligibility
+    const appointmentDate = new Date(appointment.date);
+    const [hours, minutes] = appointment.time.split(':').map(Number);
+    appointmentDate.setHours(hours, minutes, 0, 0);
+
+    const hoursUntilAppointment = (appointmentDate - new Date()) / (1000 * 60 * 60);
+    const refundEligible = hoursUntilAppointment > 24;
+
+    // Update appointment
+    appointment.status = 'cancelled';
+    appointment.cancellation = {
+      cancelledBy,
+      reason,
+      refundEligible,
+      cancellationFee: refundEligible ? 0 : Math.floor(appointment.payment?.amount * 0.1) || 0
+    };
+    appointment.cancelledAt = new Date();
+
+    await appointment.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Appointment cancelled successfully",
+      appointment
+    });
+
+  } catch (error) {
+    console.error("Error cancelling appointment:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to cancel appointment"
+    });
+  }
+};
+
+
+
+// Get business hours and available slots
+const getAvailableSlots = async (req, res) => {
+  try {
+    const { serviceId, startDate, endDate } = req.query;
+    
+    // Get business hours
+    const businessHours = await businessHoursModel.find().sort({ dayOfWeek: 1 });
+    
+    if (!businessHours.length) {
+      return res.status(404).json({ message: "Business hours not configured" });
+    }
+    
+    const start = new Date(startDate || new Date());
+    const end = new Date(endDate || new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)); // 10 days ahead
+    
+    const availableSlots = [];
+    
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dayOfWeek = d.getDay();
+      const businessDay = businessHours.find(bh => bh.dayOfWeek === dayOfWeek);
+      
+      if (!businessDay || !businessDay.isOpen) continue;
+      
+      const dateStr = d.toISOString().split('T')[0];
+      
+      // Get existing appointments for this date
+      const existingAppointments = await appointmentModel.find({
+        date: new Date(dateStr),
+        status: { $in: ['pending', 'confirmed'] }
+      }).select('time duration');
+      
+      const slots = generateTimeSlots(businessDay, existingAppointments, new Date(d));
+      
+      if (slots.length > 0) {
+        availableSlots.push({
+          date: dateStr,
+          dayOfWeek: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayOfWeek],
+          slots
+        });
+      }
+    }
+    
+    res.status(200).json({ availableSlots });
+  } catch (error) {
+    console.error("Error fetching available slots:", error);
+    res.status(500).json({ message: "Failed to fetch available slots" });
+  }
+};
+
+// Helper function to generate time slots
+const generateTimeSlots = (businessDay, existingAppointments, date) => {
+  const slots = [];
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  
+  const [openHour, openMinute] = businessDay.openTime.split(':').map(Number);
+  const [closeHour, closeMinute] = businessDay.closeTime.split(':').map(Number);
+  
+  let currentTime = new Date(date);
+  currentTime.setHours(openHour, openMinute, 0, 0);
+  
+  const endTime = new Date(date);
+  endTime.setHours(closeHour, closeMinute, 0, 0);
+  
+  // If it's today, start from current time + buffer
+  if (isToday && now > currentTime) {
+    currentTime = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours buffer
+    currentTime.setMinutes(Math.ceil(currentTime.getMinutes() / 30) * 30); // Round to nearest 30 min
+  }
+  
+  while (currentTime < endTime) {
+    const timeStr = currentTime.toTimeString().slice(0, 5);
+    
+    // Check if slot conflicts with existing appointments
+    const hasConflict = existingAppointments.some(apt => {
+      const aptStart = new Date(date);
+      const [aptHour, aptMinute] = apt.time.split(':').map(Number);
+      aptStart.setHours(aptHour, aptMinute);
+      const aptEnd = new Date(aptStart.getTime() + apt.duration * 60000);
+      
+      const slotEnd = new Date(currentTime.getTime() + businessDay.slotDuration * 60000);
+      
+      return (currentTime < aptEnd && slotEnd > aptStart);
+    });
+    
+    // Check if slot conflicts with break time
+    let inBreak = false;
+    if (businessDay.breakStart && businessDay.breakEnd) {
+      const [breakStartHour, breakStartMinute] = businessDay.breakStart.split(':').map(Number);
+      const [breakEndHour, breakEndMinute] = businessDay.breakEnd.split(':').map(Number);
+      
+      const breakStart = new Date(date);
+      breakStart.setHours(breakStartHour, breakStartMinute);
+      const breakEnd = new Date(date);
+      breakEnd.setHours(breakEndHour, breakEndMinute);
+      
+      inBreak = currentTime < breakEnd && currentTime >= breakStart;
+    }
+    
+    if (!hasConflict && !inBreak) {
+      slots.push({
+        time: timeStr,
+        available: true
+      });
+    }
+    
+    currentTime.setMinutes(currentTime.getMinutes() + businessDay.slotDuration);
+  }
+  
+  return slots;
+};
+
+// Adjust this import path based on your project
+
+
 const bookAppointment = async (req, res) => {
   try {
-    const { serviceId, serviceTitle, date, time, userDetails } = req.body;
+    
+    const { serviceId, serviceTitle, date, time, duration, amount } = req.body;
+    const userId = req.userId;
 
+    if (!time || !serviceId) {
+      return res.status(400).json({ message: "Required fields are missing" });
+    }
 
-    // Check if slot is already booked
+    const userData = await userModel.findById(userId);
+    if (!userData) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     const existingAppointment = await appointmentModel.findOne({
       date: new Date(date),
       time,
-      isCompleted: false
+      status: { $in: ['pending', 'confirmed'] }
     });
 
     if (existingAppointment) {
       return res.status(409).json({ 
-        message: "This slot is already booked. Please select another time." 
+        message: "This slot is no longer available. Please select another time." 
       });
     }
 
-    // Save the appointment to the database
-    const newAppointment = new appointmentModel({
+    const newAppointment = await appointmentModel.create({
+      userId,
       serviceId,
       serviceTitle,
-      date,
+      userName: userData.name,
+      userEmail: userData.email,
+      userPhone: userData.phone,
+      date: new Date(date),
       time,
-      userDetails,
+      duration,
+      status: 'pending',
+      payment: {
+        amount,
+        status: 'pending'
+      }
     });
-    await newAppointment.save();
 
-    const icsFilePath = await createCalendarEvent(newAppointment);
-
-    // Send email notification
-    // sendAppointmentNotification(newAppointment);
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'cad', // or 'ngn', etc.
+          product_data: {
+            name: serviceTitle
+          },
+          unit_amount: amount * 100,
+        },
+        quantity: 1
+      }],
+      mode: 'payment',
+      customer_email: userData.email,
+      success_url: `${process.env.FRONTEND_URL}/appointment/verify/${newAppointment._id}?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL}/appointment/cancelled`,
+      metadata: {
+        appointmentId: newAppointment._id.toString()
+      }
+    });
 
     res.status(201).json({
-      message: "Booking successful!",
+      message: "Appointment created. Please complete payment.",
       appointment: newAppointment,
-      calendarLink: `/download-calendar/${newAppointment._id}`,
+      paymentUrl: session.url
     });
+
   } catch (error) {
-    console.error("Error creating booking:", error);
-    res.status(500).json({ message: "Failed to create booking" });
+    console.error("Error booking appointment:", error);
+    res.status(500).json({ message: error.message || "Failed to book appointment" });
   }
 };
 
-
-// New function to get booked slots
-const getBookedSlots = async (req, res) => {
+// BACKEND - Enhanced error handling and logging
+const verifyAppointmentPayment = async (req, res) => {
   try {
-    const appointments = await appointmentModel.find(
-      { isCompleted: false }, // Only get active appointments
-      'date time' // Only select needed fields
-    );
+    console.log("🔍 Starting payment verification...");
+    console.log("Request body:", req.body);
+    console.log("User ID from token:", req.userId);
     
-    // Format the appointments for the frontend
-    const bookedSlots = appointments.map(appointment => ({
-      date: appointment.date.toISOString().split('T')[0],
-      time: appointment.time,
-      serviceId: appointment.serviceId
-    }));
+    const { sessionId, appointmentId } = req.body;
 
-    res.status(200).json(bookedSlots);
-  } catch (error) {
-    console.error("Error fetching booked slots:", error);
-    res.status(500).json({ message: "Failed to fetch booked slots" });
-  }
-};
-
-
-
-
-
-const downloadCalendar = async (req, res) => {
-  try {
-    const { appointmentId } = req.params;
-    const filePath = path.join(
-      __dirname,
-      "..",
-      "calendar",
-      `event-${appointmentId}.ics`
-    );
-
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).send("File not found");
+    // Validate required fields
+    if (!sessionId || !appointmentId) {
+      console.log("❌ Missing required fields");
+      return res.status(400).json({ 
+        success: false,
+        message: "Session ID and Appointment ID are required" 
+      });
     }
 
-    res.setHeader("Content-Type", "text/calendar");
+    // Find appointment with detailed logging
+    console.log("🔍 Looking for appointment:", appointmentId, "for user:", req.userId);
+    const appointment = await appointmentModel.findOne({
+      _id: appointmentId,
+      user: req.userId
+    });
 
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=event-${appointmentId}.ics`
-    );
+    if (!appointment) {
+      console.log("❌ Appointment not found or doesn't belong to user");
+      return res.status(404).json({ 
+        success: false,
+        message: "Appointment not found or access denied" 
+      });
+    }
 
-    fs.createReadStream(filePath).pipe(res);
+    console.log("✅ Appointment found:", appointment._id);
+    console.log("Current appointment status:", appointment.status);
+    console.log("Current payment status:", appointment.payment?.status);
+
+    // Check if already verified
+    if (appointment.payment?.status === 'paid') {
+      console.log("⚠️ Payment already verified");
+      return res.json({
+        success: true,
+        message: "Payment already verified",
+        appointment
+      });
+    }
+
+    // Retrieve Stripe session
+    console.log("🔍 Retrieving Stripe session:", sessionId);
+    let session;
+    try {
+      session = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ['payment_intent']
+      });
+      console.log("✅ Stripe session retrieved successfully");
+      console.log("Session payment_status:", session.payment_status);
+      console.log("Session status:", session.status);
+    } catch (stripeError) {
+      console.error("❌ Stripe session retrieval failed:", stripeError.message);
+      return res.status(400).json({
+        success: false,
+        message: "Invalid payment session",
+        details: stripeError.message
+      });
+    }
+
+    // Handle different payment statuses
+    if (session.payment_status === 'unpaid') {
+      console.log("⏳ Payment still unpaid");
+      return res.status(200).json({
+        success: false,
+        status: 'processing', // This triggers retry in frontend
+        message: "Payment is being processed",
+        payment_status: session.payment_status
+      });
+    }
+
+    if (session.payment_status !== 'paid') {
+      console.log("❌ Payment not completed, status:", session.payment_status);
+      return res.status(200).json({
+        success: false,
+        message: `Payment ${session.payment_status}. Please try again or contact support.`,
+        payment_status: session.payment_status,
+        session_status: session.status
+      });
+    }
+
+    // Payment is successful, update appointment
+    console.log("✅ Payment confirmed, updating appointment...");
+    
+    appointment.payment = {
+      status: 'paid',
+      transactionId: session.payment_intent.id,
+      paymentDate: new Date(),
+      amount: session.amount_total / 100
+    };
+    appointment.status = 'confirmed';
+    appointment.confirmedAt = new Date();
+
+    await appointment.save();
+    console.log("✅ Appointment updated successfully");
+
+    return res.json({
+      success: true,
+      message: "Payment verified and appointment confirmed",
+      appointment
+    });
+
   } catch (error) {
-    console.error("Error downloading calendar:", error);
+    console.error("💥 Payment verification error:", error);
+    console.error("Error stack:", error.stack);
+    
+    let statusCode = 500;
+    let message = "Payment verification failed";
+    let details = error.message;
 
-    res.status(500).send("Internal server error");
+    // Handle specific error types
+    if (error.name === 'CastError') {
+      statusCode = 400;
+      message = "Invalid appointment ID format";
+    } else if (error.type === 'StripeInvalidRequestError') {
+      statusCode = 400;
+      message = "Invalid Stripe session";
+      details = error.raw?.message || error.message;
+    } else if (error.name === 'ValidationError') {
+      statusCode = 400;
+      message = "Data validation failed";
+      details = Object.values(error.errors).map(e => e.message).join(', ');
+    }
+    
+    res.status(statusCode).json({ 
+      success: false,
+      message,
+      details,
+      error_type: error.name || error.type
+    });
+  }
+};
+
+const getSingleAppointment = async (req, res) => {
+   try {
+    console.log("🔍 Fetching appointment by ID:", req.params.id);
+    console.log("👤 User ID:", req.userId);
+    
+    const appointment = await appointmentModel.findOne({
+      _id: req.params.id,
+      user: req.userId // Ensure user can only access their own appointments
+    });
+
+    if (!appointment) {
+      console.log("❌ Appointment not found");
+      return res.status(404).json({
+        success: false,
+        message: "Appointment not found or access denied"
+      });
+    }
+
+    console.log("✅ Appointment found:", appointment._id);
+    
+    res.json({
+      success: true,
+      appointment
+    });
+
+  } catch (error) {
+    console.error("💥 Error fetching appointment:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch appointment",
+      details: error.message
+    });
   }
 };
 
 
-// New function to cancel appointment
-const cancelAppointment = async (req, res) => {
+
+
+
+
+
+// const verifyAppointmentPayment = async (req, res) => {
+//   try {
+//     const { sessionId } = req.params;
+//     const { appointmentId } = req.query;
+
+//     if (!appointmentId) {
+//       return res.status(400).json({ message: "Appointment ID is required" });
+//     }
+
+//     const appointment = await appointmentModel.findById(appointmentId);
+//     if (!appointment) {
+//       return res.status(404).json({ message: "Appointment not found" });
+//     }
+
+//     const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+//     if (session.payment_status === 'paid') {
+//       appointment.payment.status = 'paid';
+//       appointment.payment.transactionId = session.payment_intent;
+//       appointment.payment.paymentDate = new Date();
+//       appointment.status = 'confirmed';
+//       appointment.confirmedAt = new Date();
+
+//       await appointment.save();
+
+//       const icsFilePath = await createCalendarEvent(appointment);
+//       console.log("sessionId:", sessionId);
+// console.log("appointmentId:", appointmentId);
+
+
+
+//       return res.status(200).json({
+//         message: "Payment successful! Appointment confirmed.",
+//         appointment,
+//         calendarLink: `/download-calendar/${appointment._id}`
+//       });
+//     } else {
+//       appointment.payment.status = 'failed';
+//       await appointment.save();
+
+//       return res.status(400).json({ message: "Payment not completed" });
+//     }
+
+//   } catch (error) {
+//     console.error("Error verifying payment:", error);
+//     return res.status(500).json({ message: "Payment verification failed" });
+//   }
+// };
+
+
+
+
+// const verifyAppointmentPayment = async (req, res) => {
+//   try {
+//     const { sessionId, appointmentId } = req.body;
+
+//     if (!sessionId || !appointmentId) {
+//       return res.status(400).json({ message: "Session ID and Appointment ID are required" });
+//     }
+
+//         const appointment = await appointmentModel.findOne({
+//       _id: appointmentId,
+//       user: req.userId
+//     });
+//     // const appointment = await appointmentModel.findById(appointmentId);
+//     if (!appointment) {
+//       return res.status(404).json({ message: "Appointment not found", success: false });
+//     }
+//    // Retrieve Stripe session with expanded payment intent
+//     const session = await stripe.checkout.sessions.retrieve(sessionId, {
+//       expand: ['payment_intent']
+//     });
+
+//     // Comprehensive status handling
+//     if (session.payment_status !== 'paid') {
+//       return res.status(200).json({
+//         success: false,
+//         message: "Payment not completed",
+//         payment_status: session.payment_status,
+//         session_status: session.status
+//       });
+//     }
+
+//     // console.log("Stripe session:", session);
+
+
+//     // Update appointment
+//     appointment.payment = {
+//       status: 'paid',
+//       transactionId: session.payment_intent.id,
+//       paymentDate: new Date(),
+//       amount: session.amount_total / 100
+//     };
+//     appointment.status = 'confirmed';
+//     appointment.confirmedAt = new Date();
+
+
+//     console.log("Verifying payment for:", appointmentId, sessionId);
+// console.log("req.user or req.userId:", req.user, req.userId);
+
+// console.log("Appointment found:", appointment?._id);
+// console.log("Stripe session payment_status:", session.payment_status);
+// console.log("Stripe session status:", session.status);
+// console.log("✅ Hit /api/appointment/verify endpoint");
+
+//     await appointment.save();
+
+//    return res.json({
+//   success: true,
+//   message: "Payment verified and appointment confirmed",
+//   appointment
+// });
+
+
+
+//   }
+//  // Backend - Detailed error responses
+// catch (error) {
+//   console.error("Payment verification error:", error);
+  
+//   let statusCode = 500;
+//   let message = "Payment verification failed";
+//   let details = null;
+
+//   if (error.type === 'StripeInvalidRequestError') {
+//     statusCode = 400;
+//     message = "Invalid Stripe session";
+//     details = error.raw?.message;
+//   }
+  
+//   res.status(statusCode).json({ 
+//     success: false,
+//     message,
+//     details,
+//     code: error.code 
+//   });
+// }
+// };
+
+
+
+
+
+
+
+
+
+// const verifyAppointmentPayment = async (req, res) => {
+//   try {
+//     const { appointmentId } = req.params;
+//     const { session_id } = req.query;
+
+//     const appointment = await appointmentModel.findById(appointmentId);
+//     if (!appointment) {
+//       return res.status(404).json({ message: "Appointment not found" });
+//     }
+
+//     const session = await stripe.checkout.sessions.retrieve(session_id);
+
+//     if (session.payment_status === 'paid') {
+//       appointment.payment.status = 'paid';
+//       appointment.payment.transactionId = session.payment_intent;
+//       appointment.payment.paymentDate = new Date();
+//       appointment.status = 'confirmed';
+//       appointment.confirmedAt = new Date();
+
+//       await appointment.save();
+
+//       const icsFilePath = await createCalendarEvent(appointment);
+
+//       res.status(200).json({
+//         message: "Payment successful! Appointment confirmed.",
+//         appointment,
+//         calendarLink: `/download-calendar/${appointment._id}`
+//       });
+//     } else {
+//       appointment.payment.status = 'failed';
+//       await appointment.save();
+
+//       res.status(400).json({ message: "Payment not completed" });
+//     }
+
+//   } catch (error) {
+//     console.error("Error verifying payment:", error);
+//     res.status(500).json({ message: "Payment verification failed" });
+//   }
+// };
+
+
+
+// // Verify payment and confirm appointment
+// const verifyAppointmentPayment = async (req, res) => {
+//   try {
+//     const { appointmentId, reference } = req.params;
+
+//     const appointment = await appointmentModel.findById(appointmentId);
+//     if (!appointment) {
+//       return res.status(404).json({ message: "Appointment not found" });
+//     }
+
+//     // Verify payment with payment provider
+//     const paymentResult = await verifyPayment(reference);
+    
+//     if (paymentResult.status === 'success') {
+//       // Update appointment
+//       appointment.payment.status = 'paid';
+//       appointment.payment.transactionId = paymentResult.reference;
+//       appointment.payment.paymentDate = new Date();
+//       appointment.status = 'confirmed';
+//       appointment.confirmedAt = new Date();
+      
+//       await appointment.save();
+
+//       // Generate calendar event
+//       const icsFilePath = await createCalendarEvent(appointment);
+
+//       res.status(200).json({
+//         message: "Payment successful! Appointment confirmed.",
+//         appointment,
+//         calendarLink: `/download-calendar/${appointment._id}`
+//       });
+//     } else {
+//       appointment.payment.status = 'failed';
+//       await appointment.save();
+      
+//       res.status(400).json({ 
+//         message: "Payment verification failed",
+//         status: paymentResult.status 
+//       });
+//     }
+
+//   } catch (error) {
+//     console.error("Error verifying payment:", error);
+//     res.status(500).json({ message: "Payment verification failed" });
+//   }
+// };
+
+// Cancel appointment
+// const cancelAppointment = async (req, res) => {
+//   try {
+//     const { appointmentId, cancelledBy, reason } = req.body;
+
+//     const appointment = await appointmentModel.findById(appointmentId);
+//     if (!appointment) {
+//       return res.status(404).json({ message: "Appointment not found" });
+//     }
+
+//     if (appointment.status === 'cancelled') {
+//       return res.status(400).json({ message: "Appointment already cancelled" });
+//     }
+
+//     // Calculate refund eligibility (e.g., 24 hours before appointment)
+//     const appointmentDateTime = new Date(appointment.date);
+//     const [hours, minutes] = appointment.time.split(':').map(Number);
+//     appointmentDateTime.setHours(hours, minutes);
+    
+//     const hoursUntilAppointment = (appointmentDateTime - new Date()) / (1000 * 60 * 60);
+//     const refundEligible = hoursUntilAppointment > 24;
+    
+//     // Update appointment
+//     appointment.status = 'cancelled';
+//     appointment.cancelledAt = new Date();
+//     appointment.cancellation = {
+//       cancelledBy,
+//       reason,
+//       refundEligible,
+//       cancellationFee: refundEligible ? 0 : appointment.payment.amount * 0.1 // 10% cancellation fee
+//     };
+
+//     // Process refund if eligible and payment was made
+//     if (refundEligible && appointment.payment.status === 'paid') {
+//       // Implement refund logic here
+//       appointment.payment.status = 'refunded';
+//       appointment.payment.refundDate = new Date();
+//       appointment.payment.refundAmount = appointment.payment.amount - appointment.cancellation.cancellationFee;
+//     }
+
+//     await appointment.save();
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Appointment cancelled successfully",
+//       appointment,
+//       refundEligible
+//     });
+
+//   } catch (error) {
+//     console.error("Error cancelling appointment:", error);
+//     res.status(500).json({ message: "Failed to cancel appointment" });
+//   }
+// };
+
+// Update appointment notes (for service provider)
+const updateAppointmentNotes = async (req, res) => {
   try {
-    const { appointmentId } = req.body;
+    const { appointmentId } = req.params;
+    const { preAppointment, duringAppointment, postAppointment, privateNotes } = req.body;
 
-    console.log("Cancelling appointment with ID", appointmentId)
-
-    const appointment = await appointmentModel.findByIdAndUpdate(appointmentId, {isCancelled: true, cancelledAt: new Date()}, {new: true}
+    const appointment = await appointmentModel.findByIdAndUpdate(
+      appointmentId,
+      {
+        $set: {
+          'serviceProviderNotes.preAppointment': preAppointment,
+          'serviceProviderNotes.duringAppointment': duringAppointment,
+          'serviceProviderNotes.postAppointment': postAppointment,
+          'serviceProviderNotes.privateNotes': privateNotes
+        }
+      },
+      { new: true }
     );
 
     if (!appointment) {
       return res.status(404).json({ message: "Appointment not found" });
     }
 
-    res.status(200).json({ 
-      success: true,
-      message: "Appointment cancelled successfully",
-      appointment 
+    res.status(200).json({
+      message: "Notes updated successfully",
+      appointment
     });
+
   } catch (error) {
-    console.error("Error cancelling appointment:", error);
-    res.status(500).json({ message: "Failed to cancel appointment" });
+    console.error("Error updating notes:", error);
+    res.status(500).json({ message: "Failed to update notes" });
   }
 };
 
+// // Get user appointments
+// const getUserAppointments = async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+//     const { status, page = 1, limit = 10 } = req.query;
 
-export { bookAppointment, downloadCalendar, getBookedSlots, cancelAppointment };
+//     const query = { userId };
+//     if (status) query.status = status;
+
+//     const appointments = await appointmentModel.find(query)
+//       .sort({ date: -1, time: -1 })
+//       .limit(limit * 1)
+//       .skip((page - 1) * limit)
+//       .exec();
+
+//     const total = await appointmentModel.countDocuments(query);
+// res.status(200).json({
+//   success: true,
+//   appointments,
+//   totalPages: Math.ceil(total / limit),
+//   currentPage: page,
+//   total
+// });
+
+
+//   } catch (error) {
+//     console.error("Error fetching appointments:", error);
+//     res.status(500).json({ message: "Failed to fetch appointments" });
+//   }
+// };
+
+// Complete appointment
+const completeAppointment = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const { postAppointmentNotes, rating } = req.body;
+
+    const appointment = await appointmentModel.findByIdAndUpdate(
+      appointmentId,
+      {
+        status: 'completed',
+        completedAt: new Date(),
+        'serviceProviderNotes.postAppointment': postAppointmentNotes,
+        'followUp.rating': rating
+      },
+      { new: true }
+    );
+
+    if (!appointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    res.status(200).json({
+      message: "Appointment marked as completed",
+      appointment
+    });
+
+  } catch (error) {
+    console.error("Error completing appointment:", error);
+    res.status(500).json({ message: "Failed to complete appointment" });
+  }
+};
+
+// Download calendar event
+const downloadCalendar = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const filePath = path.join(__dirname, "..", "calendar", `event-${appointmentId}.ics`);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).send("Calendar file not found");
+    }
+
+    res.setHeader("Content-Type", "text/calendar");
+    res.setHeader("Content-Disposition", `attachment; filename=appointment-${appointmentId}.ics`);
+    
+    fs.createReadStream(filePath).pipe(res);
+  } catch (error) {
+    console.error("Error downloading calendar:", error);
+    res.status(500).send("Internal server error");
+  }
+};
+
+export {
+  getAvailableSlots,
+  bookAppointment,
+  verifyAppointmentPayment,
+  cancelAppointment,
+  updateAppointmentNotes,
+  getUserAppointments,
+  completeAppointment,
+  downloadCalendar,
+  getSingleAppointment
+};

@@ -44,7 +44,7 @@ try {
             date: Date.now()
         }
 
-        console.log(productData);
+        // console.log(productData);
         
         const product = new productModel (productData)
         await product.save()
@@ -57,6 +57,20 @@ try {
         res.json({success:false,message:error.message})
     }
 }
+
+const updateProduct = async (req, res) => {
+  try {
+    const { id, updates } = req.body;
+
+    const product = await productModel.findByIdAndUpdate(id, updates, { new: true });
+
+    res.json({ success: true, message: "Product updated", product });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
 
 // Function for list product
 const listProduct = async (req, res) => {
@@ -89,4 +103,4 @@ const removeProduct = async (req,res) => {
  }
 
 
- export {addProduct, listProduct, removeProduct, singleProduct}
+ export {addProduct, listProduct, removeProduct, singleProduct, updateProduct}

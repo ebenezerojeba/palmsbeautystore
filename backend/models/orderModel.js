@@ -5,7 +5,7 @@ const orderSchema = new mongoose.Schema({
     userId: { 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'User', 
-        required: false, // Allow null for guest orders
+        required: true, // Allow null for guest orders
         default: null 
     },
     items: [{
