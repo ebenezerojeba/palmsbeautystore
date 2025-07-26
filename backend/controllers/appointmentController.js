@@ -724,10 +724,8 @@ const bookAppointment = async (req, res) => {
       }],
       mode: 'payment',
       customer_email: userData.email,
-      success_url: `${process.env.FRONTEND_URL}/verify-appointment/{CHECKOUT_SESSION_ID}?appointmentId=${appointmentId}`,
-  cancel_url: `${process.env.FRONTEND_URL}/appointments`,
-      // success_url: `${process.env.FRONTEND_URL}/appointment/verify/${newAppointment._id}?session_id={CHECKOUT_SESSION_ID}`,
-      // cancel_url: `${process.env.FRONTEND_URL}/appointment/cancelled`,
+      success_url: `${process.env.FRONTEND_URL}/appointment/verify/${newAppointment._id}?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL}/appointment/cancelled`,
       metadata: {
         appointmentId: newAppointment._id.toString()
       }
@@ -770,15 +768,19 @@ const handleStripeRedirect = async (req, res) => {
 
 
 
-// BACKEND - Enhanced error handling and logging
-// UPDATED VERIFY FUNCTION - Fixed the user field issue
+
+
+// CONTROLLER - Updated for GET method
 const verifyAppointmentPayment = async (req, res) => {
   try {
     console.log("🔍 Starting payment verification...");
-    console.log("Request body:", req.body);
+    console.log("Request params:", req.params);
+    console.log("Request query:", req.query);
     console.log("User ID from token:", req.userId);
     
-    const { sessionId, appointmentId } = req.body;
+    // Get data from URL params and query string
+    const { appointmentId } = req.params;
+    const sessionId = req.query.session_id;
 
     // Validate required fields
     if (!sessionId || !appointmentId) {
@@ -909,6 +911,150 @@ const verifyAppointmentPayment = async (req, res) => {
     });
   }
 };
+
+
+
+
+
+// BACKEND - Enhanced error handling and logging
+// UPDATED VERIFY FUNCTION - Fixed the user field issue
+// const verifyAppointmentPayment = async (req, res) => {
+//   try {
+//     console.log("🔍 Starting payment verification...");
+//     console.log("Request body:", req.body);
+//     console.log("User ID from token:", req.userId);
+    
+//     const { sessionId, appointmentId } = req.body;
+
+//     // Validate required fields
+//     if (!sessionId || !appointmentId) {
+//       console.log("❌ Missing required fields");
+//       return res.status(400).json({ 
+//         success: false,
+//         message: "Session ID and Appointment ID are required" 
+//       });
+//     }
+
+//     // Find appointment with FIXED field name - use userId instead of user
+//     console.log("🔍 Looking for appointment:", appointmentId, "for user:", req.userId);
+//     const appointment = await appointmentModel.findOne({
+//       _id: appointmentId,
+//       userId: req.userId // FIXED: Changed from 'user' to 'userId'
+//     });
+
+//     if (!appointment) {
+//       console.log("❌ Appointment not found or doesn't belong to user");
+//       return res.status(404).json({ 
+//         success: false,
+//         message: "Appointment not found or access denied" 
+//       });
+//     }
+
+//     console.log("✅ Appointment found:", appointment._id);
+//     console.log("Current appointment status:", appointment.status);
+//     console.log("Current payment status:", appointment.payment?.status);
+
+//     // Check if already verified
+//     if (appointment.payment?.status === 'paid') {
+//       console.log("⚠️ Payment already verified");
+//       return res.json({
+//         success: true,
+//         message: "Payment already verified",
+//         appointment
+//       });
+//     }
+
+//     // Retrieve Stripe session
+//     console.log("🔍 Retrieving Stripe session:", sessionId);
+//     let session;
+//     try {
+//       session = await stripe.checkout.sessions.retrieve(sessionId, {
+//         expand: ['payment_intent']
+//       });
+//       console.log("✅ Stripe session retrieved successfully");
+//       console.log("Session payment_status:", session.payment_status);
+//       console.log("Session status:", session.status);
+//     } catch (stripeError) {
+//       console.error("❌ Stripe session retrieval failed:", stripeError.message);
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid payment session",
+//         details: stripeError.message
+//       });
+//     }
+
+//     // Handle different payment statuses
+//     if (session.payment_status === 'unpaid') {
+//       console.log("⏳ Payment still unpaid");
+//       return res.status(200).json({
+//         success: false,
+//         status: 'processing',
+//         message: "Payment is being processed",
+//         payment_status: session.payment_status
+//       });
+//     }
+
+//     if (session.payment_status !== 'paid') {
+//       console.log("❌ Payment not completed, status:", session.payment_status);
+//       return res.status(200).json({
+//         success: false,
+//         message: `Payment ${session.payment_status}. Please try again or contact support.`,
+//         payment_status: session.payment_status,
+//         session_status: session.status
+//       });
+//     }
+
+//     // Payment is successful, update appointment
+//     console.log("✅ Payment confirmed, updating appointment...");
+    
+//     appointment.payment = {
+//       status: 'paid',
+//       transactionId: session.payment_intent.id,
+//       paymentDate: new Date(),
+//       amount: session.amount_total / 100
+//     };
+//     appointment.status = 'confirmed';
+//     appointment.confirmedAt = new Date();
+
+//     await appointment.save();
+//     console.log("✅ Appointment updated successfully");
+
+//     return res.json({
+//       success: true,
+//       message: "Payment verified and appointment confirmed",
+//       appointment
+//     });
+
+//   } catch (error) {
+//     console.error("💥 Payment verification error:", error);
+//     console.error("Error stack:", error.stack);
+    
+//     let statusCode = 500;
+//     let message = "Payment verification failed";
+//     let details = error.message;
+
+//     // Handle specific error types
+//     if (error.name === 'CastError') {
+//       statusCode = 400;
+//       message = "Invalid appointment ID format";
+//     } else if (error.type === 'StripeInvalidRequestError') {
+//       statusCode = 400;
+//       message = "Invalid Stripe session";
+//       details = error.raw?.message || error.message;
+//     } else if (error.name === 'ValidationError') {
+//       statusCode = 400;
+//       message = "Data validation failed";
+//       details = Object.values(error.errors).map(e => e.message).join(', ');
+//     }
+    
+//     res.status(statusCode).json({ 
+//       success: false,
+//       message,
+//       details,
+//       error_type: error.name || error.type
+//     });
+  // }
+// };
 
 
 
