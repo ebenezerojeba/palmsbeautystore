@@ -1,5 +1,5 @@
 import express from 'express'
-import { bookAppointment, cancelAppointment, completeAppointment, downloadCalendar, getAvailableSlots, getSingleAppointment, getUserAppointments, handleStripeRedirect, updateAppointmentNotes, verifyAppointmentPayment,  } from '../controllers/appointmentController.js'
+import { bookAppointment, bookMultipleAppointment, cancelAppointment, completeAppointment, downloadCalendar, getAvailableSlots, getSingleAppointment, getUserAppointments, handleStripeRedirect, updateAppointmentNotes, verifyAppointmentPayment,  } from '../controllers/appointmentController.js'
 import authUser from '../middlewares/auth.js';
 
 const appointmentRouter = express.Router()
@@ -7,6 +7,7 @@ const appointmentRouter = express.Router()
 appointmentRouter.get('/available-slots', getAvailableSlots);
 appointmentRouter.get('/:id', authUser, getSingleAppointment);
 appointmentRouter.post('/book-appointment', authUser, bookAppointment);
+appointmentRouter.post('/book-multiple-appointment', authUser, bookMultipleAppointment);
 appointmentRouter.post('/verify', authUser, verifyAppointmentPayment);
 // Add GET route to handle Stripe redirect
 appointmentRouter.get('/verify/:appointmentId', authUser, handleStripeRedirect);

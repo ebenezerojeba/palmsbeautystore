@@ -783,6 +783,1205 @@
 
 
 
+// import React, { useState, useEffect, useContext } from "react";
+// import { useNavigate, useParams } from "react-router-dom";
+// import { AppContext } from "../context/AppContext";
+// import { ShopContext } from "../context/ShopContext";
+// import { toast } from "react-toastify";
+// import { 
+//   Loader, 
+//   Calendar, 
+//   Clock, 
+//   User, 
+//   Mail, 
+//   Phone, 
+//   CreditCard,
+//   AlertCircle,
+//   CheckCircle,
+//   XCircle,
+//   ChevronRight,
+//   Info
+// } from "lucide-react";
+
+// const Appointment = () => {
+//   const { id } = useParams();
+//   const navigate = useNavigate();
+//   const { backendUrl, userData } = useContext(AppContext);
+//   const { formatNaira } = useContext(ShopContext);
+
+//   const [serviceInfo, setServiceInfo] = useState(null);
+//   const [availableSlots, setAvailableSlots] = useState([]);
+//   const [selectedDate, setSelectedDate] = useState("");
+//   const [selectedTime, setSelectedTime] = useState("");
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [isBooking, setIsBooking] = useState(false);
+//   const [showPayment, setShowPayment] = useState(false);
+//   const [paymentUrl, setPaymentUrl] = useState("");
+//   const [appointmentId, setAppointmentId] = useState("");
+//   const [activeTab, setActiveTab] = useState("details"); // 'details' or 'summary'
+
+//   // Fetch service information
+//   useEffect(() => {
+//     const fetchService = async () => {
+//       try {
+//         const res = await fetch(`${backendUrl}/api/services/services/${id}`);
+//         const data = await res.json();
+//         if (data.service) {
+//           setServiceInfo(data.service);
+//         } else {
+//           toast.error("Service not found");
+//           navigate("/services");
+//         }
+//       } catch (err) {
+//         toast.error("Failed to fetch service details");
+//         navigate("/services");
+//       }
+//     };
+
+//     if (id) {
+//       fetchService();
+//     }
+//   }, [id, backendUrl, navigate]);
+
+  // // Fetch available slots
+  // useEffect(() => {
+  //   const fetchAvailableSlots = async () => {
+  //     if (!serviceInfo) return;
+      
+  //     setIsLoading(true);
+  //     try {
+  //       const startDate = new Date().toISOString().split('T')[0];
+  //       const endDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        
+  //       const res = await fetch(
+  //         `${backendUrl}/api/appointment/available-slots?serviceId=${id}&startDate=${startDate}&endDate=${endDate}`
+  //       );
+  //       const data = await res.json();
+        
+  //       if (data.availableSlots) {
+  //         setAvailableSlots(data.availableSlots);
+  //       }
+  //     } catch (err) {
+  //       toast.error("Failed to fetch available slots");
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
+
+  //   fetchAvailableSlots();
+  // }, [serviceInfo, id, backendUrl]);
+
+//   // Handle appointment booking
+//   const handleBooking = async () => {
+//     if (!selectedDate || !selectedTime) {
+//       toast.warn("Please select a date and time");
+//       return;
+//     }
+
+//     if (!userData) {
+//       toast.warn("User information not available");
+//       return;
+//     }
+
+//     const token = localStorage.getItem('token');
+//     if (!token) {
+//       alert("Please log in first!");
+//       return;
+//     }
+
+//     setIsBooking(true);
+    
+//     try {
+//       const bookingData = {
+//         serviceId: serviceInfo._id,
+//         serviceTitle: serviceInfo.title,
+//         date: selectedDate,
+//         time: selectedTime,
+//         duration: serviceInfo.duration || 90,
+//         amount: serviceInfo.price
+//       };
+
+//       const res = await fetch(`${backendUrl}/api/appointment/book-appointment`, {
+//         method: "POST",
+//         headers: {
+//           'Content-Type': 'application/json',
+//           'Authorization': `Bearer ${token}`
+//         },
+//         body: JSON.stringify(bookingData),
+//       });
+
+//       const data = await res.json();
+
+//       if (res.ok) {
+//         setAppointmentId(data.appointment._id);
+//         setPaymentUrl(data.paymentUrl);
+//         setShowPayment(true);
+//         toast.success("Appointment created! Please complete payment to confirm.");
+//       } else {
+//         toast.error(data.message || "Booking failed. Please try again.");
+//       }
+//     } catch (err) {
+//       console.error("Booking error:", err);
+//       toast.error("Something went wrong. Please try again.");
+//     } finally {
+//       setIsBooking(false);
+//     }
+//   };
+
+//   const handlePayment = () => {
+//     if (paymentUrl) {
+//       window.location.href = paymentUrl;
+//     }
+//   };
+
+//   const formatDate = (dateStr) => {
+//     const date = new Date(dateStr);
+//     return date.toLocaleDateString('en-US', {
+//       weekday: 'long',
+//       year: 'numeric',
+//       month: 'long',
+//       day: 'numeric'
+//     });
+//   };
+
+//   if (!serviceInfo) {
+//     return (
+//       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+//         <Loader className="animate-spin h-8 w-8 text-blue-600" />
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-8 px-4 sm:px-6">
+//       <div className="max-w-6xl mx-auto">
+//         {/* Service Header */}
+//         <div className="flex items-center mb-6">
+//           <button 
+//             onClick={() => navigate(-1)} 
+//             className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+//           >
+//             <ChevronRight className="rotate-180 h-5 w-5 mr-1" />
+//             Back to services
+//           </button>
+//         </div>
+
+//         {/* Main Content */}
+//         <div className="flex flex-col lg:flex-row gap-8">
+//           {/* Left Column - Service Details */}
+//           <div className="lg:w-2/3">
+//             {/* Service Card */}
+//             <div className="bg-white rounded-xl shadow-md overflow-hidden mb-8 transition-all hover:shadow-lg">
+//               {serviceInfo.image && (
+//                 <div className="relative h-64 md:h-80">
+//                   <img
+//                     src={serviceInfo.image}
+//                     alt={serviceInfo.title}
+//                     className="w-full h-full object-cover"
+//                   />
+//                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+//                   <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+//                     <h1 className="text-3xl md:text-4xl font-bold mb-2">
+//                       {serviceInfo.title}
+//                     </h1>
+//                     <p className="text-lg opacity-90 max-w-2xl">{serviceInfo.description}</p>
+//                   </div>
+//                 </div>
+//               )}
+              
+//               {/* <div className="p-6">
+//                 <div className="flex flex-wrap gap-6">
+//                   <div className="flex items-center space-x-4 bg-blue-50/50 p-4 rounded-lg flex-1 min-w-[200px]">
+//                     <div className="p-3 bg-blue-100 rounded-full">
+//                       <CreditCard className="h-6 w-6 text-blue-600" />
+//                     </div>
+//                     <div>
+//                       <p className="text-sm text-gray-600">Price</p>
+//                       <p className="text-2xl font-bold text-gray-900">
+//                         {formatNaira(serviceInfo.price)}
+//                       </p>
+//                     </div>
+//                   </div>
+                  
+//                   <div className="flex items-center space-x-4 bg-indigo-50/50 p-4 rounded-lg flex-1 min-w-[200px]">
+//                     <div className="p-3 bg-indigo-100 rounded-full">
+//                       <Clock className="h-6 w-6 text-indigo-600" />
+//                     </div>
+//                     <div>
+//                       <p className="text-sm text-gray-600">Duration</p>
+//                       <p className="text-lg font-semibold text-gray-900">
+//                         {serviceInfo.duration}
+//                       </p>
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div> */}
+//             </div>
+
+//             {/* Mobile Tabs */}
+//             <div className="lg:hidden mb-6 bg-white rounded-xl shadow-sm p-1">
+//               <div className="flex">
+//                 <button
+//                   onClick={() => setActiveTab("details")}
+//                   className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-colors ${
+//                     activeTab === "details" 
+//                       ? "bg-blue-600 text-white" 
+//                       : "text-gray-600 hover:text-blue-600"
+//                   }`}
+//                 >
+//                   Booking Details
+//                 </button>
+//                 <button
+//                   onClick={() => setActiveTab("summary")}
+//                   className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-colors ${
+//                     activeTab === "summary" 
+//                       ? "bg-blue-600 text-white" 
+//                       : "text-gray-600 hover:text-blue-600"
+//                   }`}
+//                 >
+//                   Appointment Summary
+//                 </button>
+//               </div>
+//             </div>
+
+//             {/* Booking Form (Visible on mobile when details tab is active) */}
+//             <div className={`lg:block ${activeTab !== "details" && "hidden lg:block"}`}>
+//               <div className="bg-white rounded-xl shadow-md p-6">
+//                 <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+//                   <Calendar className="h-6 w-6 mr-2 text-blue-600" />
+//                   Book Your Appointment
+//                 </h2>
+
+//                 {/* Date Selection */}
+//                 <div className="mb-8">
+//                   <label className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+//                     <Calendar className="h-4 w-4 mr-2 text-blue-500" />
+//                     Select Date
+//                   </label>
+                  
+//                   {isLoading ? (
+//                     <div className="flex flex-col items-center justify-center py-8">
+//                       <Loader className="animate-spin h-8 w-8 text-blue-600 mb-3" />
+//                       <span className="text-gray-600">Loading available dates...</span>
+//                     </div>
+//                   ) : availableSlots.length > 0 ? (
+//                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+//                       {availableSlots.map((daySlot, index) => (
+//                         <button
+//                           key={index}
+//                           onClick={() => {
+//                             setSelectedDate(daySlot.date);
+//                             setSelectedTime("");
+//                           }}
+//                           className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center ${
+//                             selectedDate === daySlot.date
+//                               ? "bg-blue-600 text-white border-blue-600 shadow-md"
+//                               : "bg-gray-50 text-gray-700 border-gray-200 hover:border-blue-300 hover:shadow-sm"
+//                           }`}
+//                         >
+//                           <div className="text-xs font-medium opacity-80">
+//                             {daySlot.dayOfWeek.substring(0, 3)}
+//                           </div>
+//                           <div className="text-lg font-bold mt-1">
+//                             {new Date(daySlot.date).getDate()}
+//                           </div>
+//                           <div className="text-xs mt-1 opacity-70">
+//                             {new Date(daySlot.date).toLocaleString('default', { month: 'short' })}
+//                           </div>
+//                         </button>
+//                       ))}
+//                     </div>
+//                   ) : (
+//                     <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+//                       <AlertCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+//                       <p>No available slots in the next 14 days</p>
+//                     </div>
+//                   )}
+//                 </div>
+
+//                 {/* Time Selection */}
+//                 {selectedDate && (
+//                   <div className="mb-8">
+//                     <label className="block text-sm font-medium text-gray-700 mb-3 items-center">
+//                       <Clock className="h-4 w-4 mr-2 text-blue-500" />
+//                       Select Time
+//                     </label>
+                    
+//                     {(() => {
+//                       const selectedDay = availableSlots.find(slot => slot.date === selectedDate);
+//                       return selectedDay ? (
+//                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+//                           {selectedDay.slots.map((timeSlot, index) => (
+//                             <button
+//                               key={index}
+//                               onClick={() => setSelectedTime(timeSlot.time)}
+//                               className={`p-3 rounded-lg text-sm font-medium transition-all ${
+//                                 selectedTime === timeSlot.time
+//                                   ? "bg-blue-600 text-white shadow-md"
+//                                   : "bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700"
+//                               }`}
+//                             >
+//                               {timeSlot.time}
+//                             </button>
+//                           ))}
+//                         </div>
+//                       ) : null;
+//                     })()}
+//                   </div>
+//                 )}
+
+//                 {/* Book Button */}
+//                 <button
+//                   onClick={handleBooking}
+//                   disabled={isBooking || !selectedDate || !selectedTime}
+//                   className={`w-full py-4 px-6 rounded-xl font-semibold tracking-wide transition-all duration-200 flex items-center justify-center ${
+//                     isBooking || !selectedDate || !selectedTime
+//                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+//                       : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl"
+//                   }`}
+//                 >
+//                   {isBooking ? (
+//                     <>
+//                       <Loader className="animate-spin h-5 w-5 mr-2" />
+//                       Creating Appointment...
+//                     </>
+//                   ) : (
+//                     <>
+//                       <Calendar className="h-5 w-5 mr-2" />
+//                       Book Appointment - {formatNaira(serviceInfo.price)}
+//                     </>
+//                   )}
+//                 </button>
+
+//                 {/* Info Note */}
+//                 <div className="mt-4 flex items-start text-sm text-gray-500">
+//                   <Info className="h-4 w-4 mr-2 mt-0.5 text-blue-500 flex-shrink-0" />
+//                   <p>Your appointment will be confirmed after payment is completed.</p>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+
+//           {/* Right Column - Summary (Visible on desktop or mobile when summary tab is active) */}
+//           <div className={`lg:w-1/3 ${activeTab !== "summary" && "hidden lg:block"}`}>
+//             <div className="bg-white rounded-xl shadow-md p-6 sticky top-6">
+//               <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+//                 <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
+//                 Appointment Summary
+//               </h3>
+              
+//               {selectedDate && selectedTime ? (
+//                 <div className="space-y-6">
+//                   <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+//                     <div className="flex items-center space-x-3 mb-3">
+//                       <Calendar className="h-5 w-5 text-blue-600" />
+//                       <span className="font-medium text-blue-900">
+//                         {formatDate(selectedDate)}
+//                       </span>
+//                     </div>
+//                     <div className="flex items-center space-x-3">
+//                       <Clock className="h-5 w-5 text-blue-600" />
+//                       <span className="font-medium text-blue-900">
+//                         {selectedTime}
+//                       </span>
+//                     </div>
+//                   </div>
+                  
+//                   <div className="space-y-4">
+//                     <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+//                       <span className="text-gray-600">Service:</span>
+//                       <span className="font-medium text-right">{serviceInfo.title}</span>
+//                     </div>
+//                     <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+//                       <span className="text-gray-600">Duration:</span>
+//                       <span className="font-medium">{serviceInfo?.duration || 90 } </span>
+//                     </div>
+//                     <div className="flex justify-between items-center pt-2">
+//                       <span className="text-gray-600 font-semibold">Total:</span>
+//                       <span className="font-bold text-xl text-blue-700">
+//                         {formatNaira(serviceInfo.price)}
+//                       </span>
+//                     </div>
+//                   </div>
+//                 </div>
+//               ) : (
+//                 <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+//                   <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+//                   <p className="text-gray-600">Select a date and time to see your appointment summary</p>
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Payment Modal */}
+//         {showPayment && (
+//           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+//             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scaleIn">
+//               <div className="text-center">
+//                 <div className="relative mx-auto mb-4">
+//                   <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+//                   <div className="absolute -inset-2 rounded-full bg-green-100/50 animate-ping"></div>
+//                 </div>
+//                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
+//                   Appointment Reserved!
+//                 </h3>
+//                 <p className="text-gray-600 mb-6">
+//                   Complete your payment to confirm your appointment for:
+//                 </p>
+                
+//                 <div className="bg-gray-50 rounded-lg p-4 mb-6">
+//                   <p className="font-medium text-gray-900">
+//                     {formatDate(selectedDate)} at {selectedTime}
+//                   </p>
+//                   <p className="text-sm text-gray-500 mt-1">
+//                     {serviceInfo.title} ({serviceInfo.duration || 90} minutes)
+//                   </p>
+//                 </div>
+                
+//                 <div className="space-y-3 mb-6">
+//                   <button
+//                     onClick={handlePayment}
+//                     className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition duration-200 shadow-md hover:shadow-lg flex items-center justify-center"
+//                   >
+//                     <CreditCard className="h-5 w-5 mr-2" />
+//                     Pay Now - {formatNaira(serviceInfo.price)}
+//                   </button>
+                  
+                
+//                 </div>
+                
+//                 <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 text-left">
+//                   <div className="flex">
+//                     <Info className="h-5 w-5 text-yellow-500 mr-2" />
+//                     <p className="text-sm text-yellow-700">
+//                       Your slot is reserved for 15 minutes. Complete payment to confirm.
+//                     </p>
+//                   </div>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default Appointment;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import React, { useState, useEffect, useContext } from "react";
+// import { useNavigate, useParams } from "react-router-dom";
+// import { AppContext } from "../context/AppContext";
+// import { ShopContext } from "../context/ShopContext";
+// import { toast } from "react-toastify";
+// import { 
+//   Loader, 
+//   Calendar, 
+//   Clock, 
+//   User, 
+//   Mail, 
+//   Phone, 
+//   CreditCard,
+//   AlertCircle,
+//   CheckCircle,
+//   XCircle,
+//   ChevronRight,
+//   Info,
+//   Plus,
+//   Minus,
+//   X
+// } from "lucide-react";
+
+// const Appointment = () => {
+//   const { id } = useParams();
+//   const navigate = useNavigate();
+//   const { backendUrl, userData } = useContext(AppContext);
+//   const { formatNaira } = useContext(ShopContext);
+
+//   const [serviceInfo, setServiceInfo] = useState(null);
+//   const [allServices, setAllServices] = useState([]);
+//   const [selectedServices, setSelectedServices] = useState([]);
+//   const [availableSlots, setAvailableSlots] = useState([]);
+//   const [selectedDate, setSelectedDate] = useState("");
+//   const [selectedTime, setSelectedTime] = useState("");
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [isBooking, setIsBooking] = useState(false);
+//   const [showPayment, setShowPayment] = useState(false);
+//   const [showAddService, setShowAddService] = useState(false);
+//   const [paymentUrl, setPaymentUrl] = useState("");
+//   const [appointmentId, setAppointmentId] = useState("");
+//   const [activeTab, setActiveTab] = useState("details");
+
+//   // Fetch service information and all services
+//   useEffect(() => {
+//     const fetchService = async () => {
+//       try {
+//         const res = await fetch(`${backendUrl}/api/services/services/${id}`);
+//         const data = await res.json();
+//         if (data.service) {
+//           setServiceInfo(data.service);
+//           setSelectedServices([data.service]); // Initialize with the primary service
+//         } else {
+//           toast.error("Service not found");
+//           navigate("/services");
+//         }
+//       } catch (err) {
+//         toast.error("Failed to fetch service details");
+//         navigate("/services");
+//       }
+//     };
+
+//     const fetchAllServices = async () => {
+//       try {
+//         const res = await fetch(`${backendUrl}/api/services/all-services`);
+//         const data = await res.json();
+//         if (data.services) {
+//           setAllServices(data.services);
+//         }
+//       } catch (err) {
+//         console.error("Failed to fetch all services");
+//       }
+//     };
+
+//     if (id) {
+//       fetchService();
+//       fetchAllServices();
+//     }
+//   }, [id, backendUrl, navigate]);
+
+//   // Calculate total duration and price
+//   const getTotalDuration = () => {
+//     return selectedServices.reduce((total, service) => total + (service.duration || 90), 0);
+//   };
+
+//   const getTotalPrice = () => {
+//     return selectedServices.reduce((total, service) => total + service.price, 0);
+//   };
+
+//   // Fetch available slots based on total duration
+//   useEffect(() => {
+//     const fetchAvailableSlots = async () => {
+//       if (selectedServices.length === 0) return;
+      
+//       setIsLoading(true);
+//       try {
+//         const totalDuration = getTotalDuration();
+//         const startDate = new Date().toISOString().split('T')[0];
+//         const endDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        
+//         const res = await fetch(
+//           `${backendUrl}/api/appointment/available-slots?serviceId=${id}&startDate=${startDate}&endDate=${endDate}&duration=${totalDuration}`
+//         );
+//         const data = await res.json();
+        
+//         if (data.availableSlots) {
+//           setAvailableSlots(data.availableSlots);
+//         }
+//       } catch (err) {
+//         toast.error("Failed to fetch available slots");
+//       } finally {
+//         setIsLoading(false);
+//       }
+//     };
+
+//     fetchAvailableSlots();
+//   }, [selectedServices, id, backendUrl]);
+
+//   // Add service to selection
+//   const addService = (service) => {
+//     const isAlreadySelected = selectedServices.some(s => s._id === service._id);
+//     if (!isAlreadySelected) {
+//       setSelectedServices([...selectedServices, service]);
+//       setShowAddService(false);
+//       // Reset date/time selection when services change
+//       setSelectedDate("");
+//       setSelectedTime("");
+//       toast.success(`${service.title} added to your appointment`);
+//     } else {
+//       toast.info("This service is already selected");
+//     }
+//   };
+
+//   // Remove service from selection
+//   const removeService = (serviceId) => {
+//     if (selectedServices.length === 1) {
+//       toast.warn("You must have at least one service selected");
+//       return;
+//     }
+    
+//     setSelectedServices(selectedServices.filter(s => s._id !== serviceId));
+//     // Reset date/time selection when services change
+//     setSelectedDate("");
+//     setSelectedTime("");
+//     toast.success("Service removed from appointment");
+//   };
+
+//   // Handle appointment booking
+//   const handleBooking = async () => {
+//     if (!selectedDate || !selectedTime) {
+//       toast.warn("Please select a date and time");
+//       return;
+//     }
+
+//     if (!userData) {
+//       toast.warn("User information not available");
+//       return;
+//     }
+
+//     const token = localStorage.getItem('token');
+//     if (!token) {
+//       alert("Please log in first!");
+//       return;
+//     }
+
+//     setIsBooking(true);
+    
+//     try {
+//       const bookingData = {
+//         services: selectedServices.map(service => ({
+//           serviceId: service._id,
+//           serviceTitle: service.title,
+//           duration: service.duration || 90,
+//           price: service.price
+//         })),
+//         date: selectedDate,
+//         time: selectedTime,
+//         totalDuration: getTotalDuration(),
+//         totalAmount: getTotalPrice()
+//       };
+
+//       const res = await fetch(`${backendUrl}/api/appointment/book-multiple-appointment`, {
+//         method: "POST",
+//         headers: {
+//           'Content-Type': 'application/json',
+//           'Authorization': `Bearer ${token}`
+//         },
+//         body: JSON.stringify(bookingData),
+//       });
+
+//       const data = await res.json();
+
+//       if (res.ok) {
+//         setAppointmentId(data.appointment._id);
+//         setPaymentUrl(data.paymentUrl);
+//         setShowPayment(true);
+//         toast.success("Appointment created! Please complete payment to confirm.");
+//       } else {
+//         toast.error(data.message || "Booking failed. Please try again.");
+//       }
+//     } catch (err) {
+//       console.error("Booking error:", err);
+//       toast.error("Something went wrong. Please try again.");
+//     } finally {
+//       setIsBooking(false);
+//     }
+//   };
+
+//   const handlePayment = () => {
+//     if (paymentUrl) {
+//       window.location.href = paymentUrl;
+//     }
+//   };
+
+//   const formatDate = (dateStr) => {
+//     const date = new Date(dateStr);
+//     return date.toLocaleDateString('en-US', {
+//       weekday: 'long',
+//       year: 'numeric',
+//       month: 'long',
+//       day: 'numeric'
+//     });
+//   };
+
+//   const  = (minutes) => {
+//     const hours = Math.floor(minutes / 60);
+//     const mins = minutes % 60;
+//     if (hours > 0 && mins > 0) {
+//       return `${hours}h ${mins}m`;
+//     } else if (hours > 0) {
+//       return `${hours}h`;
+//     } else {
+//       return `${mins}m`;
+//     }
+//   };
+
+//   if (!serviceInfo) {
+//     return (
+//       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+//         <Loader className="animate-spin h-8 w-8 text-blue-600" />
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-8 px-4 sm:px-6">
+//       <div className="max-w-6xl mx-auto">
+//         {/* Service Header */}
+//         <div className="flex items-center mb-6">
+//           <button 
+//             onClick={() => navigate(-1)} 
+//             className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+//           >
+//             <ChevronRight className="rotate-180 h-5 w-5 mr-1" />
+//             Back to services
+//           </button>
+//         </div>
+
+//         {/* Main Content */}
+//         <div className="flex flex-col lg:flex-row gap-8">
+//           {/* Left Column - Service Details */}
+//           <div className="lg:w-2/3">
+//             {/* Selected Services Card */}
+//             <div className="bg-white rounded-xl shadow-md overflow-hidden mb-8 transition-all hover:shadow-lg">
+//               <div className="p-6">
+//                 <div className="flex items-center justify-between mb-4">
+//                   <h2 className="text-2xl font-bold text-gray-900">Selected Services</h2>
+//                   <button
+//                     onClick={() => setShowAddService(true)}
+//                     className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+//                   >
+//                     <Plus className="h-4 w-4 mr-2" />
+//                     Add Service
+//                   </button>
+//                 </div>
+
+//                 <div className="space-y-4">
+//                   {selectedServices.map((service, index) => (
+//                     <div key={service._id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+//                       <div className="flex-1">
+//                         <h3 className="font-semibold text-gray-900">{service.title}</h3>
+//                         <p className="text-sm text-gray-600 mt-1">{service.description}</p>
+//                         <div className="flex items-center space-x-4 mt-2">
+//                           <span className="text-sm text-gray-500">
+//                             <Clock className="h-4 w-4 inline mr-1" />
+//                             {formatDuration(service.duration || 90)}
+//                           </span>
+//                           <span className="text-sm font-medium text-blue-600">
+//                             {formatNaira(service.price)}
+//                           </span>
+//                         </div>
+//                       </div>
+//                       {selectedServices.length > 1 && (
+//                         <button
+//                           onClick={() => removeService(service._id)}
+//                           className="ml-4 p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+//                         >
+//                           <X className="h-4 w-4" />
+//                         </button>
+//                       )}
+//                     </div>
+//                   ))}
+//                 </div>
+
+//                 {/* Total Summary */}
+//                 <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+//                   <div className="flex justify-between items-center">
+//                     <div>
+//                       <p className="text-sm text-blue-600">Total Duration</p>
+//                       <p className="font-semibold text-blue-900">{formatDuration(getTotalDuration())}</p>
+//                     </div>
+//                     <div className="text-right">
+//                       <p className="text-sm text-blue-600">Total Price</p>
+//                       <p className="text-2xl font-bold text-blue-900">{formatNaira(getTotalPrice())}</p>
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div>
+//             </div>
+
+//             {/* Mobile Tabs */}
+//             <div className="lg:hidden mb-6 bg-white rounded-xl shadow-sm p-1">
+//               <div className="flex">
+//                 <button
+//                   onClick={() => setActiveTab("details")}
+//                   className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-colors ${
+//                     activeTab === "details" 
+//                       ? "bg-blue-600 text-white" 
+//                       : "text-gray-600 hover:text-blue-600"
+//                   }`}
+//                 >
+//                   Booking Details
+//                 </button>
+//                 <button
+//                   onClick={() => setActiveTab("summary")}
+//                   className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-colors ${
+//                     activeTab === "summary" 
+//                       ? "bg-blue-600 text-white" 
+//                       : "text-gray-600 hover:text-blue-600"
+//                   }`}
+//                 >
+//                   Appointment Summary
+//                 </button>
+//               </div>
+//             </div>
+
+//             {/* Booking Form */}
+//             <div className={`lg:block ${activeTab !== "details" && "hidden lg:block"}`}>
+//               <div className="bg-white rounded-xl shadow-md p-6">
+//                 <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+//                   <Calendar className="h-6 w-6 mr-2 text-blue-600" />
+//                   Book Your Appointment
+//                 </h2>
+
+//                 {/* Date Selection */}
+//                 <div className="mb-8">
+//                   <label className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+//                     <Calendar className="h-4 w-4 mr-2 text-blue-500" />
+//                     Select Date
+//                   </label>
+                  
+//                   {isLoading ? (
+//                     <div className="flex flex-col items-center justify-center py-8">
+//                       <Loader className="animate-spin h-8 w-8 text-blue-600 mb-3" />
+//                       <span className="text-gray-600">Loading available dates...</span>
+//                     </div>
+//                   ) : availableSlots.length > 0 ? (
+//                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+//                       {availableSlots.map((daySlot, index) => (
+//                         <button
+//                           key={index}
+//                           onClick={() => {
+//                             setSelectedDate(daySlot.date);
+//                             setSelectedTime("");
+//                           }}
+//                           className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center ${
+//                             selectedDate === daySlot.date
+//                               ? "bg-blue-600 text-white border-blue-600 shadow-md"
+//                               : "bg-gray-50 text-gray-700 border-gray-200 hover:border-blue-300 hover:shadow-sm"
+//                           }`}
+//                         >
+//                           <div className="text-xs font-medium opacity-80">
+//                             {daySlot.dayOfWeek.substring(0, 3)}
+//                           </div>
+//                           <div className="text-lg font-bold mt-1">
+//                             {new Date(daySlot.date).getDate()}
+//                           </div>
+//                           <div className="text-xs mt-1 opacity-70">
+//                             {new Date(daySlot.date).toLocaleString('default', { month: 'short' })}
+//                           </div>
+//                         </button>
+//                       ))}
+//                     </div>
+//                   ) : (
+//                     <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+//                       <AlertCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+//                       <p>No available slots for the selected services duration ({formatDuration(getTotalDuration())})</p>
+//                     </div>
+//                   )}
+//                 </div>
+
+//                 {/* Time Selection */}
+//                 {selectedDate && (
+//                   <div className="mb-8">
+//                     <label className="block text-sm font-medium text-gray-700 mb-3 items-center">
+//                       <Clock className="h-4 w-4 mr-2 text-blue-500" />
+//                       Select Time
+//                     </label>
+                    
+//                     {(() => {
+//                       const selectedDay = availableSlots.find(slot => slot.date === selectedDate);
+//                       return selectedDay ? (
+//                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+//                           {selectedDay.slots.map((timeSlot, index) => (
+//                             <button
+//                               key={index}
+//                               onClick={() => setSelectedTime(timeSlot.time)}
+//                               className={`p-3 rounded-lg text-sm font-medium transition-all ${
+//                                 selectedTime === timeSlot.time
+//                                   ? "bg-blue-600 text-white shadow-md"
+//                                   : "bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700"
+//                               }`}
+//                             >
+//                               {timeSlot.time}
+//                             </button>
+//                           ))}
+//                         </div>
+//                       ) : null;
+//                     })()}
+//                   </div>
+//                 )}
+
+//                 {/* Book Button */}
+//                 <button
+//                   onClick={handleBooking}
+//                   disabled={isBooking || !selectedDate || !selectedTime}
+//                   className={`w-full py-4 px-6 rounded-xl font-semibold tracking-wide transition-all duration-200 flex items-center justify-center ${
+//                     isBooking || !selectedDate || !selectedTime
+//                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+//                       : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl"
+//                   }`}
+//                 >
+//                   {isBooking ? (
+//                     <>
+//                       <Loader className="animate-spin h-5 w-5 mr-2" />
+//                       Creating Appointment...
+//                     </>
+//                   ) : (
+//                     <>
+//                       <Calendar className="h-5 w-5 mr-2" />
+//                       Book Appointment - {formatNaira(getTotalPrice())}
+//                     </>
+//                   )}
+//                 </button>
+
+//                 {/* Info Note */}
+//                 <div className="mt-4 flex items-start text-sm text-gray-500">
+//                   <Info className="h-4 w-4 mr-2 mt-0.5 text-blue-500 flex-shrink-0" />
+//                   <p>Your appointment will be confirmed after payment is completed. Multiple services will be scheduled consecutively.</p>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+
+//           {/* Right Column - Summary */}
+//           <div className={`lg:w-1/3 ${activeTab !== "summary" && "hidden lg:block"}`}>
+//             <div className="bg-white rounded-xl shadow-md p-6 sticky top-6">
+//               <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+//                 <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
+//                 Appointment Summary
+//               </h3>
+              
+//               {selectedDate && selectedTime ? (
+//                 <div className="space-y-6">
+//                   <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+//                     <div className="flex items-center space-x-3 mb-3">
+//                       <Calendar className="h-5 w-5 text-blue-600" />
+//                       <span className="font-medium text-blue-900">
+//                         {formatDate(selectedDate)}
+//                       </span>
+//                     </div>
+//                     <div className="flex items-center space-x-3">
+//                       <Clock className="h-5 w-5 text-blue-600" />
+//                       <span className="font-medium text-blue-900">
+//                         {selectedTime}
+//                       </span>
+//                     </div>
+//                   </div>
+                  
+//                   <div className="space-y-4">
+//                     <div className="space-y-3">
+//                       <span className="text-gray-600 font-medium">Services:</span>
+//                       {selectedServices.map((service, index) => (
+//                         <div key={service._id} className="flex justify-between items-center py-2 border-b border-gray-100">
+//                           <div className="flex-1">
+//                             <span className="font-medium text-sm">{service.title}</span>
+//                             <div className="text-xs text-gray-500">
+//                               {formatDuration(service.duration || 90)}
+//                             </div>
+//                           </div>
+//                           <span className="font-medium text-right">{formatNaira(service.price)}</span>
+//                         </div>
+//                       ))}
+//                     </div>
+                    
+//                     <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+//                       <span className="text-gray-600">Total Duration:</span>
+//                       <span className="font-medium">{formatDuration(getTotalDuration())}</span>
+//                     </div>
+                    
+//                     <div className="flex justify-between items-center pt-2">
+//                       <span className="text-gray-600 font-semibold">Total:</span>
+//                       <span className="font-bold text-xl text-blue-700">
+//                         {formatNaira(getTotalPrice())}
+//                       </span>
+//                     </div>
+//                   </div>
+//                 </div>
+//               ) : (
+//                 <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+//                   <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+//                   <p className="text-gray-600">Select a date and time to see your appointment summary</p>
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Add Service Modal */}
+//         {showAddService && (
+//           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+//             <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+//               <div className="p-6 border-b">
+//                 <div className="flex items-center justify-between">
+//                   <h3 className="text-xl font-bold text-gray-900">Add Another Service</h3>
+//                   <button
+//                     onClick={() => setShowAddService(false)}
+//                     className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+//                   >
+//                     <X className="h-5 w-5" />
+//                   </button>
+//                 </div>
+//               </div>
+              
+//               <div className="p-6 overflow-y-auto max-h-[60vh]">
+//                 <div className="grid gap-4">
+//                   {allServices
+//                     .filter(service => !selectedServices.some(s => s._id === service._id))
+//                     .map((service) => (
+//                     <div key={service._id} className="p-4 border rounded-lg hover:border-blue-300 transition-colors">
+//                       <div className="flex items-start justify-between">
+//                         <div className="flex-1">
+//                           <h4 className="font-semibold text-gray-900">{service.title}</h4>
+//                           <p className="text-sm text-gray-600 mt-1">{service.description}</p>
+//                           <div className="flex items-center space-x-4 mt-2">
+//                             <span className="text-sm text-gray-500">
+//                               <Clock className="h-4 w-4 inline mr-1" />
+//                               {formatDuration(service.duration || 90)}
+//                             </span>
+//                             <span className="text-sm font-medium text-blue-600">
+//                               {formatNaira(service.price)}
+//                             </span>
+//                           </div>
+//                         </div>
+//                         <button
+//                           onClick={() => addService(service)}
+//                           className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+//                         >
+//                           <Plus className="h-4 w-4 mr-1" />
+//                           Add
+//                         </button>
+//                       </div>
+//                     </div>
+//                   ))}
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+//         )}
+
+//         {/* Payment Modal */}
+//         {showPayment && (
+//           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+//             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scaleIn">
+//               <div className="text-center">
+//                 <div className="relative mx-auto mb-4">
+//                   <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+//                   <div className="absolute -inset-2 rounded-full bg-green-100/50 animate-ping"></div>
+//                 </div>
+//                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
+//                   Appointment Reserved!
+//                 </h3>
+//                 <p className="text-gray-600 mb-6">
+//                   Complete your payment to confirm your appointment for:
+//                 </p>
+                
+//                 <div className="bg-gray-50 rounded-lg p-4 mb-6">
+//                   <p className="font-medium text-gray-900">
+//                     {formatDate(selectedDate)} at {selectedTime}
+//                   </p>
+//                   <div className="text-sm text-gray-500 mt-2 space-y-1">
+//                     {selectedServices.map((service, index) => (
+//                       <p key={service._id}>• {service.title}</p>
+//                     ))}
+//                   </div>
+//                   <p className="text-sm text-gray-500 mt-2">
+//                     Total Duration: {formatDuration(getTotalDuration())}
+//                   </p>
+//                 </div>
+                
+//                 <div className="space-y-3 mb-6">
+//                   <button
+//                     onClick={handlePayment}
+//                     className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition duration-200 shadow-md hover:shadow-lg flex items-center justify-center"
+//                   >
+//                     <CreditCard className="h-5 w-5 mr-2" />
+//                     Pay Now - {formatNaira(getTotalPrice())}
+//                   </button>
+//                 </div>
+                
+//                 <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 text-left">
+//                   <div className="flex">
+//                     <Info className="h-5 w-5 text-yellow-500 mr-2" />
+//                     <p className="text-sm text-yellow-700">
+//                       Your slot is reserved for 15 minutes. Complete payment to confirm.
+//                     </p>
+//                   </div>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default Appointment;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
@@ -800,7 +1999,10 @@ import {
   CheckCircle,
   XCircle,
   ChevronRight,
-  Info
+  Info,
+  Plus,
+  Minus,
+  X
 } from "lucide-react";
 
 const Appointment = () => {
@@ -810,17 +2012,20 @@ const Appointment = () => {
   const { formatNaira } = useContext(ShopContext);
 
   const [serviceInfo, setServiceInfo] = useState(null);
+  const [allServices, setAllServices] = useState([]);
+  const [selectedServices, setSelectedServices] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [showAddService, setShowAddService] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState("");
   const [appointmentId, setAppointmentId] = useState("");
-  const [activeTab, setActiveTab] = useState("details"); // 'details' or 'summary'
+  const [activeTab, setActiveTab] = useState("details");
 
-  // Fetch service information
+  // Fetch service information and all services
   useEffect(() => {
     const fetchService = async () => {
       try {
@@ -828,6 +2033,7 @@ const Appointment = () => {
         const data = await res.json();
         if (data.service) {
           setServiceInfo(data.service);
+          setSelectedServices([data.service]); // Initialize with the primary service
         } else {
           toast.error("Service not found");
           navigate("/services");
@@ -838,38 +2044,108 @@ const Appointment = () => {
       }
     };
 
+    const fetchAllServices = async () => {
+      try {
+        const res = await fetch(`${backendUrl}/api/services/all-services`);
+        const data = await res.json();
+        if (data.services) {
+          setAllServices(data.services);
+        }
+      } catch (err) {
+        console.error("Failed to fetch all services");
+      }
+    };
+
     if (id) {
       fetchService();
+      fetchAllServices();
     }
   }, [id, backendUrl, navigate]);
 
-  // Fetch available slots
+  // // Calculate total duration and price
+  // const getTotalDuration = () => {
+  //   return selectedServices.reduce((total, service) => {
+  //     // Handle both string and number duration formats
+  //     let duration = service.duration;
+  //     if (typeof duration === 'string') {
+  //       // Extract numbers from strings like "90 minutes" or "1h 30m"
+  //       const match = duration.match(/(\d+)/);
+  //       duration = match ? parseInt(match[1]) : 90;
+  //     }
+  //     return total + (duration || 90);
+  //   }, 0);
+  // };
+
+  const getTotalPrice = () =>
+  selectedServices.reduce((total, service) => total + Number(service.price || 0), 0);
+
+
+  // Fetch available slots based on total duration
   useEffect(() => {
     const fetchAvailableSlots = async () => {
-      if (!serviceInfo) return;
+      if (selectedServices.length === 0) return;
       
       setIsLoading(true);
       try {
+        // const totalDuration = getTotalDuration();
         const startDate = new Date().toISOString().split('T')[0];
         const endDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        
+        // console.log('Fetching slots with duration:', totalDuration); // Debug log
         
         const res = await fetch(
           `${backendUrl}/api/appointment/available-slots?serviceId=${id}&startDate=${startDate}&endDate=${endDate}`
         );
         const data = await res.json();
         
+        console.log('Available slots response:', data); // Debug log
+        
         if (data.availableSlots) {
           setAvailableSlots(data.availableSlots);
+        } else {
+          console.error('No availableSlots in response:', data);
+          setAvailableSlots([]);
         }
       } catch (err) {
+        console.error('Error fetching slots:', err);
         toast.error("Failed to fetch available slots");
+        setAvailableSlots([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchAvailableSlots();
-  }, [serviceInfo, id, backendUrl]);
+  }, [selectedServices, id, backendUrl]);
+
+  // Add service to selection
+  const addService = (service) => {
+    const isAlreadySelected = selectedServices.some(s => s._id === service._id);
+    if (!isAlreadySelected) {
+      setSelectedServices([...selectedServices, service]);
+      setShowAddService(false);
+      // Reset date/time selection when services change
+      setSelectedDate("");
+      setSelectedTime("");
+      toast.success(`${service.title} added to your appointment`);
+    } else {
+      toast.info("This service is already selected");
+    }
+  };
+
+  // Remove service from selection
+  const removeService = (serviceId) => {
+    if (selectedServices.length === 1) {
+      toast.warn("You must have at least one service selected");
+      return;
+    }
+    
+    setSelectedServices(selectedServices.filter(s => s._id !== serviceId));
+    // Reset date/time selection when services change
+    setSelectedDate("");
+    setSelectedTime("");
+    toast.success("Service removed from appointment");
+  };
 
   // Handle appointment booking
   const handleBooking = async () => {
@@ -893,15 +2169,18 @@ const Appointment = () => {
     
     try {
       const bookingData = {
-        serviceId: serviceInfo._id,
-        serviceTitle: serviceInfo.title,
+        services: selectedServices.map(service => ({
+          serviceId: service._id,
+          serviceTitle: service.title,
+          duration: service.duration || 90,
+          price: service.price
+        })),
         date: selectedDate,
         time: selectedTime,
-        duration: serviceInfo.duration || 90,
-        amount: serviceInfo.price
+        totalAmount: getTotalPrice()
       };
 
-      const res = await fetch(`${backendUrl}/api/appointment/book-appointment`, {
+      const res = await fetch(`${backendUrl}/api/appointment/book-multiple-appointment`, {
         method: "POST",
         headers: {
           'Content-Type': 'application/json',
@@ -944,6 +2223,8 @@ const Appointment = () => {
     });
   };
 
+
+
   if (!serviceInfo) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -970,52 +2251,62 @@ const Appointment = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left Column - Service Details */}
           <div className="lg:w-2/3">
-            {/* Service Card */}
+            {/* Selected Services Card */}
             <div className="bg-white rounded-xl shadow-md overflow-hidden mb-8 transition-all hover:shadow-lg">
-              {serviceInfo.image && (
-                <div className="relative h-64 md:h-80">
-                  <img
-                    src={serviceInfo.image}
-                    alt={serviceInfo.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                    <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                      {serviceInfo.title}
-                    </h1>
-                    <p className="text-lg opacity-90 max-w-2xl">{serviceInfo.description}</p>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900"></h2>
+                  <button
+                    onClick={() => setShowAddService(true)}
+                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Service
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {selectedServices.map((service, index) => (
+                    <div key={service._id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">{service.title}</h3>
+                        <p className="text-sm text-gray-600 mt-1">{service.description}</p>
+                        <div className="flex items-center space-x-4 mt-2">
+                          <span className="text-sm text-gray-500">
+                            <Clock className="h-4 w-4 inline mr-1" />
+                            {(service.duration || 90)}
+                          </span>
+                          <span className="text-sm font-medium text-blue-600">
+                            {formatNaira(service.price || 0)}
+                          </span>
+                        </div>
+                      </div>
+                      {selectedServices.length > 1 && (
+                        <button
+                          onClick={() => removeService(service._id)}
+                          className="ml-4 p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Total Summary */}
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                  <div className="flex justify-between items-center">
+                    {/* <div>
+                      <p className="text-sm text-blue-600">Total Duration</p>
+                      <p className="font-semibold text-blue-900">{(getTotalDuration())}</p>
+                    </div> */}
+                    <div className="text-right">
+                      <p className="text-sm text-blue-600">Total Price</p>
+                      <p className="text-2xl font-bold text-blue-900">{formatNaira(getTotalPrice())}</p>
+                    </div>
                   </div>
                 </div>
-              )}
-              
-              {/* <div className="p-6">
-                <div className="flex flex-wrap gap-6">
-                  <div className="flex items-center space-x-4 bg-blue-50/50 p-4 rounded-lg flex-1 min-w-[200px]">
-                    <div className="p-3 bg-blue-100 rounded-full">
-                      <CreditCard className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Price</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {formatNaira(serviceInfo.price)}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-4 bg-indigo-50/50 p-4 rounded-lg flex-1 min-w-[200px]">
-                    <div className="p-3 bg-indigo-100 rounded-full">
-                      <Clock className="h-6 w-6 text-indigo-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Duration</p>
-                      <p className="text-lg font-semibold text-gray-900">
-                        {serviceInfo.duration}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div> */}
+              </div>
             </div>
 
             {/* Mobile Tabs */}
@@ -1044,7 +2335,7 @@ const Appointment = () => {
               </div>
             </div>
 
-            {/* Booking Form (Visible on mobile when details tab is active) */}
+            {/* Booking Form */}
             <div className={`lg:block ${activeTab !== "details" && "hidden lg:block"}`}>
               <div className="bg-white rounded-xl shadow-md p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
@@ -1094,7 +2385,8 @@ const Appointment = () => {
                   ) : (
                     <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
                       <AlertCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                      <p>No available slots in the next 14 days</p>
+                      <p>No available slots for the selected services duration</p>
+                      <p className="text-sm mt-1">Try selecting fewer services or different services</p>
                     </div>
                   )}
                 </div>
@@ -1102,7 +2394,7 @@ const Appointment = () => {
                 {/* Time Selection */}
                 {selectedDate && (
                   <div className="mb-8">
-                    <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center">
+                    <label className="block text-sm font-medium text-gray-700 mb-3 items-center">
                       <Clock className="h-4 w-4 mr-2 text-blue-500" />
                       Select Time
                     </label>
@@ -1148,7 +2440,7 @@ const Appointment = () => {
                   ) : (
                     <>
                       <Calendar className="h-5 w-5 mr-2" />
-                      Book Appointment - {formatNaira(serviceInfo.price)}
+                      Book Appointment - {formatNaira(getTotalPrice())}
                     </>
                   )}
                 </button>
@@ -1156,13 +2448,13 @@ const Appointment = () => {
                 {/* Info Note */}
                 <div className="mt-4 flex items-start text-sm text-gray-500">
                   <Info className="h-4 w-4 mr-2 mt-0.5 text-blue-500 flex-shrink-0" />
-                  <p>Your appointment will be confirmed after payment is completed.</p>
+                  <p>Your appointment will be confirmed after payment is completed. Multiple services will be scheduled consecutively.</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column - Summary (Visible on desktop or mobile when summary tab is active) */}
+          {/* Right Column - Summary */}
           <div className={`lg:w-1/3 ${activeTab !== "summary" && "hidden lg:block"}`}>
             <div className="bg-white rounded-xl shadow-md p-6 sticky top-6">
               <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
@@ -1188,18 +2480,26 @@ const Appointment = () => {
                   </div>
                   
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                      <span className="text-gray-600">Service:</span>
-                      <span className="font-medium text-right">{serviceInfo.title}</span>
+                    <div className="space-y-3">
+                      <span className="text-gray-600 font-medium">Services:</span>
+                      {selectedServices.map((service, index) => (
+                        <div key={service._id} className="flex justify-between items-center py-2 border-b border-gray-100">
+                          <div className="flex-1">
+                            <span className="font-medium text-sm">{service.title}</span>
+                            <div className="text-xs text-gray-500">
+                              {(service.duration || 90)}
+                            </div>
+                          </div>
+                          <span className="font-medium text-right">{formatNaira(service.price)}</span>
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                      <span className="text-gray-600">Duration:</span>
-                      <span className="font-medium">{serviceInfo?.duration || 90 } </span>
-                    </div>
+                    
+                    
                     <div className="flex justify-between items-center pt-2">
                       <span className="text-gray-600 font-semibold">Total:</span>
                       <span className="font-bold text-xl text-blue-700">
-                        {formatNaira(serviceInfo.price)}
+                        {formatNaira(getTotalPrice())}
                       </span>
                     </div>
                   </div>
@@ -1213,6 +2513,58 @@ const Appointment = () => {
             </div>
           </div>
         </div>
+
+        {/* Add Service Modal */}
+        {showAddService && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+              <div className="p-6 border-b">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-gray-900">Add Another Service</h3>
+                  <button
+                    onClick={() => setShowAddService(false)}
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-6 overflow-y-auto max-h-[60vh]">
+                <div className="grid gap-4">
+                  {allServices
+                    .filter(service => !selectedServices.some(s => s._id === service._id))
+                    .map((service) => (
+                    <div key={service._id} className="p-4 border rounded-lg hover:border-blue-300 transition-colors">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900">{service.title}</h4>
+                          <p className="text-sm text-gray-600 mt-1">{service.description}</p>
+                          <div className="flex items-center space-x-4 mt-2">
+                            <span className="text-sm text-gray-500">
+                              <Clock className="h-4 w-4 inline mr-1" />
+                              {(service.duration || 90)}
+                            </span>
+                            <span className="text-sm font-medium text-blue-600">
+                              {formatNaira(service.price)}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => addService(service)}
+                          className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Payment Modal */}
         {showPayment && (
@@ -1234,9 +2586,14 @@ const Appointment = () => {
                   <p className="font-medium text-gray-900">
                     {formatDate(selectedDate)} at {selectedTime}
                   </p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {serviceInfo.title} ({serviceInfo.duration || 90} minutes)
-                  </p>
+                  <div className="text-sm text-gray-500 mt-2 space-y-1">
+                    {selectedServices.map((service, index) => (
+                      <p key={service._id}>• {service.title}</p>
+                    ))}
+                  </div>
+                  {/* <p className="text-sm text-gray-500 mt-2">
+                    Total Duration: {(getTotalDuration())}
+                  </p> */}
                 </div>
                 
                 <div className="space-y-3 mb-6">
@@ -1245,10 +2602,8 @@ const Appointment = () => {
                     className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition duration-200 shadow-md hover:shadow-lg flex items-center justify-center"
                   >
                     <CreditCard className="h-5 w-5 mr-2" />
-                    Pay Now - {formatNaira(serviceInfo.price)}
+                    Pay Now - {formatNaira(getTotalPrice())}
                   </button>
-                  
-                
                 </div>
                 
                 <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 text-left">

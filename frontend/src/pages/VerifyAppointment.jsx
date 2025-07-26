@@ -6,10 +6,11 @@ import { Loader2 } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 
 export default function VerifyAppointment() {
-  const { appointmentId } = useParams();
+  // const { appointmentId } = useParams();
   const {backendUrl} = useContext(AppContext)
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id');
+    const appointmentId = searchParams.get('appointmentId'); 
   const [status, setStatus] = useState('verifying');
   const [message, setMessage] = useState('');
   const [retryCount, setRetryCount] = useState(0);

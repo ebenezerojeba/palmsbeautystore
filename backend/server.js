@@ -78,9 +78,9 @@ app.use('/api/business', businessRouter)
 
 // Serve .ics files for download
 
-app.get("/", (req, res) => {
-  res.send("API Working Perfctly");
-});
+// app.get("/", (req, res) => {
+//   res.send("API Working Perfctly");
+// });
 
 app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, 'frontend', 'build', 'index.html'));
