@@ -5,8 +5,8 @@ import {toast} from "react-toastify"
 export const AppContext = createContext()
 
 const AppContextProvider = (props) => {
-const backendUrl = "http://localhost:3000"
-// const backendUrl = "https://palmsbeautystore-backend.onrender.com"
+// const backendUrl = "http://localhost:3000"
+const backendUrl = "https://palmsbeautystore-backend.onrender.com"
       const [userData, setUserData] = useState(false)
     const [isLoggedIn, setIsLoggedin] = useState(false)
     const [token, setToken] = useState(localStorage.getItem('token')? localStorage.getItem('token'): "")
