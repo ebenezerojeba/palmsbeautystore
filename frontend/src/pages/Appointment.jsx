@@ -1010,7 +1010,7 @@ const Appointment = () => {
                     <div>
                       <p className="text-sm text-gray-600">Duration</p>
                       <p className="text-lg font-semibold text-gray-900">
-                        {serviceInfo.duration || 90} minutes
+                        {serviceInfo.duration}
                       </p>
                     </div>
                   </div>
