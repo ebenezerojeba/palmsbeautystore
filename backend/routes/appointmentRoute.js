@@ -1,5 +1,5 @@
 import express from 'express'
-import { bookAppointment, cancelAppointment, completeAppointment, downloadCalendar, getAvailableSlots, getSingleAppointment, getUserAppointments, updateAppointmentNotes, verifyAppointmentPayment,  } from '../controllers/appointmentController.js'
+import { bookAppointment, cancelAppointment, completeAppointment, downloadCalendar, getAvailableSlots, getSingleAppointment, getUserAppointments, handleStripeRedirect, updateAppointmentNotes, verifyAppointmentPayment,  } from '../controllers/appointmentController.js'
 import authUser from '../middlewares/auth.js';
 
 const appointmentRouter = express.Router()

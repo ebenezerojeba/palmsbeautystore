@@ -1053,6 +1053,14 @@ const downloadCalendar = async (req, res) => {
   }
 };
 
+const getSingleAppointment = async (req, res) => {
+  try {
+    
+  } catch (error) {
+    
+  }
+}
+
 export {
   getAvailableSlots,
   bookAppointment,
@@ -1062,5 +1070,6 @@ export {
   getUserAppointments,
   completeAppointment,
   downloadCalendar,
-  getSingleAppointment
+  getSingleAppointment,
+  handleStripeRedirect
 };
