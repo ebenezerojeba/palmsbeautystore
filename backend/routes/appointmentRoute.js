@@ -8,9 +8,7 @@ appointmentRouter.get('/available-slots', getAvailableSlots);
 appointmentRouter.get('/:id', authUser, getSingleAppointment);
 appointmentRouter.post('/book-appointment', authUser, bookAppointment);
 appointmentRouter.post('/book-multiple-appointment', authUser, bookMultipleAppointment);
-// appointmentRouter.post('/verify', authUser, verifyAppointmentPayment);
-appointmentRouter.get('/verify/:appointmentId', authUser, verifyAppointmentPayment);
-
+appointmentRouter.post('/verify', authUser, verifyAppointmentPayment);
 // Add GET route to handle Stripe redirect
 appointmentRouter.get('/verify/:appointmentId', authUser, handleStripeRedirect);
 
