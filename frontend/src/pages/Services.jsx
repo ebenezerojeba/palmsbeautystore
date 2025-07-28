@@ -6,14 +6,14 @@ import { AppContext } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 
 const Services = () => {
-  const [services, setServices] = useState([]); // array of categories
+  const [services, setServices] = useState([]);
   const [expanded, setExpanded] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const navigate = useNavigate();
-  const { backendUrl } = useContext(AppContext); // Assuming you have a context for the backend URL
+  const { backendUrl } = useContext(AppContext);
 
   useEffect(() => {
     fetchServices();
@@ -38,24 +38,25 @@ const Services = () => {
     }));
   };
 
-const handleBook = (service) => {
+  const handleBook = (service) => {
     navigate(`/appointment/${service._id}`);
-  }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin" />
+        <Loader2 className="w-8 h-8 animate-spin text-gray-600" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-600">Error loading services: {error}</p>
+      <div className="text-center py-16">
+        <p className="text-red-600 text-lg font-medium">Error loading services: {error}</p>
         <button
           onClick={fetchServices}
-          className="mt-4 bg-pink-600 text-white px-4 py-2 rounded hover:bg-pink-700"
+          className="mt-6 bg-gray-600 text-white px-6 py-2 rounded-md hover:bg-gray-700 transition-all"
         >
           Try Again
         </button>
@@ -64,26 +65,27 @@ const handleBook = (service) => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-center mb-8">Book a Service</h1>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <h1 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-10">
+        Book a Service
+      </h1>
 
-      <div className="max-w-md mx-auto mb-6">
-  <input
-    type="text"
-    placeholder="Search services..."
-    value={searchQuery}
-    onChange={(e) => setSearchQuery(e.target.value)}
-    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none "
-  />
-</div>
-
+      <div className="max-w-xl mx-auto mb-10">
+        <input
+          type="text"
+          placeholder="Search services..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500"
+        />
+      </div>
 
       {services.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-600">No service available at the moment.</p>
         </div>
       ) : (
-           <div className="space-y-8">
+        <div className="space-y-10">
           {services.map((category) => {
             const filteredSubServices = category.subServices.filter((service) =>
               service.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -95,18 +97,18 @@ const handleBook = (service) => {
               <div key={category._id}>
                 <button
                   onClick={() => toggleCategory(category._id)}
-                  className="flex items-center justify-between w-full text-left text-2xl font-semibold mb-4 text-gray-900 focus:outline-none"
+                  className="flex items-center gap-3 w-full text-left text-2xl font-semibold text-gray-800 hover:text-gray-600 transition-all"
                 >
-                  <span>{category.title}</span>
                   {expanded[category._id] ? (
                     <ChevronDown className="w-5 h-5" />
                   ) : (
                     <ChevronRight className="w-5 h-5" />
                   )}
+                  <span>{category.title}</span>
                 </button>
 
                 {expanded[category._id] && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
                     {filteredSubServices.map((service) => (
                       <ServiceCard
                         key={service._id}

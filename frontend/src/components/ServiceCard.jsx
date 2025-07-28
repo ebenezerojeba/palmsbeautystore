@@ -21,6 +21,18 @@ const ServiceCard = ({
 
   const navigate = useNavigate()
 
+  const formatDuration = (minutes) => {
+  if (!minutes || isNaN(minutes)) return '0m';
+
+  const hrs = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+
+  if (hrs && mins) return `${hrs}h ${mins}m`;
+  if (hrs) return `${hrs}h`;
+  return `${mins}m`;
+};
+
+
 const handleBooking = (e) => {
   e.stopPropagation();
 
@@ -38,7 +50,7 @@ const handleBooking = (e) => {
 
   return (
     <div
-      className={`group relative bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 hover:border-gray-200 ${
+      className={`group relative bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 ${
         hasImage ? 'flex flex-row sm:flex-col' : 'flex flex-col'
       }`}
       onMouseEnter={() => setIsHovered(true)}
@@ -65,7 +77,7 @@ const handleBooking = (e) => {
       <div className="flex-1 p-4 flex flex-col justify-between">
         {/* Title & Description */}
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-gray-900 leading-tight group-hover:text-purple-700 transition-colors">
+          <h3 className="text-lg font-semibold text-gray-900 leading-tight">
             {title}
           </h3>
           <p className="text-gray-600 text-sm leading-relaxed line-clamp-2">
@@ -77,7 +89,7 @@ const handleBooking = (e) => {
         <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
           <div className="flex items-center gap-1 text-gray-700 text-sm">
             <Clock className="w-4 h-4 text-gray-500" />
-            {duration || '45 min'}minutes
+            {formatDuration(duration)}
           </div>
           <div className="flex items-center gap-2">
             {originalPrice && (
@@ -100,7 +112,7 @@ const handleBooking = (e) => {
         {/* Book Button */}
         <button
           onClick={handleBooking}
-          className={`mt-3 w-full py-2.5 px-4 rounded-xl font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 group/btn ${
+          className={`mt-3 w-full py-2.5 px-4 rounded-xl cursor-pointer font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 group/btn ${
             isHovered ? 'bg-gray-800 shadow-md' : 'bg-gray-700'
           }`}
         >
