@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { Clock, Calendar, ArrowRight } from 'lucide-react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 import { toast } from 'react-toastify';
 
@@ -19,7 +19,9 @@ const ServiceCard = ({
   const [isHovered, setIsHovered] = useState(false);
   const{token} =useContext(AppContext)
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+const location = useLocation();
+
 
   const formatDuration = (minutes) => {
   if (!minutes || isNaN(minutes)) return '0m';
@@ -38,7 +40,8 @@ const handleBooking = (e) => {
 
   if (!token) {
     toast.warn("Kindly login to book this service");
-    navigate('/login');
+   navigate('/login', { state: { from: location } });
+
     return; // Prevent onBook from being called
   }
 

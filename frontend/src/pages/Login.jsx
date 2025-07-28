@@ -285,10 +285,11 @@
 import React, { useState, useContext, useEffect } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { useSpring, animated, config } from "react-spring";
 import { Mail, Lock, User, EyeOff, Eye, Loader2 } from "lucide-react";
 import { AppContext } from "../context/AppContext";
+
 import { assets } from "../assets/assets";
 
 const InputField = ({
@@ -348,6 +349,9 @@ const LoadingSpinner = () => (
 const Login = () => {
   const { backendUrl, token, setToken } = useContext(AppContext);
   const navigate = useNavigate();
+  const location = useLocation();
+const from = location.state?.from?.pathname || "/";
+
 
   const [state, setState] = useState("Sign Up");
   const [email, setEmail] = useState("");
@@ -405,11 +409,12 @@ const Login = () => {
     }
   };
 
-  useEffect(() => {
-    if (token) {
-      navigate("/");
-    }
-  }, [token, navigate]);
+ useEffect(() => {
+  if (token) {
+    navigate(from, { replace: true });
+  }
+}, [token, from, navigate]);
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">

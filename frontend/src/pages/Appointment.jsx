@@ -566,7 +566,7 @@ const Appointment = () => {
             <div className="text-center">
               <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Appointment Reserved!
+                Ypu are almost there!
               </h3>
               <p className="text-gray-600 mb-6">
                 Complete payment to confirm your booking
@@ -590,14 +590,6 @@ const Appointment = () => {
                 Pay Now - {formatNaira(getTotalPrice())}
               </button>
 
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 text-left">
-                <div className="flex">
-                  <Info className="h-4 w-4 text-yellow-500 mr-2 mt-0.5" />
-                  <p className="text-sm text-yellow-700">
-                    Slot reserved for 15 minutes. Complete payment to confirm.
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
