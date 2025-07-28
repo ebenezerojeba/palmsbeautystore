@@ -537,10 +537,10 @@ const Appointment = () => {
                           <p className="text-sm text-gray-500 mt-1">{service.description}</p>
                           <div className="flex items-center space-x-4 mt-2">
                             <span className="text-sm text-gray-500">
-                              {service.duration}
+                              {formatDuration(service.duration)}
                             </span>
                             <span className="text-sm font-medium text-gray-900">
-                              {service.price}
+                              {formatNaira(service.price)}
                             </span>
                           </div>
                         </div>

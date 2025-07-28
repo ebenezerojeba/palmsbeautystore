@@ -77,7 +77,7 @@ const handleBooking = (e) => {
         <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
           <div className="flex items-center gap-1 text-gray-700 text-sm">
             <Clock className="w-4 h-4 text-gray-500" />
-            {duration || '45 min'}
+            {duration || '45 min'}minutes
           </div>
           <div className="flex items-center gap-2">
             {originalPrice && (
