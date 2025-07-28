@@ -7,9 +7,12 @@ import appointmentModel from "../models/appointment.js";
 // import { configDotenv } from "dotenv";
 // configDotenv()
 // 
-const createToken = (id) => {
-    return jwt.sign({id}, process.env.JWT_SECRET)
-}
+
+const createToken = (userId) => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET, {
+    expiresIn: '1h' // Token will expire in 1 hour
+  });
+};
 
 // Route for Login
 const loginUser = async (req, res) => {
@@ -137,87 +140,6 @@ const adminLogin = async (req, res) => {
         res.json({success: false, message: error.message})
     }
 }
-
-
-// // API to update the  user profile
-
-// const updateProfile = async (req, res) => {
-//   try {
-//     const { userId, name, phone, address, dob, gender } = req.body;
-//     const imageFile = req.file;
-
-//     // Validate required fields
-//     if (!name || !phone || !gender || !dob) {
-//       return res.status(400).json({ success: false, message: "Missing required fields" });
-//     }
-
-//     // Prepare update data with proper date handling
-//     const updateData = { 
-//       name, 
-//       phone, 
-//       dob: new Date(dob), // Ensure dob is stored as Date object
-//       gender 
-//     };
-
-//     // Handle address
-//     if (address) {
-//       try {
-//         updateData.address = typeof address === 'string' ? JSON.parse(address) : address;
-//         // Ensure address has consistent structure
-//         updateData.address = {
-//           line1: updateData.address.line1 || '',
-//           line2: updateData.address.line2 || ''
-//         };
-//       } catch (err) {
-//         console.error("Address parsing error:", err);
-//         updateData.address = { line1: '', line2: '' };
-//       }
-//     }
-
-//     // Update user data
-//     let updatedUser = await userModel.findByIdAndUpdate(
-//       userId, 
-//       updateData, 
-//       { new: true } // Return the updated document
-//     );
-
-//     // Handle image upload if present
-//     if (imageFile) {
-//       const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
-//         resource_type: "image",
-//         folder: "user-profiles"
-//       });
-//       updatedUser = await userModel.findByIdAndUpdate(
-//         userId, 
-//         { image: imageUpload.secure_url },
-//         { new: true }
-//       );
-//     }
-
-//     // Format the response data with safe date handling
-//     const responseData = {
-//       ...updatedUser._doc,
-//       dob: updatedUser.dob instanceof Date 
-//         ? updatedUser.dob.toISOString().split('T')[0] 
-//         : new Date(updatedUser.dob).toISOString().split('T')[0]
-//     };
-
-//     res.json({ 
-//       success: true, 
-//       message: "Profile updated successfully", 
-//       user: responseData 
-//     });
-
-//   } catch (error) {
-//     console.error("Profile update error:", error);
-//     res.status(500).json({ 
-//       success: false, 
-//       message: "Internal server error",
-//       error: process.env.NODE_ENV === 'development' ? error.message : undefined
-//     });
-//   }
-// };
-
 
 
 
