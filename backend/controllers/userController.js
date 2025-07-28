@@ -139,28 +139,121 @@ const adminLogin = async (req, res) => {
 }
 
 
-// API to update the  user profile
+// // API to update the  user profile
+
+// const updateProfile = async (req, res) => {
+//   try {
+//     const { userId, name, phone, address, dob, gender } = req.body;
+//     const imageFile = req.file;
+
+//     // Validate required fields
+//     if (!name || !phone || !gender || !dob) {
+//       return res.status(400).json({ success: false, message: "Missing required fields" });
+//     }
+
+//     // Prepare update data with proper date handling
+//     const updateData = { 
+//       name, 
+//       phone, 
+//       dob: new Date(dob), // Ensure dob is stored as Date object
+//       gender 
+//     };
+
+//     // Handle address
+//     if (address) {
+//       try {
+//         updateData.address = typeof address === 'string' ? JSON.parse(address) : address;
+//         // Ensure address has consistent structure
+//         updateData.address = {
+//           line1: updateData.address.line1 || '',
+//           line2: updateData.address.line2 || ''
+//         };
+//       } catch (err) {
+//         console.error("Address parsing error:", err);
+//         updateData.address = { line1: '', line2: '' };
+//       }
+//     }
+
+//     // Update user data
+//     let updatedUser = await userModel.findByIdAndUpdate(
+//       userId, 
+//       updateData, 
+//       { new: true } // Return the updated document
+//     );
+
+//     // Handle image upload if present
+//     if (imageFile) {
+//       const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+//         resource_type: "image",
+//         folder: "user-profiles"
+//       });
+//       updatedUser = await userModel.findByIdAndUpdate(
+//         userId, 
+//         { image: imageUpload.secure_url },
+//         { new: true }
+//       );
+//     }
+
+//     // Format the response data with safe date handling
+//     const responseData = {
+//       ...updatedUser._doc,
+//       dob: updatedUser.dob instanceof Date 
+//         ? updatedUser.dob.toISOString().split('T')[0] 
+//         : new Date(updatedUser.dob).toISOString().split('T')[0]
+//     };
+
+//     res.json({ 
+//       success: true, 
+//       message: "Profile updated successfully", 
+//       user: responseData 
+//     });
+
+//   } catch (error) {
+//     console.error("Profile update error:", error);
+//     res.status(500).json({ 
+//       success: false, 
+//       message: "Internal server error",
+//       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+//     });
+//   }
+// };
+
+
+
+
+// API to update user profile - supports partial updates
 
 const updateProfile = async (req, res) => {
   try {
     const { userId, name, phone, address, dob, gender } = req.body;
     const imageFile = req.file;
 
-    // Validate required fields
-    if (!name || !phone || !gender || !dob) {
-      return res.status(400).json({ success: false, message: "Missing required fields" });
+    // Validate that userId is provided
+    if (!userId) {
+      return res.status(400).json({ success: false, message: "User ID is required" });
     }
 
-    // Prepare update data with proper date handling
-    const updateData = { 
-      name, 
-      phone, 
-      dob: new Date(dob), // Ensure dob is stored as Date object
-      gender 
-    };
+    // Check if user exists
+    const existingUser = await userModel.findById(userId);
+    if (!existingUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
 
-    // Handle address
-    if (address) {
+    // Build update data only with provided fields
+    const updateData = {};
+
+    // Only add fields that are provided in the request
+    if (name !== undefined) updateData.name = name;
+    if (phone !== undefined) updateData.phone = phone;
+    if (gender !== undefined) updateData.gender = gender;
+    
+    // Handle DOB with proper date conversion
+    if (dob !== undefined) {
+      updateData.dob = new Date(dob);
+    }
+
+    // Handle address if provided
+    if (address !== undefined) {
       try {
         updateData.address = typeof address === 'string' ? JSON.parse(address) : address;
         // Ensure address has consistent structure
@@ -174,12 +267,15 @@ const updateProfile = async (req, res) => {
       }
     }
 
-    // Update user data
-    let updatedUser = await userModel.findByIdAndUpdate(
-      userId, 
-      updateData, 
-      { new: true } // Return the updated document
-    );
+    // Update user data only if there are fields to update
+    let updatedUser = existingUser;
+    if (Object.keys(updateData).length > 0) {
+      updatedUser = await userModel.findByIdAndUpdate(
+        userId, 
+        updateData, 
+        { new: true } // Return the updated document
+      );
+    }
 
     // Handle image upload if present
     if (imageFile) {
@@ -194,13 +290,25 @@ const updateProfile = async (req, res) => {
       );
     }
 
+    // Check if any update was actually made
+    if (Object.keys(updateData).length === 0 && !imageFile) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "No fields provided for update" 
+      });
+    }
+
     // Format the response data with safe date handling
     const responseData = {
-      ...updatedUser._doc,
-      dob: updatedUser.dob instanceof Date 
-        ? updatedUser.dob.toISOString().split('T')[0] 
-        : new Date(updatedUser.dob).toISOString().split('T')[0]
+      ...updatedUser._doc
     };
+
+    // Format DOB for response if it exists
+    if (responseData.dob) {
+      responseData.dob = responseData.dob instanceof Date 
+        ? responseData.dob.toISOString().split('T')[0] 
+        : new Date(responseData.dob).toISOString().split('T')[0];
+    }
 
     res.json({ 
       success: true, 
@@ -217,6 +325,10 @@ const updateProfile = async (req, res) => {
     });
   }
 };
+
+
+
+
 
 // API to get userData if it's verified or not
 const getUserData = async (req, res) => {
