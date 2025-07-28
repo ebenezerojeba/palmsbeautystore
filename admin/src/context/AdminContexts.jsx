@@ -18,7 +18,8 @@ const [loadingId, setLoadingId] = useState(null);
 
  
   // const backendUrl = "https://palmsbeauty-backend.vercel.app";
-  const backendUrl = "https://palmsbeautystore-backend.onrender.com"
+  // const backendUrl = "https://palmsbeautystore-backend.onrender.com"
+  const backendUrl = "http://localhost:3000"
 
   const months = [
     "",
