@@ -566,7 +566,7 @@ const Appointment = () => {
             <div className="text-center">
               <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Ypu are almost there!
+                You are almost there!
               </h3>
               <p className="text-gray-600 mb-6">
                 Complete payment to confirm your booking
