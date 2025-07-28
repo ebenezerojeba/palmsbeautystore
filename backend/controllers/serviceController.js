@@ -48,6 +48,17 @@ const publicServices = async (req, res) => {
 };
 
 
+// Get only individual services (not categories)
+const getOnlyServices = async (req, res) => {
+  try {
+    const services = await serviceModel.find({ isCategory: false, isActive: true });
+    res.json({ services });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch services' });
+  }
+};
 
 
-export {getAllServices, getServiceById, publicServices};
+
+
+export {getAllServices, getServiceById, publicServices, getOnlyServices};

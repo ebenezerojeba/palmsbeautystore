@@ -281,123 +281,123 @@ const cancelAppointment = async (req, res) => {
 
 
 
-const getAvailableSlots = async (req, res) => {
-  try {
-    const { serviceId, startDate, endDate, duration } = req.query;
+// const getAvailableSlots = async (req, res) => {
+//   try {
+//     const { serviceId, startDate, endDate, duration } = req.query;
     
-    // Use provided duration or default to 90 minutes
-    const appointmentDuration = parseInt(duration) || 90;
+//     // Use provided duration or default to 90 minutes
+//     const appointmentDuration = parseInt(duration) || 90;
     
-    // Your existing slot generation logic here...
-      const businessHours = await businessHoursModel.find().sort({ dayOfWeek: 1 });
+//     // Your existing slot generation logic here...
+//       const businessHours = await businessHoursModel.find().sort({ dayOfWeek: 1 });
     
-    if (!businessHours.length) {
-      return res.status(404).json({ message: "Business hours not configured" });
-    }
-    // But now consider the total duration when checking availability
+//     if (!businessHours.length) {
+//       return res.status(404).json({ message: "Business hours not configured" });
+//     }
+//     // But now consider the total duration when checking availability
     
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const availableSlots = [];
+//     const start = new Date(startDate);
+//     const end = new Date(endDate);
+//     const availableSlots = [];
     
-    // Generate time slots (9 AM to 6 PM, 30-minute intervals)
-    const timeSlots = [];
-    for (let hour = 9; hour < 18; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        timeSlots.push(timeString);
-      }
-    }
+//     // Generate time slots (9 AM to 6 PM, 30-minute intervals)
+//     const timeSlots = [];
+//     for (let hour = 9; hour < 18; hour++) {
+//       for (let minute = 0; minute < 60; minute += 30) {
+//         const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+//         timeSlots.push(timeString);
+//       }
+//     }
     
-    // Check each day in the range
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const daySlots = [];
-      const dayOfWeek = d.toLocaleDateString('en-US', { weekday: 'long' });
+//     // Check each day in the range
+//     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+//       const daySlots = [];
+//       const dayOfWeek = d.toLocaleDateString('en-US', { weekday: 'long' });
       
-      // Check each time slot
-      for (const timeSlot of timeSlots) {
-        // Check if this slot can accommodate the full duration
-        const slotStart = new Date(d);
-        const [hours, minutes] = timeSlot.split(':').map(Number);
-        slotStart.setHours(hours, minutes, 0, 0);
+//       // Check each time slot
+//       for (const timeSlot of timeSlots) {
+//         // Check if this slot can accommodate the full duration
+//         const slotStart = new Date(d);
+//         const [hours, minutes] = timeSlot.split(':').map(Number);
+//         slotStart.setHours(hours, minutes, 0, 0);
         
-        const slotEnd = new Date(slotStart.getTime() + appointmentDuration * 60000);
+//         const slotEnd = new Date(slotStart.getTime() + appointmentDuration * 60000);
         
-        // Don't allow slots that go past 6 PM
-        if (slotEnd.getHours() >= 18) {
-          continue;
-        }
+//         // Don't allow slots that go past 6 PM
+//         if (slotEnd.getHours() >= 18) {
+//           continue;
+//         }
         
-        // Check for conflicts with existing appointments
-        const conflictingAppointment = await appointmentModel.findOne({
-          date: {
-            $gte: new Date(d.getFullYear(), d.getMonth(), d.getDate()),
-            $lt: new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)
-          },
-          status: { $in: ['pending', 'confirmed'] },
-          $or: [
-            // New appointment starts during existing appointment
-            {
-              $and: [
-                { time: { $lte: timeSlot } },
-                { $expr: {
-                  $gte: [
-                    { $dateAdd: {
-                      startDate: {
-                        $dateFromParts: {
-                          year: { $year: "$date" },
-                          month: { $month: "$date" },
-                          day: { $dayOfMonth: "$date" },
-                          hour: { $toInt: { $substr: ["$time", 0, 2] } },
-                          minute: { $toInt: { $substr: ["$time", 3, 2] } }
-                        }
-                      },
-                      unit: "minute",
-                      amount: { $ifNull: ["$totalDuration", { $toInt: "$duration" }] }
-                    }},
-                    slotStart
-                  ]
-                }}
-              ]
-            },
-            // Existing appointment starts during new appointment
-            {
-              $and: [
-                { time: { $gte: timeSlot } },
-                { time: { $lt: slotEnd.toTimeString().slice(0, 5) } }
-              ]
-            }
-          ]
-        });
+//         // Check for conflicts with existing appointments
+//         const conflictingAppointment = await appointmentModel.findOne({
+//           date: {
+//             $gte: new Date(d.getFullYear(), d.getMonth(), d.getDate()),
+//             $lt: new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)
+//           },
+//           status: { $in: ['pending', 'confirmed'] },
+//           $or: [
+//             // New appointment starts during existing appointment
+//             {
+//               $and: [
+//                 { time: { $lte: timeSlot } },
+//                 { $expr: {
+//                   $gte: [
+//                     { $dateAdd: {
+//                       startDate: {
+//                         $dateFromParts: {
+//                           year: { $year: "$date" },
+//                           month: { $month: "$date" },
+//                           day: { $dayOfMonth: "$date" },
+//                           hour: { $toInt: { $substr: ["$time", 0, 2] } },
+//                           minute: { $toInt: { $substr: ["$time", 3, 2] } }
+//                         }
+//                       },
+//                       unit: "minute",
+//                       amount: { $ifNull: ["$totalDuration", { $toInt: "$duration" }] }
+//                     }},
+//                     slotStart
+//                   ]
+//                 }}
+//               ]
+//             },
+//             // Existing appointment starts during new appointment
+//             {
+//               $and: [
+//                 { time: { $gte: timeSlot } },
+//                 { time: { $lt: slotEnd.toTimeString().slice(0, 5) } }
+//               ]
+//             }
+//           ]
+//         });
         
-        if (!conflictingAppointment) {
-          daySlots.push({
-            time: timeSlot,
-            available: true
-          });
-        }
-      }
+//         if (!conflictingAppointment) {
+//           daySlots.push({
+//             time: timeSlot,
+//             available: true
+//           });
+//         }
+//       }
       
-      if (daySlots.length > 0) {
-        availableSlots.push({
-          date: d.toISOString().split('T')[0],
-          dayOfWeek,
-          slots: daySlots
-        });
-      }
-    }
+//       if (daySlots.length > 0) {
+//         availableSlots.push({
+//           date: d.toISOString().split('T')[0],
+//           dayOfWeek,
+//           slots: daySlots
+//         });
+//       }
+//     }
     
-    res.status(200).json({
-      availableSlots,
-      appointmentDuration,
-      message: `Available slots for ${appointmentDuration} minute appointment`
-    });
+//     res.status(200).json({
+//       availableSlots,
+//       appointmentDuration,
+//       message: `Available slots for ${appointmentDuration} minute appointment`
+//     });
     
-  } catch (error) {
-    console.error("Error fetching available slots:", error);
-    res.status(500).json({ message: "Failed to fetch available slots" });
-  }
-};
+//   } catch (error) {
+//     console.error("Error fetching available slots:", error);
+//     res.status(500).json({ message: "Failed to fetch available slots" });
+//   }
+// };
 
 
 
@@ -407,53 +407,53 @@ const getAvailableSlots = async (req, res) => {
 
 
 // // Get business hours and available slots
-// const getAvailableSlots = async (req, res) => {
-//   try {
-//     const { serviceId, startDate, endDate } = req.query;
+const getAvailableSlots = async (req, res) => {
+  try {
+    const { serviceId, startDate, endDate } = req.query;
     
-//     // Get business hours
-    // const businessHours = await businessHoursModel.find().sort({ dayOfWeek: 1 });
+    // Get business hours
+    const businessHours = await businessHoursModel.find().sort({ dayOfWeek: 1 });
     
-    // if (!businessHours.length) {
-    //   return res.status(404).json({ message: "Business hours not configured" });
-    // }
+    if (!businessHours.length) {
+      return res.status(404).json({ message: "Business hours not configured" });
+    }
     
-//     const start = new Date(startDate || new Date());
-//     const end = new Date(endDate || new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)); // 10 days ahead
+    const start = new Date(startDate || new Date());
+    const end = new Date(endDate || new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)); // 10 days ahead
     
-//     const availableSlots = [];
+    const availableSlots = [];
     
-//     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-//       const dayOfWeek = d.getDay();
-//       const businessDay = businessHours.find(bh => bh.dayOfWeek === dayOfWeek);
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dayOfWeek = d.getDay();
+      const businessDay = businessHours.find(bh => bh.dayOfWeek === dayOfWeek);
       
-//       if (!businessDay || !businessDay.isOpen) continue;
+      if (!businessDay || !businessDay.isOpen) continue;
       
-//       const dateStr = d.toISOString().split('T')[0];
+      const dateStr = d.toISOString().split('T')[0];
       
-//       // Get existing appointments for this date
-//       const existingAppointments = await appointmentModel.find({
-//         date: new Date(dateStr),
-//         status: { $in: ['pending', 'confirmed'] }
-//       }).select('time duration');
+      // Get existing appointments for this date
+      const existingAppointments = await appointmentModel.find({
+        date: new Date(dateStr),
+        status: { $in: ['pending', 'confirmed'] }
+      }).select('time duration');
       
-//       const slots = generateTimeSlots(businessDay, existingAppointments, new Date(d));
+      const slots = generateTimeSlots(businessDay, existingAppointments, new Date(d));
       
-//       if (slots.length > 0) {
-//         availableSlots.push({
-//           date: dateStr,
-//           dayOfWeek: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayOfWeek],
-//           slots
-//         });
-//       }
-//     }
+      if (slots.length > 0) {
+        availableSlots.push({
+          date: dateStr,
+          dayOfWeek: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayOfWeek],
+          slots
+        });
+      }
+    }
     
-//     res.status(200).json({ availableSlots });
-//   } catch (error) {
-//     console.error("Error fetching available slots:", error);
-//     res.status(500).json({ message: "Failed to fetch available slots" });
-//   }
-// };
+    res.status(200).json({ availableSlots });
+  } catch (error) {
+    console.error("Error fetching available slots:", error);
+    res.status(500).json({ message: "Failed to fetch available slots" });
+  }
+};
 
 // Helper function to generate time slots
 const generateTimeSlots = (businessDay, existingAppointments, date) => {
