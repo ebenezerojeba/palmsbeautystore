@@ -13,10 +13,7 @@ const backendUrl = "https://palmsbeautystore-backend.onrender.com"
 
    
 const loadUserProfileData = async () => {
-  try {
-    // Get token from localStorage (or your auth context)
-    const token = localStorage.getItem('token'); // or from context
-    
+  try { 
     if (!token) {
       toast.error("Please login first");
       return;
@@ -47,17 +44,6 @@ const loadUserProfileData = async () => {
   }
 };
 
-    // const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
-// const backendUrl = "https://palmsbeautystore-backend.onrender.com"
-// const backendUrl = "https://palmsbeauty-backend.vercel.app";
-    const value = {
-        
-        backendUrl,
-        userData,setUserData,isLoggedIn,setIsLoggedin,loadUserProfileData,token,setToken
-        
-    }
- 
    useEffect(()=>{
     if (token) {
       loadUserProfileData()
@@ -66,6 +52,12 @@ const loadUserProfileData = async () => {
       setUserData(false)
     }
   },[token])
+
+    const value = { 
+        backendUrl,
+        userData,setUserData,isLoggedIn,setIsLoggedin,loadUserProfileData,token,setToken
+        
+    }
 
      
     return (
