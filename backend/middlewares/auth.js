@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
-import dotevn from "dotenv";
-dotevn.config();
+import dotenv from "dotenv"; // Also fixed the typo
+dotenv.config();
 
 const authUser = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -19,11 +19,11 @@ const authUser = async (req, res, next) => {
     });
   }
 
-  const token = authHeader.split(" ")[1]; // Extract token part
+  const token = authHeader.split(" ")[1];
 
   try {
     const tokenDecode = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = tokenDecode.id;
+    req.userId = tokenDecode.userId; // Changed from tokenDecode.id
     next();
   } catch (error) {
     console.error("JWT verification error:", error);
