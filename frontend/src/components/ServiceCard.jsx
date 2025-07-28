@@ -14,40 +14,47 @@ const ServiceCard = ({
   onBook,
   discount = null,
   originalPrice = null,
+  categoryId,
+  serviceId,
   availability = "Available Today"
 }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const{token} =useContext(AppContext)
+  const { token } = useContext(AppContext);
 
   const navigate = useNavigate();
-const location = useLocation();
-
+  const location = useLocation();
 
   const formatDuration = (minutes) => {
-  if (!minutes || isNaN(minutes)) return '0m';
+    if (!minutes || isNaN(minutes)) return '0m';
 
-  const hrs = Math.floor(minutes / 60);
-  const mins = minutes % 60;
+    const hrs = Math.floor(minutes / 60);
+    const mins = minutes % 60;
 
-  if (hrs && mins) return `${hrs}h ${mins}m`;
-  if (hrs) return `${hrs}h`;
-  return `${mins}m`;
-};
+    if (hrs && mins) return `${hrs}h ${mins}m`;
+    if (hrs) return `${hrs}h`;
+    return `${mins}m`;
+  };
 
+  const handleBooking = (e) => {
+    e.stopPropagation();
 
-const handleBooking = (e) => {
-  e.stopPropagation();
+    if (!token) {
+      toast.warn("Kindly login to book this service");
+      // Navigate to login with the appointment route as the intended destination
+      navigate('/login', {
+        state: {
+          from: `/appointment/${serviceId}`, // This should be the appointment route, not current location
+          category: categoryId,
+          service: serviceId,
+          scrollY: window.scrollY,
+        },
+      });
+      return;
+    }
 
-  if (!token) {
-    toast.warn("Kindly login to book this service");
-   navigate('/login', { state: { from: location } });
-
-    return; // Prevent onBook from being called
-  }
-
-  onBook?.(); // Only run if the user is authenticated
-};
-;
+    // If user is authenticated, proceed with booking
+    onBook?.();
+  };
 
   const hasImage = Boolean(image);
 

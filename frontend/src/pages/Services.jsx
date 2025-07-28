@@ -3,7 +3,7 @@ import { useState, useEffect, useContext } from 'react';
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
 import ServiceCard from '../components/ServiceCard';
 import { AppContext } from '../context/AppContext';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const Services = () => {
   const [services, setServices] = useState([]);
@@ -15,9 +15,26 @@ const Services = () => {
   const navigate = useNavigate();
   const { backendUrl } = useContext(AppContext);
 
+
+  const location = useLocation();
+const { category, service, scrollY } = location.state || {};
+
+
   useEffect(() => {
     fetchServices();
   }, []);
+
+useEffect(() => {
+  if (category) {
+    setExpanded(prev => ({ ...prev, [category]: true }));
+  }
+
+  if (scrollY !== undefined) {
+    window.scrollTo({ top: scrollY, behavior: "smooth" });
+  }
+}, [category, scrollY]);
+
+
 
   const fetchServices = async () => {
     try {
@@ -119,6 +136,8 @@ const Services = () => {
                         image={service.image}
                         isActive={service.isActive}
                         onBook={() => handleBook(service)}
+                        categoryId={category._id} 
+                        serviceId={service._id}
                       />
                     ))}
                   </div>
