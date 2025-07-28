@@ -2,37 +2,6 @@
 import nodemailer from "nodemailer";
 import { transporter } from "../utils/emailSender.js";
 
-
-// const subscribe = async (req, res) => {
-//   const { email } = req.body;
-
-//   try {
-//     const existingSubscriber = await subscribeModel.findOne({ email });
-//     if (existingSubscriber) {
-//       return res
-//         .status(400)
-//         .json({ success: false, message: "Email already subscribed." });
-//     }
-
-//     const newSubscriber = new subscribeModel({ email });
-//     await newSubscriber.save();
-
-//     await transporter.sendMail({
-//         from: process.env.EMAIL_USER,
-//         to: email,
-//         subject: 'Welcome to Our Service',
-//         text: 'Thank you for subscribing! We are excited to have you on board.',
-//       });
-
-//     res
-//       .status(201)
-//       .json({ success: true, message: "Thank you for joining our community!" });
-//   } catch (error) {
-//     res.status(500).json({ success: false, message: "Server error." });
-//   }
-// };
-
-
 const subscribe = async (req, res) => {
     const { email } = req.body;
   
