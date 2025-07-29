@@ -1,7 +1,8 @@
+
 import React, { useState, useContext, useEffect } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
 import { useSpring, animated, config } from "react-spring";
 import { Mail, Lock, User, EyeOff, Eye, Loader2 } from "lucide-react";
 import { AppContext } from "../context/AppContext";
@@ -66,12 +67,31 @@ const Login = () => {
   const { backendUrl, token, setToken } = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
-  // Extract state from location
-  const from = location.state?.from || '/'; // Default to home if no 'from' state
-  const category = location.state?.category;
-  const service = location.state?.service;
-  const scrollY = location.state?.scrollY;
+  // Get redirect information from multiple sources for better mobile compatibility
+  const getRedirectInfo = () => {
+    // First try URL parameters (most reliable for mobile)
+    const redirectTo = searchParams.get('redirect');
+    const categoryParam = searchParams.get('category');
+    const serviceParam = searchParams.get('service');
+    const scrollParam = searchParams.get('scroll');
+
+    // Fallback to location state
+    const stateFrom = location.state?.from;
+    const stateCategory = location.state?.category;
+    const stateService = location.state?.service;
+    const stateScrollY = location.state?.scrollY;
+
+    return {
+      from: redirectTo || stateFrom || '/',
+      category: categoryParam || stateCategory,
+      service: serviceParam || stateService,
+      scrollY: scrollParam ? parseInt(scrollParam) : stateScrollY,
+    };
+  };
+
+  const redirectInfo = getRedirectInfo();
 
   const [state, setState] = useState("Sign Up");
   const [email, setEmail] = useState("");
@@ -131,19 +151,26 @@ const Login = () => {
 
   useEffect(() => {
     if (token) {
-      // Navigate to the intended destination after successful login
-      if (from.startsWith('/appointment/')) {
-        // If it's an appointment route, navigate directly there
-        navigate(from, { replace: true });
-      } else {
-        // If it's the services page, preserve the state for scrolling and expanding
-        navigate(from, {
-          replace: true,
-          state: { category, service, scrollY },
-        });
-      }
+      const { from, category, service, scrollY } = redirectInfo;
+      
+      // Add a small delay to ensure token is properly set
+      setTimeout(() => {
+        if (from.startsWith('/appointment/')) {
+          // Direct appointment booking
+          navigate(from, { replace: true });
+        } else if (from === '/services' || from.includes('/services')) {
+          // Services page with category/scroll state
+          navigate(from, {
+            replace: true,
+            state: { category, service, scrollY },
+          });
+        } else {
+          // Default redirect
+          navigate(from, { replace: true });
+        }
+      }, 100);
     }
-  }, [token, from, navigate, category, service, scrollY]);
+  }, [token, redirectInfo, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
@@ -184,6 +211,15 @@ const Login = () => {
             ? "Join us to book your appointments easily"
             : "Login to access your account"}
         </p>
+
+        {/* Debug info - remove in production */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mb-4 p-2 bg-gray-800 rounded text-xs text-white">
+            <div>Redirect to: {redirectInfo.from}</div>
+            <div>Category: {redirectInfo.category}</div>
+            <div>Service: {redirectInfo.service}</div>
+          </div>
+        )}
 
         <form onSubmit={onSubmitHandler} className="space-y-4">
           {state === "Sign Up" && (

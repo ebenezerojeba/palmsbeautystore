@@ -40,15 +40,33 @@ const ServiceCard = ({
 
     if (!token) {
       toast.warn("Kindly login to book this service");
-      // Navigate to login with the appointment route as the intended destination
-      navigate('/login', {
+      
+      // Create URL parameters for mobile compatibility
+      const appointmentUrl = `/appointment/${serviceId}`;
+      const loginUrl = `/login?redirect=${encodeURIComponent(appointmentUrl)}`;
+      
+      // Add additional parameters if needed
+      const urlParams = new URLSearchParams();
+      urlParams.set('redirect', appointmentUrl);
+      
+      if (categoryId) {
+        urlParams.set('category', categoryId);
+      }
+      if (serviceId) {
+        urlParams.set('service', serviceId);
+      }
+      urlParams.set('scroll', window.scrollY.toString());
+
+      // Use both URL parameters AND state for maximum compatibility
+      navigate(`/login?${urlParams.toString()}`, {
         state: {
-          from: `/appointment/${serviceId}`, // This should be the appointment route, not current location
+          from: appointmentUrl,
           category: categoryId,
           service: serviceId,
           scrollY: window.scrollY,
         },
       });
+
       return;
     }
 
