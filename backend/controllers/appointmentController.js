@@ -604,7 +604,7 @@ const bookMultipleAppointment = async (req, res) => {
       status: 'pending',
       payment: {
         amount: finalAmount, // Ensure this is always set
-        currency: 'NGN', // Change to NGN for Nigeria
+        currency: 'CAD', // 
         status: 'pending'
       }
     });
@@ -612,7 +612,7 @@ const bookMultipleAppointment = async (req, res) => {
     // Create Stripe checkout session
     const lineItems = processedServices.map(service => ({
       price_data: {
-        currency: 'ngn', // Change to ngn for Nigerian Naira
+        currency: 'cad', // Change to ngn for Nigerian Naira
         product_data: {
           name: service.serviceTitle,
           description: `Duration: ${service.duration} minutes`
