@@ -213,13 +213,7 @@ const Login = () => {
         </p>
 
         {/* Debug info - remove in production */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mb-4 p-2 bg-gray-800 rounded text-xs text-white">
-            <div>Redirect to: {redirectInfo.from}</div>
-            <div>Category: {redirectInfo.category}</div>
-            <div>Service: {redirectInfo.service}</div>
-          </div>
-        )}
+
 
         <form onSubmit={onSubmitHandler} className="space-y-4">
           {state === "Sign Up" && (
