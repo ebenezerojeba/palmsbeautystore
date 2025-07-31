@@ -91,7 +91,7 @@ const Dashboard = () => {
   const StatCard = ({ icon, value, label, bgColor, textColor, status, trend, onClick, isRevenue = false }) => (
     <div 
       className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 transition-all duration-300 hover:shadow-md cursor-pointer hover:border-gray-300
-        ${filterStatus === status ? 'ring-2 ring-blue-500 border-blue-500' : ''}`}
+        ${filterStatus === status ? 'ring-2 ring-gray-500 border-gray-500' : ''}`}
       onClick={() => onClick && onClick(status)}
     >
       <div className="flex items-center justify-between mb-4">
@@ -125,7 +125,7 @@ const Dashboard = () => {
       cancelled: "bg-red-50 text-red-700 border border-red-200",
       completed: "bg-green-50 text-green-700 border border-green-200",
       pending: "bg-yellow-50 text-yellow-700 border border-yellow-200",
-      confirmed: "bg-blue-50 text-blue-700 border border-blue-200",
+      confirmed: "bg-gray-50 text-gray-700 border border-gray-200",
       'no-show': "bg-gray-50 text-gray-700 border border-gray-200",
     };
     
@@ -150,7 +150,7 @@ const Dashboard = () => {
       className={`p-2 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed
         ${color === 'red' ? 'text-red-600 border-red-200 hover:bg-red-50' :
           color === 'green' ? 'text-green-600 border-green-200 hover:bg-green-50' :
-          color === 'blue' ? 'text-blue-600 border-blue-200 hover:bg-blue-50' :
+          color === 'gray' ? 'text-gray-600 border-gray-200 hover:bg-gray-50' :
           'text-gray-600 border-gray-200 hover:bg-gray-50'}`}
       disabled={disabled}
       title={title}
@@ -201,7 +201,7 @@ const Dashboard = () => {
             <div className="mt-4 md:mt-0">
               <button
                 onClick={() => navigate('/appointments')}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
               >
                 View All Appointments
               </button>
@@ -234,8 +234,8 @@ const Dashboard = () => {
             icon={<CheckCircle />}
             value={stats.confirmed}
             label="Confirmed Today"
-            bgColor="bg-blue-100"
-            textColor="text-blue-600"
+            bgColor="bg-gray-100"
+            textColor="text-gray-600"
             status="confirmed"
             trend={8}
             onClick={handleFilterClick}
@@ -306,7 +306,7 @@ const Dashboard = () => {
                     placeholder="Search appointments..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64"
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 w-64"
                   />
                 </div>
                 
@@ -330,7 +330,7 @@ const Dashboard = () => {
                     onClick={() => handleFilterClick(status)}
                     className={`px-3 py-1 rounded-full text-sm font-medium transition-colors
                       ${filterStatus === status 
-                        ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+                        ? 'bg-gray-100 text-gray-700 border border-gray-300' 
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                   >
                     {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
@@ -374,7 +374,7 @@ const Dashboard = () => {
                           <p className="text-sm text-gray-500 mb-2">Additional Services:</p>
                           <div className="flex flex-wrap gap-2">
                             {item.services.slice(1).map((service, idx) => (
-                              <span key={idx} className="text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200">
+                              <span key={idx} className="text-sm bg-gray-50 text-gray-700 px-3 py-1 rounded-full border border-gray-200">
                                 {service.serviceTitle}
                               </span>
                             ))}
@@ -439,7 +439,7 @@ const Dashboard = () => {
                             <ActionButton
                               onClick={() => confirmAppointment && confirmAppointment(item._id)}
                               icon={<CheckCircle className="w-4 h-4" />}
-                              color="blue"
+                              color="gray"
                               title="Confirm Appointment"
                               disabled={loadingId === item._id}
                               loading={loadingId === item._id}
@@ -488,7 +488,7 @@ const Dashboard = () => {
                 </p>
                 <button
                   onClick={() => navigate('/appointments')}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  className="text-gray-600 hover:text-gray-700 text-sm font-medium"
                 >
                   View all appointments →
                 </button>
