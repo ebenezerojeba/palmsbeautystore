@@ -12,14 +12,14 @@ const AdminContextsProvider = (props) => {
     cancelOperation: false,
     completeOperation: false,
   });
-  
-const [loadingId, setLoadingId] = useState(null);
+
+  const [loadingId, setLoadingId] = useState(null);
 
 
- 
+
   // const backendUrl = "https://palmsbeauty-backend.vercel.app";
-  // const backendUrl = "https://palmsbeautystore-backend.onrender.com"
-  const backendUrl = "http://localhost:3000"
+  const backendUrl = "https://palmsbeautystore-backend.onrender.com"
+  // const backendUrl = "http://localhost:3000"
 
   const months = [
     "",
@@ -45,62 +45,116 @@ const [loadingId, setLoadingId] = useState(null);
       ...prev,
       [key]: value,
     }));
-  };
 
-  // API for cancelling appointment
-  const cancelAppointment = async (appointmentId) => {
-    setLoadingId(appointmentId)
-    try {
-      const response = await fetch(`${backendUrl}/api/admin/cancel-appointment`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ appointmentId }),
+
+  }
+
+  // Updated Admin Context Functions
+
+ 
+  // Fixed API for admin cancelling appointment
+const cancelAppointment = async (appointmentId, reason = "Cancelled by admin", cancelledBy = "provider") => {
+  setLoadingId(appointmentId);
+  try {
+    // Get admin auth token (adjust this based on your auth implementation)
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    
+    const response = await fetch(`${backendUrl}/api/admin/cancel-appointment`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        ...(token && { "Authorization": `Bearer ${token}` }) // Add admin auth header
+      },
+      body: JSON.stringify({ 
+        appointmentId, 
+        reason, 
+        cancelledBy 
+      }),
+    });
+    
+    const data = await response.json();
+
+    if (response.ok) {
+      toast.success(data.message);
+
+      // Update dashboard data with new status-based logic
+      setDashData((prevData) => {
+        if (!prevData) return null;
+        return {
+          ...prevData,
+          cancelledAppointments: (prevData.cancelledAppointments || 0) + 1,
+          pendingAppointments: Math.max(0, (prevData.pendingAppointments || 0) - 1),
+          latestAppointments:
+            prevData.latestAppointments?.map((appointment) =>
+              appointment._id === appointmentId
+                ? { 
+                    ...appointment, 
+                    status: 'cancelled', 
+                    cancelledAt: new Date(),
+                    cancellation: {
+                      cancelledBy,
+                      reason,
+                      refundEligible: data.appointment?.cancellation?.refundEligible || false,
+                      cancellationFee: data.appointment?.cancellation?.cancellationFee || 0
+                    }
+                  }
+                : appointment
+            ) || [],
+        };
       });
-      const data = await response.json();
 
-      if (response.ok) {
-        toast.success(data.message);
-        setDashData((prevData) => {
-          if (!prevData) return null;
-          return {
-            ...prevData,
-            cancelledAppointments: data.isCancelled
-              ? (prevData.cancelledAppointments || 0) + 1
-              : prevData.cancelledAppointments || 0,
-            pendingAppointments: Math.max(
-              0,
-              (prevData.pendingAppointments || 0) - 1
-            ),
-            latestAppointments:
-              prevData.latestAppointments?.map((appointment) =>
-                appointment._id === appointmentId
-                  ? { ...appointment, isCancelled: true }
-                  : appointment
-              ) || [],
-          };
-        });
-
-        setAppointments((prevAppointments) =>
-          prevAppointments.map((appointment) =>
-            appointment._id === appointmentId
-              ? { ...appointment, isCancelled: true }
-              : appointment
-          )
-        );
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error("Failed to cancel appointment");
-    } finally {
-      setLoadingId(null);
+      // Update appointments list with complete cancellation data
+      setAppointments((prevAppointments) =>
+        prevAppointments.map((appointment) =>
+          appointment._id === appointmentId
+            ? { 
+                ...appointment, 
+                status: 'cancelled', 
+                cancelledAt: new Date(),
+                cancellation: {
+                  cancelledBy,
+                  reason,
+                  refundEligible: data.appointment?.cancellation?.refundEligible || false,
+                  cancellationFee: data.appointment?.cancellation?.cancellationFee || 0
+                }
+              }
+            : appointment
+        )
+      );
+    } else {
+      toast.error(data.message || "Failed to cancel appointment");
     }
-  };
+  } catch (error) {
+    console.error("Cancel appointment error:", error);
+    toast.error("Failed to cancel appointment. Please try again.");
+  } finally {
+    setLoadingId(null);
+  }
+};
 
-  // API for completing appointment
-  const isCompleted = async (appointmentId) => {
-    // setLoading("completeOperation", true);
-    setLoadingId(appointmentId)
+// Alternative version with admin input for cancellation reason
+const cancelAppointmentWithReason = async (appointmentId) => {
+  // You might want to show a modal/dialog to get the reason
+  const reason = prompt("Please provide a reason for cancellation:") || "Cancelled by admin";
+  
+  if (reason.trim()) {
+    await cancelAppointment(appointmentId, reason, "provider");
+  }
+};
+
+// Usage examples:
+// For simple admin cancellation:
+// cancelAppointment(appointmentId);
+
+// For admin cancellation with custom reason:
+// cancelAppointment(appointmentId, "Service unavailable", "provider");
+
+// For admin cancellation with input dialog:
+// cancelAppointmentWithReason(appointmentId);
+
+  // API for completing appointment (renamed from isCompleted)
+  const completeAppointment = async (appointmentId) => {
+    setLoadingId(appointmentId);
     try {
       const response = await fetch(`${backendUrl}/api/admin/complete-appointment`, {
         method: "POST",
@@ -111,30 +165,28 @@ const [loadingId, setLoadingId] = useState(null);
 
       if (response.ok) {
         toast.success(data.message);
+
+        // Update dashboard data with new status-based logic
         setDashData((prevData) => {
           if (!prevData) return null;
           return {
             ...prevData,
-            completedAppointments: data.isCompleted
-              ? (prevData.completedAppointments || 0) + 1
-              : prevData.completedAppointments || 0,
-            pendingAppointments: Math.max(
-              0,
-              (prevData.pendingAppointments || 0) - 1
-            ),
+            completedAppointments: (prevData.completedAppointments || 0) + 1,
+            pendingAppointments: Math.max(0, (prevData.pendingAppointments || 0) - 1),
             latestAppointments:
               prevData.latestAppointments?.map((appointment) =>
                 appointment._id === appointmentId
-                  ? { ...appointment, isCompleted: true }
+                  ? { ...appointment, status: 'completed', completedAt: new Date() }
                   : appointment
               ) || [],
           };
         });
 
+        // Update appointments list
         setAppointments((prevAppointments) =>
           prevAppointments.map((appointment) =>
             appointment._id === appointmentId
-              ? { ...appointment, isCompleted: true }
+              ? { ...appointment, status: 'completed', completedAt: new Date() }
               : appointment
           )
         );
@@ -142,10 +194,108 @@ const [loadingId, setLoadingId] = useState(null);
         toast.error(data.message);
       }
     } catch (error) {
+      console.error("Complete appointment error:", error);
       toast.error("Failed to complete appointment");
     } finally {
-    //   setLoading("completeOperation", false);
-    setLoadingId(null)
+      setLoadingId(null);
+    }
+  };
+
+  // NEW: API for confirming appointment
+  const confirmAppointment = async (appointmentId) => {
+    setLoadingId(appointmentId);
+    try {
+      const response = await fetch(`${backendUrl}/api/admin/confirm-appointment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appointmentId }),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(data.message);
+
+        // Update dashboard data
+        setDashData((prevData) => {
+          if (!prevData) return null;
+          return {
+            ...prevData,
+            confirmedAppointments: (prevData.confirmedAppointments || 0) + 1,
+            pendingAppointments: Math.max(0, (prevData.pendingAppointments || 0) - 1),
+            latestAppointments:
+              prevData.latestAppointments?.map((appointment) =>
+                appointment._id === appointmentId
+                  ? { ...appointment, status: 'confirmed', confirmedAt: new Date() }
+                  : appointment
+              ) || [],
+          };
+        });
+
+        // Update appointments list
+        setAppointments((prevAppointments) =>
+          prevAppointments.map((appointment) =>
+            appointment._id === appointmentId
+              ? { ...appointment, status: 'confirmed', confirmedAt: new Date() }
+              : appointment
+          )
+        );
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.error("Confirm appointment error:", error);
+      toast.error("Failed to confirm appointment");
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  // NEW: API for marking appointment as no-show
+  const markNoShow = async (appointmentId) => {
+    setLoadingId(appointmentId);
+    try {
+      const response = await fetch(`${backendUrl}/api/admin/mark-no-show`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appointmentId }),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(data.message);
+
+        // Update dashboard data
+        setDashData((prevData) => {
+          if (!prevData) return null;
+          return {
+            ...prevData,
+            noShowAppointments: (prevData.noShowAppointments || 0) + 1,
+            confirmedAppointments: Math.max(0, (prevData.confirmedAppointments || 0) - 1),
+            latestAppointments:
+              prevData.latestAppointments?.map((appointment) =>
+                appointment._id === appointmentId
+                  ? { ...appointment, status: 'no-show' }
+                  : appointment
+              ) || [],
+          };
+        });
+
+        // Update appointments list
+        setAppointments((prevAppointments) =>
+          prevAppointments.map((appointment) =>
+            appointment._id === appointmentId
+              ? { ...appointment, status: 'no-show' }
+              : appointment
+          )
+        );
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.error("Mark no-show error:", error);
+      toast.error("Failed to mark as no-show");
+    } finally {
+      setLoadingId(null);
     }
   };
 
@@ -165,6 +315,7 @@ const [loadingId, setLoadingId] = useState(null);
         toast.error(data.message);
       }
     } catch (error) {
+      console.error("Dashboard data error:", error);
       toast.error("Failed to fetch dashboard data");
     } finally {
       setLoading("dashboard", false);
@@ -187,27 +338,125 @@ const [loadingId, setLoadingId] = useState(null);
         toast.error(data.message);
       }
     } catch (error) {
+      console.error("Get appointments error:", error);
       toast.error("Failed to fetch appointments");
     } finally {
       setLoading("appointments", false);
     }
   };
 
+  // NEW: API to get appointments by status with pagination
+  const getAppointmentsByStatus = async (status, page = 1, limit = 20, startDate = null, endDate = null) => {
+    setLoading("appointmentsByStatus", true);
+    try {
+      const params = new URLSearchParams({
+        status,
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+
+      const response = await fetch(`${backendUrl}/api/admin/appointments/status?${params}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        return data; // Return the data with appointments and pagination info
+      } else {
+        toast.error(data.message);
+        return null;
+      }
+    } catch (error) {
+      console.error("Get appointments by status error:", error);
+      toast.error("Failed to fetch appointments by status");
+      return null;
+    } finally {
+      setLoading("appointmentsByStatus", false);
+    }
+  };
+
+  // NEW: API to update payment status
+  const updatePaymentStatus = async (appointmentId, paymentData) => {
+    setLoadingId(appointmentId);
+    try {
+      const response = await fetch(`${backendUrl}/api/admin/payment/${appointmentId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(paymentData),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(data.message);
+
+        // Update appointments list with new payment info
+        setAppointments((prevAppointments) =>
+          prevAppointments.map((appointment) =>
+            appointment._id === appointmentId
+              ? { ...appointment, payment: data.appointment.payment }
+              : appointment
+          )
+        );
+
+        // Update dashboard data if needed
+        setDashData((prevData) => {
+          if (!prevData) return null;
+          return {
+            ...prevData,
+            paidAppointments: paymentData.status === 'paid'
+              ? (prevData.paidAppointments || 0) + 1
+              : prevData.paidAppointments,
+            latestAppointments:
+              prevData.latestAppointments?.map((appointment) =>
+                appointment._id === appointmentId
+                  ? { ...appointment, payment: data.appointment.payment }
+                  : appointment
+              ) || [],
+          };
+        });
+
+        return data.appointment;
+      } else {
+        toast.error(data.message);
+        return null;
+      }
+    } catch (error) {
+      console.error("Update payment status error:", error);
+      toast.error("Failed to update payment status");
+      return null;
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  // Legacy function for backward compatibility
+  const isCompleted = completeAppointment;
+
   return (
     <AdminContexts.Provider
       value={{
         appointments,
-        setAppointments,
-        getAllAppointments,
         dashData,
-        getDashData,
-        cancelAppointment,
+        setAppointments,
         slotDateFormat,
+        getAllAppointments,
+        cancelAppointment,
+        completeAppointment,
+        confirmAppointment,
+        markNoShow,
+        getDashData,
+        getAllAppointments,
+        getAppointmentsByStatus,
+        updatePaymentStatus,
         isCompleted,
+        setLoadingId,
         loadingStates,
         months,
         loadingId,
-        setLoadingId
       }}
     >
       {props.children}
