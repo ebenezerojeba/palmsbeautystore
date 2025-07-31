@@ -72,6 +72,7 @@ const appointmentSchema = new mongoose.Schema({
   completedAt: { type: Date },
   cancelledAt: { type: Date },
   
+  
   // Cancellation Details
   cancellation: {
     cancelledBy: { type: String, enum: ['client', 'provider'] },

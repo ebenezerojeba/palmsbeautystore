@@ -227,13 +227,13 @@ const cancelAppointment = async (req, res) => {
       });
     }
 
-    // Confirm user is authorized to cancel the appointment
-    if (appointment.userId.toString() !== req.userId) {
-      return res.status(403).json({
-        success: false,
-        message: "Unauthorized to cancel this appointment"
-      });
-    }
+    // // Confirm user is authorized to cancel the appointment
+    // if (appointment.userId.toString() !== req.userId) {
+    //   return res.status(403).json({
+    //     success: false,
+    //     message: "Unauthorized to cancel this appointment"
+    //   });
+    // }
 
     // Prevent duplicate cancellations
     if (appointment.status === 'cancelled') {

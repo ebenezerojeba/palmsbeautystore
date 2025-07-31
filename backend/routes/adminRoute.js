@@ -1,6 +1,6 @@
 import express from 'express'
 import { cancelAppointment } from '../controllers/appointmentController.js'
-import { addCategory, addService, adminDashboard, allServices, completeAppointment, deleteCategory, deleteService, deleteServiceImage, getAllAppointment, getCompletedAppointments, toggleServiceStatus, updateCategory, updateService } from '../controllers/adminController.js'
+import { addCategory, addService, adminDashboard, allServices, completeAppointment, confirmAppointment, deleteCategory, deleteService, deleteServiceImage, getAllAppointment, getAllAppointments, getAppointmentsByStatus, getCompletedAppointments, markNoShow, toggleServiceStatus, updateCategory, updatePaymentStatus, updateService } from '../controllers/adminController.js'
 import upload from '../middlewares/multer.js'
 // import { bookAppointment } from '../controllers/appointmentController.js'
 
@@ -10,8 +10,14 @@ adminRouter.get('/admin' )
 adminRouter.post('/cancel-appointment', cancelAppointment)
 adminRouter.post('/complete-appointment', completeAppointment)
 adminRouter.post('/completed', getCompletedAppointments)
-adminRouter.get('/all-appointments', getAllAppointment)
+adminRouter.get('/all-appointments', getAllAppointments)
+adminRouter.get('/appointments', getAllAppointment)
+adminRouter.get('/appointments/status', getAppointmentsByStatus)
 adminRouter.get('/dashboard', adminDashboard)
+adminRouter.post('/confirm-appointment', confirmAppointment);
+adminRouter.post('/mark-no-show', markNoShow);
+adminRouter.put('/payment/:appointmentId', updatePaymentStatus);
+
 
 // Category
 adminRouter.post('/addcategory',upload.none(), addCategory)
