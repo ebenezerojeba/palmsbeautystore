@@ -610,15 +610,23 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
   
   // For today, ensure we only show future slots with proper buffer
   if (isToday) {
-    const minTime = new Date(currentDateTime.getTime() + 30 * 60 * 1000); // 30 minutes buffer
+    const now = new Date(currentDateTime);
+    const minTime = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes buffer from current time
+    
+    // If minimum time is after business opening, start from minimum time
     if (minTime > currentTime) {
       currentTime = new Date(minTime);
-      // Round up to next slot interval
-      const slotDuration = businessDay.slotDuration || 90;
-      const minutesToAdd = slotDuration - (currentTime.getMinutes() % slotDuration);
-      if (minutesToAdd !== slotDuration) {
-        currentTime.setMinutes(currentTime.getMinutes() + minutesToAdd);
-      }
+    }
+    
+    // Round up to next slot interval
+    const slotDuration = businessDay.slotDuration || 90;
+    const currentMinutes = currentTime.getMinutes();
+    const minutesToAdd = slotDuration - (currentMinutes % slotDuration);
+    
+    if (minutesToAdd !== slotDuration && minutesToAdd > 0) {
+      currentTime.setMinutes(currentMinutes + minutesToAdd);
+      currentTime.setSeconds(0);
+      currentTime.setMilliseconds(0);
     }
   }
   
@@ -667,6 +675,17 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
     // Skip if slot would extend past closing time
     if (slotEnd > endTime) break;
     
+    // CRITICAL FIX: For today, skip any slots that have already passed
+    if (isToday) {
+      const bufferTime = new Date(currentDateTime.getTime() + 30 * 60 * 1000);
+      
+      // If this slot starts before the buffer time, skip it
+      if (currentTime < bufferTime) {
+        currentTime.setMinutes(currentTime.getMinutes() + slotDuration);
+        continue;
+      }
+    }
+    
     // Check for appointment conflicts
     const hasConflict = appointmentTimes.some(apt => 
       currentTime < apt.end && slotEnd > apt.start
@@ -681,7 +700,7 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
       slots.push({
         time: timeStr,
         available: true,
-        duration: requiredDuration // Include duration info in response
+        duration: requiredDuration
       });
     }
     
