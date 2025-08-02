@@ -107,6 +107,7 @@ appointmentSchema.index({ userId: 1, status: 1 });
 appointmentSchema.index({ 'payment.status': 1 });
 appointmentSchema.index({ date: 1, status: 1 });
 
+
 // Virtual for appointment end time
 appointmentSchema.virtual('endTime').get(function() {
   const [hours, minutes] = this.time.split(':').map(Number);

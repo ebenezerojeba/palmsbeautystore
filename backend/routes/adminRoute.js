@@ -5,6 +5,7 @@ import upload from '../middlewares/multer.js'
 // import { bookAppointment } from '../controllers/appointmentController.js'
 
 const adminRouter = express.Router()
+
 // Appointment
 adminRouter.get('/admin' )
 adminRouter.post('/cancel-appointment', cancelAppointment)
@@ -17,7 +18,6 @@ adminRouter.get('/dashboard', adminDashboard)
 adminRouter.post('/confirm-appointment', confirmAppointment);
 adminRouter.post('/mark-no-show', markNoShow);
 adminRouter.put('/payment/:appointmentId', updatePaymentStatus);
-
 
 // Category
 adminRouter.post('/addcategory',upload.none(), addCategory)
