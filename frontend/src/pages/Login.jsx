@@ -218,90 +218,101 @@ const Login = () => {
         {/* Debug info - remove in production */}
 
 
-        <form onSubmit={onSubmitHandler} className="space-y-4">
-          {state === "Sign Up" && (
-            <InputField
-              icon={User}
-              type="text"
-              placeholder="Full Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          )}
+     <form onSubmit={onSubmitHandler} className="space-y-4">
+  {state === "Sign Up" && (
+    <>
+      <InputField
+        icon={User}
+        type="text"
+        placeholder="Full Name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        required
+      />
 
-          <InputField
-            icon={Mail}
-            type="email"
-            placeholder="Email Address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+      <InputField
+        icon={Mail}
+        type="email"
+        placeholder="Email Address"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+      />
 
-          
+      <InputField
+        icon={Phone}
+        type="tel"
+        placeholder="Phone Number"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+        required
+      />
+    </>
+  )}
+
+  {state === "Login" && (
+    <InputField
+      icon={Mail}
+      type="email"
+      placeholder="Email Address"
+      value={email}
+      onChange={(e) => setEmail(e.target.value)}
+      required
+    />
+  )}
+
   <InputField
-    icon={Phone} // You can replace with a phone icon if desired
-    type="tel"
-    placeholder="Phone Number"
-    value={phone}
-    onChange={(e) => setPhone(e.target.value)}
+    icon={Lock}
+    type="password"
+    placeholder="Password"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
     required
   />
 
+  {state === "Login" && (
+    <div className="text-right">
+      <button
+        type="button"
+        onClick={() => navigate('/forgot-password')}
+        className="text-sm text-primary hover:text-primary-light transition-colors"
+      >
+        Forgot Password?
+      </button>
+    </div>
+  )}
 
-
-          <InputField
-            icon={Lock}
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
+  <button
+    type="submit"
+    disabled={isLoading}
+    className={`w-full py-3 px-4 rounded-lg font-medium text-white transition-all duration-300 ${
+      isLoading
+        ? "bg-primary/70 cursor-not-allowed"
+        : "bg-primary hover:bg-primary-dark shadow-lg hover:shadow-primary/30"
+    } flex items-center justify-center space-x-2`}
+  >
+    {isLoading ? (
+      <LoadingSpinner />
+    ) : (
+      <>
+        {state === "Sign Up" ? "Create Account" : "Login"}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fillRule="evenodd"
+            d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+            clipRule="evenodd"
           />
+        </svg>
+      </>
+    )}
+  </button>
+</form>
 
-          {state === "Login" && (
-            <div className="text-right">
-              <button
-                type="button"
-                onClick={() => navigate('/forgot-password')}
-                className="text-sm text-primary hover:text-primary-light transition-colors"
-              >
-                Forgot Password?
-              </button>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={`w-full py-3 px-4 rounded-lg font-medium text-white transition-all duration-300 ${
-              isLoading
-                ? "bg-primary/70 cursor-not-allowed"
-                : "bg-primary hover:bg-primary-dark shadow-lg hover:shadow-primary/30"
-            } flex items-center justify-center space-x-2`}
-          >
-            {isLoading ? (
-              <LoadingSpinner />
-            ) : (
-              <>
-                {state === "Sign Up" ? "Create Account" : "Login"}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </>
-            )}
-          </button>
-        </form>
 
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
@@ -317,7 +328,7 @@ const Login = () => {
         <button
           disabled={isLoading}
           onClick={() => setState(state === "Sign Up" ? "Login" : "Sign Up")}
-          className={`w-full py-2.5 rounded-lg font-medium transition-colors duration-300 ${
+          className={`w-full cursor-pointer py-2.5 rounded-lg font-medium transition-colors duration-300 ${
             isLoading
               ? "text-gray-400 cursor-not-allowed"
               : "text-primary hover:text-primary-light"
