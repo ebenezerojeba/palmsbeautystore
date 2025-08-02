@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
 import { useSpring, animated, config } from "react-spring";
-import { Mail, Lock, User, EyeOff, Eye, Loader2 } from "lucide-react";
+import { Mail, Lock, User, EyeOff, Eye, Phone, Loader2 } from "lucide-react";
 import { AppContext } from "../context/AppContext";
 
 import { assets } from "../assets/assets";
@@ -97,6 +97,8 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+
   const [isLoading, setIsLoading] = useState(false);
 
   const formAnimation = useSpring({
@@ -121,6 +123,7 @@ const Login = () => {
           name,
           password,
           email,
+          phone
         });
         if (data.success && data.token) {
           localStorage.setItem("token", data.token);
@@ -235,6 +238,18 @@ const Login = () => {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
+
+          
+  <InputField
+    icon={Phone} // You can replace with a phone icon if desired
+    type="tel"
+    placeholder="Phone Number"
+    value={phone}
+    onChange={(e) => setPhone(e.target.value)}
+    required
+  />
+
+
 
           <InputField
             icon={Lock}
