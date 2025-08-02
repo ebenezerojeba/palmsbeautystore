@@ -34,9 +34,7 @@ const Services = () => {
     [services]
   );
 
-
   const hasServices = Object.values(services).some(cat => cat.subServices && cat.subServices.length > 0);
-
 
   const fetchServices = useCallback(async () => {
     try {
