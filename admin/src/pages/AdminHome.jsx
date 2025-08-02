@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart2, Calendar, Box, Clock, ExternalLink, BaggageClaim } from 'lucide-react';
+import { BarChart2, Calendar, Box, Clock, ExternalLink, BaggageClaim, Clock12Icon } from 'lucide-react';
 
 
 const AdminHome = ({token}) => {
@@ -43,6 +43,14 @@ const AdminHome = ({token}) => {
       icon: <BaggageClaim className="w-6 h-6" />,
       path: "/list",
       color: "bg-gray-50 text-gray-600",
+      borderColor: "border-gray-100"
+    },
+    {
+      title: "Business Hours",
+      description: "Manage and Update Business Time",
+      icon: <Clock12Icon className="w-6 h-6" />,
+      path: "/hours",
+      color: "bg-pink-50 text-pink-600",
       borderColor: "border-gray-100"
     }
   ];
