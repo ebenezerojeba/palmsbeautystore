@@ -633,7 +633,7 @@ const Appointment = () => {
                   </div>
                 )}
 
-                <div className="flex items-center space-x-3">
+                {/* <div className="flex items-center space-x-3">
                   <input
                     type="radio"
                     id="new-card"
@@ -646,7 +646,7 @@ const Appointment = () => {
                   <label htmlFor="new-card" className="text-sm text-gray-700">
                     Use new payment method
                   </label>
-                </div>
+                </div> */}
 
                 <div className="flex items-center space-x-3 mt-4">
                   <input
@@ -664,7 +664,7 @@ const Appointment = () => {
             </div>
 
             {/* Reminder Preferences */}
-            <div className="bg-white rounded-lg shadow-sm">
+            {/* <div className="bg-white rounded-lg shadow-sm">
               <div className="p-6 border-b border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                   <AlertCircle className="h-5 w-5 mr-2" />
@@ -748,7 +748,7 @@ const Appointment = () => {
                   </p>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Terms and Policies */}
             <div className="bg-white rounded-lg shadow-sm">
@@ -794,7 +794,7 @@ const Appointment = () => {
                     </label>
                   </div>
 
-                  <div className="flex items-start space-x-3">
+                  {/* <div className="flex items-start space-x-3">
                     <input
                       type="checkbox"
                       id="agree-terms"
@@ -819,7 +819,7 @@ const Appointment = () => {
                       </button>
                       *
                     </label>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </div>
@@ -896,11 +896,11 @@ const Appointment = () => {
                     `Book Now - ${formatNaira(getTotalPrice())}`
                   )}
                 </button>
-
+{/* 
                 <div className="mt-3 flex items-start text-xs text-gray-500">
                   <Info className="h-3 w-3 mr-1 mt-0.5 flex-shrink-0" />
                   <p>Payment required to confirm appointment. You can cancel or reschedule up to 24 hours before.</p>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
