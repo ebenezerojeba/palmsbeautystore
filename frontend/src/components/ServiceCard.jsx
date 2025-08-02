@@ -131,9 +131,9 @@ const ServiceCard = ({
 
         {/* Availability */}
         <div className="flex items-center gap-2 text-sm text-green-600 mt-2">
-          <span className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
+          {/* <span className="w-2 h-2 bg-green-500 rounded-full animate-ping" /> */}
           <span className="font-medium">
-            {isActive ? "Available Now" : "Not Available"}
+            {/* {isActive ? "Available Now" : "Not Available"} */}
           </span>
         </div>
 
