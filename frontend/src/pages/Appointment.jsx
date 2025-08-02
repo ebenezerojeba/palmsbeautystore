@@ -30,7 +30,8 @@ import {
 const Appointment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { backendUrl, userData } = useContext(AppContext);
+  // const backendUrl = "http://localhost:3000"
+  const {  userData, backendUrl } = useContext(AppContext);
   const { formatNaira } = useContext(ShopContext);
 
   // State management
@@ -140,36 +141,92 @@ const Appointment = () => {
   };
 
   // Fetch available slots
-  useEffect(() => {
-    const fetchAvailableSlots = async () => {
-      if (selectedServices.length === 0) return;
+  // useEffect(() => {
+  //   const fetchAvailableSlots = async () => {
+  //     if (selectedServices.length === 0) return;
 
-      setIsLoading(true);
-      try {
-        const startDate = new Date().toISOString().split('T')[0];
-        const endDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  //     setIsLoading(true);
+  //     try {
+  //       const startDate = new Date().toISOString().split('T')[0];
+  //       const endDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-        const res = await fetch(
-          `${backendUrl}/api/appointment/available-slots?serviceId=${id}&startDate=${startDate}&endDate=${endDate}`
-        );
-        const data = await res.json();
+  //       const res = await fetch(
+  //         `${backendUrl}/api/appointment/available-slots?serviceId=${id}&startDate=${startDate}&endDate=${endDate}`
+  //       );
+  //       const data = await res.json();
 
-        if (data.availableSlots) {
-          setAvailableSlots(data.availableSlots);
-        } else {
-          setAvailableSlots([]);
-        }
-      } catch (err) {
-        console.error('Error fetching slots:', err);
-        toast.error("Failed to fetch available slots");
-        setAvailableSlots([]);
-      } finally {
-        setIsLoading(false);
+  //       if (data.availableSlots) {
+  //         setAvailableSlots(data.availableSlots);
+  //       } else {
+  //         setAvailableSlots([]);
+  //       }
+  //     } catch (err) {
+  //       console.error('Error fetching slots:', err);
+  //       toast.error("Failed to fetch available slots");
+  //       setAvailableSlots([]);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
+
+  //   fetchAvailableSlots();
+  // }, [selectedServices, id, backendUrl]);
+
+
+
+
+  
+// Updated useEffect for fetching available slots
+useEffect(() => {
+  const fetchAvailableSlots = async () => {
+    if (selectedServices.length === 0) return;
+
+    setIsLoading(true);
+    try {
+      const startDate = new Date().toISOString().split('T')[0];
+      const endDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      // Prepare query parameters
+      const queryParams = new URLSearchParams({
+        serviceId: id,
+        startDate,
+        endDate,
+        selectedServices: JSON.stringify(selectedServices) // Send selected services for duration calculation
+      });
+
+      const res = await fetch(
+        `${backendUrl}/api/appointment/available-slots?${queryParams.toString()}`
+      );
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
       }
-    };
+      
+      const data = await res.json();
 
-    fetchAvailableSlots();
+      if (data.availableSlots) {
+        setAvailableSlots(data.availableSlots);
+      } else {
+        setAvailableSlots([]);
+      }
+    } catch (err) {
+      console.error('Error fetching slots:', err);
+      toast.error("Failed to fetch available slots");
+      setAvailableSlots([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchAvailableSlots();
   }, [selectedServices, id, backendUrl]);
+
+
+
+
+
+
+
 
   // Add service to selection
   const addService = (service) => {
