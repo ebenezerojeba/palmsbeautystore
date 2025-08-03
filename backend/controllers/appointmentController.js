@@ -525,191 +525,191 @@ const cancelAppointment = async (req, res) => {
 
 
 
-
-const getAvailableSlots = async (req, res) => {
-  try {
-    const { serviceId, startDate, endDate, selectedServices } = req.query;
+// LATEST WORKING CODE
+// const getAvailableSlots = async (req, res) => {
+//   try {
+//     const { serviceId, startDate, endDate, selectedServices } = req.query;
     
-    // Parse selectedServices if provided (for multiple service bookings)
-    let servicesToBook = [];
-    if (selectedServices) {
-      try {
-        servicesToBook = JSON.parse(selectedServices);
-      } catch (e) {
-        console.error('Error parsing selectedServices:', e);
-      }
-    }
+//     // Parse selectedServices if provided (for multiple service bookings)
+//     let servicesToBook = [];
+//     if (selectedServices) {
+//       try {
+//         servicesToBook = JSON.parse(selectedServices);
+//       } catch (e) {
+//         console.error('Error parsing selectedServices:', e);
+//       }
+//     }
     
-    // Calculate total duration needed for the services
-    const totalServiceDuration = servicesToBook.length > 0 
-      ? servicesToBook.reduce((total, service) => total + (service.duration || 90), 0)
-      : 90; // Default duration if no services specified
+//     // Calculate total duration needed for the services
+//     const totalServiceDuration = servicesToBook.length > 0 
+//       ? servicesToBook.reduce((total, service) => total + (service.duration || 90), 0)
+//       : 90; // Default duration if no services specified
     
-    // Get business hours with caching
-    const businessHours = await getBusinessHours();
+//     // Get business hours with caching
+//     const businessHours = await getBusinessHours();
     
-    if (!businessHours.length) {
-      return res.status(404).json({ message: "Business hours not configured" });
-    }
+//     if (!businessHours.length) {
+//       return res.status(404).json({ message: "Business hours not configured" });
+//     }
     
-    const start = new Date(startDate || new Date());
-    const end = new Date(endDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)); // 14 days ahead
+//     const start = new Date(startDate || new Date());
+//     const end = new Date(endDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)); // 14 days ahead
     
-    const availableSlots = [];
-    const now = new Date(); // Get current time once for consistency
+//     const availableSlots = [];
+//     const now = new Date(); // Get current time once for consistency
     
-    // Process each day in the date range
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const dayOfWeek = d.getDay();
-      const businessDay = businessHours.find(bh => bh.dayOfWeek === dayOfWeek);
+//     // Process each day in the date range
+//     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+//       const dayOfWeek = d.getDay();
+//       const businessDay = businessHours.find(bh => bh.dayOfWeek === dayOfWeek);
       
-      // Skip if business is closed on this day
-      if (!businessDay || !businessDay.isOpen) continue;
+//       // Skip if business is closed on this day
+//       if (!businessDay || !businessDay.isOpen) continue;
       
-      const dateStr = d.toISOString().split('T')[0];
+//       const dateStr = d.toISOString().split('T')[0];
       
-      // Get existing appointments for this date
-      const existingAppointments = await appointmentModel.find({
-        date: new Date(dateStr),
-        status: { $in: ['pending', 'confirmed'] }
-      }).select('time duration totalDuration services');
+//       // Get existing appointments for this date
+//       const existingAppointments = await appointmentModel.find({
+//         date: new Date(dateStr),
+//         status: { $in: ['pending', 'confirmed'] }
+//       }).select('time duration totalDuration services');
       
-      const slots = generateTimeSlots(businessDay, existingAppointments, new Date(d), now, totalServiceDuration);
+//       const slots = generateTimeSlots(businessDay, existingAppointments, new Date(d), now, totalServiceDuration);
       
-      if (slots.length > 0) {
-        availableSlots.push({
-          date: dateStr,
-          dayOfWeek: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayOfWeek],
-          slots
-        });
-      }
-    }
+//       if (slots.length > 0) {
+//         availableSlots.push({
+//           date: dateStr,
+//           dayOfWeek: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayOfWeek],
+//           slots
+//         });
+//       }
+//     }
     
-    res.status(200).json({ availableSlots });
-  } catch (error) {
-    console.error("Error fetching available slots:", error);
-    res.status(500).json({ message: "Failed to fetch available slots" });
-  }
-};
+//     res.status(200).json({ availableSlots });
+//   } catch (error) {
+//     console.error("Error fetching available slots:", error);
+//     res.status(500).json({ message: "Failed to fetch available slots" });
+//   }
+// };
 
-// Optimized helper function to generate time slots
-const generateTimeSlots = (businessDay, existingAppointments, date, currentDateTime, requiredDuration = 90) => {
-  const slots = [];
-  const isToday = date.toDateString() === currentDateTime.toDateString();
+// // Optimized helper function to generate time slots
+// const generateTimeSlots = (businessDay, existingAppointments, date, currentDateTime, requiredDuration = 90) => {
+//   const slots = [];
+//   const isToday = date.toDateString() === currentDateTime.toDateString();
   
-  // Parse business hours
-  const [openHour, openMinute] = businessDay.openTime.split(':').map(Number);
-  const [closeHour, closeMinute] = businessDay.closeTime.split(':').map(Number);
+//   // Parse business hours
+//   const [openHour, openMinute] = businessDay.openTime.split(':').map(Number);
+//   const [closeHour, closeMinute] = businessDay.closeTime.split(':').map(Number);
   
-  // Set up time boundaries
-  let currentTime = new Date(date);
-  currentTime.setHours(openHour, openMinute, 0, 0);
+//   // Set up time boundaries
+//   let currentTime = new Date(date);
+//   currentTime.setHours(openHour, openMinute, 0, 0);
   
-  const endTime = new Date(date);
-  endTime.setHours(closeHour, closeMinute, 0, 0);
+//   const endTime = new Date(date);
+//   endTime.setHours(closeHour, closeMinute, 0, 0);
   
-  // For today, ensure we only show future slots with proper buffer
-  if (isToday) {
-    const now = new Date(currentDateTime);
-    const minTime = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes buffer from current time
+//   // For today, ensure we only show future slots with proper buffer
+//   if (isToday) {
+//     const now = new Date(currentDateTime);
+//     const minTime = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes buffer from current time
     
-    // If minimum time is after business opening, start from minimum time
-    if (minTime > currentTime) {
-      currentTime = new Date(minTime);
-    }
+//     // If minimum time is after business opening, start from minimum time
+//     if (minTime > currentTime) {
+//       currentTime = new Date(minTime);
+//     }
     
-    // Round up to next slot interval
-    const slotDuration = businessDay.slotDuration || 90;
-    const currentMinutes = currentTime.getMinutes();
-    const minutesToAdd = slotDuration - (currentMinutes % slotDuration);
+//     // Round up to next slot interval
+//     const slotDuration = businessDay.slotDuration || 90;
+//     const currentMinutes = currentTime.getMinutes();
+//     const minutesToAdd = slotDuration - (currentMinutes % slotDuration);
     
-    if (minutesToAdd !== slotDuration && minutesToAdd > 0) {
-      currentTime.setMinutes(currentMinutes + minutesToAdd);
-      currentTime.setSeconds(0);
-      currentTime.setMilliseconds(0);
-    }
-  }
+//     if (minutesToAdd !== slotDuration && minutesToAdd > 0) {
+//       currentTime.setMinutes(currentMinutes + minutesToAdd);
+//       currentTime.setSeconds(0);
+//       currentTime.setMilliseconds(0);
+//     }
+//   }
   
-  // Pre-process existing appointments for faster conflict checking
-  const appointmentTimes = existingAppointments.map(apt => {
-    const [aptHour, aptMinute] = apt.time.split(':').map(Number);
-    const aptStart = new Date(date);
-    aptStart.setHours(aptHour, aptMinute, 0, 0);
+//   // Pre-process existing appointments for faster conflict checking
+//   const appointmentTimes = existingAppointments.map(apt => {
+//     const [aptHour, aptMinute] = apt.time.split(':').map(Number);
+//     const aptStart = new Date(date);
+//     aptStart.setHours(aptHour, aptMinute, 0, 0);
     
-    // Calculate duration - handle both old and new schema
-    let aptDuration;
-    if (apt.totalDuration) {
-      aptDuration = apt.totalDuration; // New schema with multiple services
-    } else if (apt.services && apt.services.length > 0) {
-      // Calculate total duration from services array
-      aptDuration = apt.services.reduce((total, service) => total + (service.duration || 90), 0);
-    } else {
-      // Fallback to old duration field
-      aptDuration = parseInt(apt.duration) || 90;
-    }
+//     // Calculate duration - handle both old and new schema
+//     let aptDuration;
+//     if (apt.totalDuration) {
+//       aptDuration = apt.totalDuration; // New schema with multiple services
+//     } else if (apt.services && apt.services.length > 0) {
+//       // Calculate total duration from services array
+//       aptDuration = apt.services.reduce((total, service) => total + (service.duration || 90), 0);
+//     } else {
+//       // Fallback to old duration field
+//       aptDuration = parseInt(apt.duration) || 90;
+//     }
     
-    const aptEnd = new Date(aptStart.getTime() + aptDuration * 60000);
-    return { start: aptStart, end: aptEnd };
-  });
+//     const aptEnd = new Date(aptStart.getTime() + aptDuration * 60000);
+//     return { start: aptStart, end: aptEnd };
+//   });
   
-  // Pre-process break time if exists
-  let breakStart = null;
-  let breakEnd = null;
-  if (businessDay.breakStart && businessDay.breakEnd) {
-    const [breakStartHour, breakStartMinute] = businessDay.breakStart.split(':').map(Number);
-    const [breakEndHour, breakEndMinute] = businessDay.breakEnd.split(':').map(Number);
+//   // Pre-process break time if exists
+//   let breakStart = null;
+//   let breakEnd = null;
+//   if (businessDay.breakStart && businessDay.breakEnd) {
+//     const [breakStartHour, breakStartMinute] = businessDay.breakStart.split(':').map(Number);
+//     const [breakEndHour, breakEndMinute] = businessDay.breakEnd.split(':').map(Number);
     
-    breakStart = new Date(date);
-    breakStart.setHours(breakStartHour, breakStartMinute, 0, 0);
-    breakEnd = new Date(date);
-    breakEnd.setHours(breakEndHour, breakEndMinute, 0, 0);
-  }
+//     breakStart = new Date(date);
+//     breakStart.setHours(breakStartHour, breakStartMinute, 0, 0);
+//     breakEnd = new Date(date);
+//     breakEnd.setHours(breakEndHour, breakEndMinute, 0, 0);
+//   }
   
-  const slotDuration = businessDay.slotDuration || 90;
+//   const slotDuration = businessDay.slotDuration || 90;
   
-  // Generate time slots
-  while (currentTime < endTime) {
-    // Use the required duration for this specific booking
-    const slotEnd = new Date(currentTime.getTime() + requiredDuration * 60000);
+//   // Generate time slots
+//   while (currentTime < endTime) {
+//     // Use the required duration for this specific booking
+//     const slotEnd = new Date(currentTime.getTime() + requiredDuration * 60000);
     
-    // Skip if slot would extend past closing time
-    if (slotEnd > endTime) break;
+//     // Skip if slot would extend past closing time
+//     if (slotEnd > endTime) break;
     
-    // CRITICAL FIX: For today, skip any slots that have already passed
-    if (isToday) {
-      const bufferTime = new Date(currentDateTime.getTime() + 30 * 60 * 1000);
+//     // CRITICAL FIX: For today, skip any slots that have already passed
+//     if (isToday) {
+//       const bufferTime = new Date(currentDateTime.getTime() + 30 * 60 * 1000);
       
-      // If this slot starts before the buffer time, skip it
-      if (currentTime < bufferTime) {
-        currentTime.setMinutes(currentTime.getMinutes() + slotDuration);
-        continue;
-      }
-    }
+//       // If this slot starts before the buffer time, skip it
+//       if (currentTime < bufferTime) {
+//         currentTime.setMinutes(currentTime.getMinutes() + slotDuration);
+//         continue;
+//       }
+//     }
     
-    // Check for appointment conflicts
-    const hasConflict = appointmentTimes.some(apt => 
-      currentTime < apt.end && slotEnd > apt.start
-    );
+//     // Check for appointment conflicts
+//     const hasConflict = appointmentTimes.some(apt => 
+//       currentTime < apt.end && slotEnd > apt.start
+//     );
     
-    // Check for break time conflicts
-    const inBreak = breakStart && breakEnd && 
-      currentTime < breakEnd && slotEnd > breakStart;
+//     // Check for break time conflicts
+//     const inBreak = breakStart && breakEnd && 
+//       currentTime < breakEnd && slotEnd > breakStart;
     
-    if (!hasConflict && !inBreak) {
-      const timeStr = currentTime.toTimeString().slice(0, 5);
-      slots.push({
-        time: timeStr,
-        available: true,
-        duration: requiredDuration
-      });
-    }
+//     if (!hasConflict && !inBreak) {
+//       const timeStr = currentTime.toTimeString().slice(0, 5);
+//       slots.push({
+//         time: timeStr,
+//         available: true,
+//         duration: requiredDuration
+//       });
+//     }
     
-    // Move to next slot (use business slot duration for intervals)
-    currentTime.setMinutes(currentTime.getMinutes() + slotDuration);
-  }
+//     // Move to next slot (use business slot duration for intervals)
+//     currentTime.setMinutes(currentTime.getMinutes() + slotDuration);
+//   }
   
-  return slots;
-};
+//   return slots;
+// };
 
 
 
@@ -719,133 +719,8 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
 
 
 
-// / New Multiple Service Appointment Controller Function
-// ============================================================================
-
-const bookMultipleAppointment = async (req, res) => {
-  try {
-    const { services, date, time, totalAmount } = req.body;
-    const userId = req.userId;
-
-    // Validation
-    if (!services || !Array.isArray(services) || services.length === 0) {
-      return res.status(400).json({ message: "At least one service is required" });
-    }
-
-    if (!time || !date) {
-      return res.status(400).json({ message: "Date and time are required" });
-    }
-
-    // Get user data
-    const userData = await userModel.findById(userId);
-    if (!userData) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Check if the time slot is available for the total duration
-    const appointmentDate = new Date(date);
-    const existingAppointment = await appointmentModel.findOne({
-      date: appointmentDate,
-      time,
-      status: { $in: ['pending', 'confirmed'] }
-    });
-
-    if (existingAppointment) {
-      return res.status(409).json({ 
-        message: "This slot is no longer available. Please select another time." 
-      });
-    }
-
-    // Validate services and calculate totals
-    let calculatedAmount = 0;
-    let calculatedDuration = 0;
-    const processedServices = services.map((service, index) => {
-      calculatedAmount += service.price;
-      calculatedDuration += service.duration;
-      return {
-        serviceId: service.serviceId,
-        serviceTitle: service.serviceTitle,
-        duration: service.duration,
-        price: service.price,
-        order: index + 1
-      };
-    });
-
-    // Use calculated amount if totalAmount is not provided or invalid
-    const finalAmount = totalAmount && totalAmount > 0 ? totalAmount : calculatedAmount;
-
-    // Security check: verify amounts match (with small tolerance for rounding)
-    if (Math.abs(finalAmount - calculatedAmount) > 0.01) {
-      return res.status(400).json({ 
-        message: "Price calculation mismatch. Please refresh and try again." 
-      });
-    }
-
-    // Create appointment with multiple services
-    const newAppointment = await appointmentModel.create({
-      userId,
-      services: processedServices,
-      
-      // For backward compatibility, set primary service (first one)
-      serviceId: processedServices[0].serviceId,
-      serviceTitle: processedServices.length > 1 
-        ? `${processedServices[0].serviceTitle} + ${processedServices.length - 1} more`
-        : processedServices[0].serviceTitle,
-      
-      userName: userData.name,
-      userEmail: userData.email,
-      userPhone: userData.phone,
-      date: appointmentDate,
-      time,
-      totalDuration: calculatedDuration, // Add this field
-      status: 'pending',
-      payment: {
-        amount: finalAmount, // Ensure this is always set
-        currency: 'CAD', // 
-        status: 'pending'
-      }
-    });
-
-    // Create Stripe checkout session
-    const lineItems = processedServices.map(service => ({
-      price_data: {
-        currency: 'cad', // Change to ngn for Nigerian Naira
-        product_data: {
-          name: service.serviceTitle,
-          description: `Duration: ${service.duration} minutes`
-        },
-        unit_amount: Math.round(service.price * 100), // Stripe expects kobo for NGN
-      },
-      quantity: 1
-    }));
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: lineItems,
-      mode: 'payment',
-      customer_email: userData.email,
-      success_url: `${process.env.FRONTEND_URL}/appointment/verify/${newAppointment._id}?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONTEND_URL}/appointment/cancelled`,
-      metadata: {
-        appointmentId: newAppointment._id.toString(),
-        isMultipleService: 'true',
-        serviceCount: processedServices.length.toString()
-      }
-    });
-
-    res.status(201).json({
-      message: "Appointment created successfully. Please complete payment.",
-      appointment: newAppointment,
-      paymentUrl: session.url
-    });
-
-  } catch (error) {
-    console.error("Error booking multiple appointment:", error);
-    res.status(500).json({ 
-      message: error.message || "Failed to book appointment" 
-    });
-  }
-};
+// // / New Multiple Service Appointment Controller Function
+// // ============================================================================
 
 // const bookMultipleAppointment = async (req, res) => {
 //   try {
@@ -883,10 +758,10 @@ const bookMultipleAppointment = async (req, res) => {
 
 //     // Validate services and calculate totals
 //     let calculatedAmount = 0;
-//     // let calculatedDuration = 0;
+//     let calculatedDuration = 0;
 //     const processedServices = services.map((service, index) => {
 //       calculatedAmount += service.price;
-//       // calculatedDuration += service.duration;
+//       calculatedDuration += service.duration;
 //       return {
 //         serviceId: service.serviceId,
 //         serviceTitle: service.serviceTitle,
@@ -896,10 +771,15 @@ const bookMultipleAppointment = async (req, res) => {
 //       };
 //     });
 
-//     // Verify amounts match (optional security check)
-    
+//     // Use calculated amount if totalAmount is not provided or invalid
+//     const finalAmount = totalAmount && totalAmount > 0 ? totalAmount : calculatedAmount;
 
-
+//     // Security check: verify amounts match (with small tolerance for rounding)
+//     if (Math.abs(finalAmount - calculatedAmount) > 0.01) {
+//       return res.status(400).json({ 
+//         message: "Price calculation mismatch. Please refresh and try again." 
+//       });
+//     }
 
 //     // Create appointment with multiple services
 //     const newAppointment = await appointmentModel.create({
@@ -917,10 +797,11 @@ const bookMultipleAppointment = async (req, res) => {
 //       userPhone: userData.phone,
 //       date: appointmentDate,
 //       time,
-//     //  For backward compatibility
+//       totalDuration: calculatedDuration, // Add this field
 //       status: 'pending',
 //       payment: {
-//         amount: totalAmount,
+//         amount: finalAmount, // Ensure this is always set
+//         currency: 'CAD', // 
 //         status: 'pending'
 //       }
 //     });
@@ -928,12 +809,12 @@ const bookMultipleAppointment = async (req, res) => {
 //     // Create Stripe checkout session
 //     const lineItems = processedServices.map(service => ({
 //       price_data: {
-//         currency: 'cad',
+//         currency: 'cad', // Change to ngn for Nigerian Naira
 //         product_data: {
 //           name: service.serviceTitle,
 //           description: `Duration: ${service.duration} minutes`
 //         },
-//         unit_amount: Math.round(service.price * 100),
+//         unit_amount: Math.round(service.price * 100), // Stripe expects kobo for NGN
 //       },
 //       quantity: 1
 //     }));
@@ -966,6 +847,333 @@ const bookMultipleAppointment = async (req, res) => {
 //   }
 // };
 
+const getAvailableSlots = async (req, res) => {
+  try {
+    const { serviceId, startDate, endDate, selectedServices } = req.query;
+    
+    // Parse selectedServices if provided (for multiple service bookings)
+    let servicesToBook = [];
+    if (selectedServices) {
+      try {
+        servicesToBook = JSON.parse(selectedServices);
+      } catch (e) {
+        console.error('Error parsing selectedServices:', e);
+      }
+    }
+    
+    // Calculate total duration needed for the services
+    const totalServiceDuration = servicesToBook.length > 0 
+      ? servicesToBook.reduce((total, service) => total + (service.duration || 90), 0)
+      : 90; // Default duration if no services specified
+    
+    // Get business hours with caching
+    const businessHours = await getBusinessHours();
+    
+    if (!businessHours.length) {
+      return res.status(404).json({ message: "Business hours not configured" });
+    }
+    
+    const start = new Date(startDate || new Date());
+    const end = new Date(endDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)); // 14 days ahead
+    
+    const availableSlots = [];
+    const now = new Date(); // Get current time once for consistency
+    
+    // FIX 1: Proper date loop that doesn't modify the loop variable
+    for (let d = new Date(start); d <= end; d = new Date(d.getTime() + 24 * 60 * 60 * 1000)) {
+      const dayOfWeek = d.getDay();
+      const businessDay = businessHours.find(bh => bh.dayOfWeek === dayOfWeek);
+      
+      // Skip if business is closed on this day
+      if (!businessDay || !businessDay.isOpen) continue;
+      
+      const dateStr = d.toISOString().split('T')[0];
+      
+      // Get existing appointments for this date
+      const existingAppointments = await appointmentModel.find({
+        date: new Date(dateStr),
+        status: { $in: ['pending', 'confirmed'] }
+      }).select('time duration totalDuration services');
+      
+      const slots = generateTimeSlots(businessDay, existingAppointments, new Date(d), now, totalServiceDuration);
+      
+      // FIX 2: Only include dates that have available slots
+      if (slots.length > 0) {
+        availableSlots.push({
+          date: dateStr,
+          dayOfWeek: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayOfWeek],
+          slots
+        });
+      }
+    }
+    
+    res.status(200).json({ availableSlots });
+  } catch (error) {
+    console.error("Error fetching available slots:", error);
+    res.status(500).json({ message: "Failed to fetch available slots" });
+  }
+};
+
+// FIX 3: Completely rewritten slot generation logic
+const generateTimeSlots = (businessDay, existingAppointments, date, currentDateTime, requiredDuration = 90) => {
+  const slots = [];
+  const isToday = date.toDateString() === currentDateTime.toDateString();
+  
+  // Parse business hours
+  const [openHour, openMinute] = businessDay.openTime.split(':').map(Number);
+  const [closeHour, closeMinute] = businessDay.closeTime.split(':').map(Number);
+  
+  // Set up time boundaries
+  const businessStart = new Date(date);
+  businessStart.setHours(openHour, openMinute, 0, 0);
+  
+  const businessEnd = new Date(date);
+  businessEnd.setHours(closeHour, closeMinute, 0, 0);
+  
+  // For today, calculate minimum start time (current time + 30 min buffer)
+  let earliestStartTime = new Date(businessStart);
+  if (isToday) {
+    const minTime = new Date(currentDateTime.getTime() + 30 * 60 * 1000); // 30 minutes buffer
+    if (minTime > businessStart) {
+      earliestStartTime = new Date(minTime);
+    }
+  }
+  
+  // FIX 4: Create comprehensive blocked time periods
+  const blockedPeriods = [];
+  
+  // Add existing appointments as blocked periods
+  existingAppointments.forEach(apt => {
+    const [aptHour, aptMinute] = apt.time.split(':').map(Number);
+    const aptStart = new Date(date);
+    aptStart.setHours(aptHour, aptMinute, 0, 0);
+    
+    // Calculate appointment duration properly
+    let aptDuration;
+    if (apt.totalDuration && apt.totalDuration > 0) {
+      aptDuration = apt.totalDuration;
+    } else if (apt.services && apt.services.length > 0) {
+      aptDuration = apt.services.reduce((total, service) => total + (service.duration || 90), 0);
+    } else if (apt.duration) {
+      aptDuration = parseInt(apt.duration) || 90;
+    } else {
+      aptDuration = 90; // Default fallback
+    }
+    
+    const aptEnd = new Date(aptStart.getTime() + aptDuration * 60000);
+    blockedPeriods.push({ start: aptStart, end: aptEnd });
+  });
+  
+  // Add break times as blocked periods
+  if (businessDay.breakStart && businessDay.breakEnd) {
+    const [breakStartHour, breakStartMinute] = businessDay.breakStart.split(':').map(Number);
+    const [breakEndHour, breakEndMinute] = businessDay.breakEnd.split(':').map(Number);
+    
+    const breakStart = new Date(date);
+    breakStart.setHours(breakStartHour, breakStartMinute, 0, 0);
+    const breakEnd = new Date(date);
+    breakEnd.setHours(breakEndHour, breakEndMinute, 0, 0);
+    
+    blockedPeriods.push({ start: breakStart, end: breakEnd });
+  }
+  
+  // FIX 5: Use consistent slot intervals
+  const slotInterval = businessDay.slotDuration || 30; // Default 30-minute intervals
+  
+  // Generate potential time slots
+  let currentSlotTime = new Date(earliestStartTime);
+  
+  // Round up to next slot interval
+  const currentMinutes = currentSlotTime.getMinutes();
+  const remainder = currentMinutes % slotInterval;
+  if (remainder !== 0) {
+    currentSlotTime.setMinutes(currentMinutes + (slotInterval - remainder));
+  }
+  currentSlotTime.setSeconds(0);
+  currentSlotTime.setMilliseconds(0);
+  
+  // Generate slots until business closes
+  while (currentSlotTime < businessEnd) {
+    const slotEnd = new Date(currentSlotTime.getTime() + requiredDuration * 60000);
+    
+    // Skip if slot would extend past closing time
+    if (slotEnd > businessEnd) {
+      break;
+    }
+    
+    // FIX 6: Comprehensive conflict checking
+    const hasConflict = blockedPeriods.some(blocked => {
+      // Check if there's any overlap between the slot and blocked period
+      return currentSlotTime < blocked.end && slotEnd > blocked.start;
+    });
+    
+    // Only add slot if there's no conflict
+    if (!hasConflict) {
+      const timeStr = currentSlotTime.toTimeString().slice(0, 5);
+      slots.push({
+        time: timeStr,
+        available: true,
+        duration: requiredDuration
+      });
+    }
+    
+    // Move to next slot interval
+    currentSlotTime = new Date(currentSlotTime.getTime() + slotInterval * 60000);
+  }
+  
+  return slots;
+};
+
+// FIX 7: Enhanced booking validation
+const bookMultipleAppointment = async (req, res) => {
+  try {
+    const { services, date, time, totalAmount } = req.body;
+    const userId = req.userId;
+
+    // Validation
+    if (!services || !Array.isArray(services) || services.length === 0) {
+      return res.status(400).json({ message: "At least one service is required" });
+    }
+
+    if (!time || !date) {
+      return res.status(400).json({ message: "Date and time are required" });
+    }
+
+    // Get user data
+    const userData = await userModel.findById(userId);
+    if (!userData) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Calculate total duration for the appointment
+    let calculatedDuration = 0;
+    let calculatedAmount = 0;
+    const processedServices = services.map((service, index) => {
+      calculatedAmount += service.price;
+      calculatedDuration += service.duration;
+      return {
+        serviceId: service.serviceId,
+        serviceTitle: service.serviceTitle,
+        duration: service.duration,
+        price: service.price,
+        order: index + 1
+      };
+    });
+
+    // FIX 8: Comprehensive slot availability check
+    const appointmentDate = new Date(date);
+    const [requestHour, requestMinute] = time.split(':').map(Number);
+    const requestStart = new Date(appointmentDate);
+    requestStart.setHours(requestHour, requestMinute, 0, 0);
+    const requestEnd = new Date(requestStart.getTime() + calculatedDuration * 60000);
+
+    // Check for ANY overlapping appointments
+    const conflictingAppointments = await appointmentModel.find({
+      date: appointmentDate,
+      status: { $in: ['pending', 'confirmed'] }
+    }).select('time duration totalDuration services');
+
+    // Check each existing appointment for conflicts
+    for (const existingApt of conflictingAppointments) {
+      const [existingHour, existingMinute] = existingApt.time.split(':').map(Number);
+      const existingStart = new Date(appointmentDate);
+      existingStart.setHours(existingHour, existingMinute, 0, 0);
+      
+      // Calculate existing appointment duration
+      let existingDuration;
+      if (existingApt.totalDuration && existingApt.totalDuration > 0) {
+        existingDuration = existingApt.totalDuration;
+      } else if (existingApt.services && existingApt.services.length > 0) {
+        existingDuration = existingApt.services.reduce((total, service) => total + (service.duration || 90), 0);
+      } else {
+        existingDuration = parseInt(existingApt.duration) || 90;
+      }
+      
+      const existingEnd = new Date(existingStart.getTime() + existingDuration * 60000);
+      
+      // Check for overlap
+      if (requestStart < existingEnd && requestEnd > existingStart) {
+        return res.status(409).json({ 
+          message: "This time slot conflicts with an existing appointment. Please select another time." 
+        });
+      }
+    }
+
+    // Use calculated amount if totalAmount is not provided or invalid
+    const finalAmount = totalAmount && totalAmount > 0 ? totalAmount : calculatedAmount;
+
+    // Security check: verify amounts match (with small tolerance for rounding)
+    if (Math.abs(finalAmount - calculatedAmount) > 0.01) {
+      return res.status(400).json({ 
+        message: "Price calculation mismatch. Please refresh and try again." 
+      });
+    }
+
+    // Create appointment with multiple services
+    const newAppointment = await appointmentModel.create({
+      userId,
+      services: processedServices,
+      
+      // For backward compatibility, set primary service (first one)
+      serviceId: processedServices[0].serviceId,
+      serviceTitle: processedServices.length > 1 
+        ? `${processedServices[0].serviceTitle} + ${processedServices.length - 1} more`
+        : processedServices[0].serviceTitle,
+      
+      userName: userData.name,
+      userEmail: userData.email,
+      userPhone: userData.phone,
+      date: appointmentDate,
+      time,
+      totalDuration: calculatedDuration, // CRITICAL: Store total duration
+      status: 'pending',
+      payment: {
+        amount: finalAmount,
+        currency: 'CAD',
+        status: 'pending'
+      }
+    });
+
+    // Create Stripe checkout session
+    const lineItems = processedServices.map(service => ({
+      price_data: {
+        currency: 'cad',
+        product_data: {
+          name: service.serviceTitle,
+          description: `Duration: ${service.duration} minutes`
+        },
+        unit_amount: Math.round(service.price * 100),
+      },
+      quantity: 1
+    }));
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: lineItems,
+      mode: 'payment',
+      customer_email: userData.email,
+      success_url: `${process.env.FRONTEND_URL}/appointment/verify/${newAppointment._id}?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL}/appointment/cancelled`,
+      metadata: {
+        appointmentId: newAppointment._id.toString(),
+        isMultipleService: 'true',
+        serviceCount: processedServices.length.toString()
+      }
+    });
+
+    res.status(201).json({
+      message: "Appointment created successfully. Please complete payment.",
+      appointment: newAppointment,
+      paymentUrl: session.url
+    });
+
+  } catch (error) {
+    console.error("Error booking multiple appointment:", error);
+    res.status(500).json({ 
+      message: error.message || "Failed to book appointment" 
+    });
+  }
+};
 // Adjust this import path based on your project
 
 const bookAppointment = async (req, res) => {
