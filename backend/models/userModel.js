@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema(
   address: { type: Object, default: { line1: "", line2: "" } },
   gender: { type: String, default: "Not Selected" },
   dob: { type: String, default: "Not Selected" },
-  phone: { type: Number, default: "00000" },
+  phone: { type: String },
   },
   { minimize: false }
 );
