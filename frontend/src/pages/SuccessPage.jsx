@@ -548,15 +548,6 @@ export default function SuccessPage() {
           </button>
         </div>
 
-        {/* Additional Info */}
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <p className="text-sm text-gray-500">
-            Need to make changes? Contact us at{" "}
-            <a href="mailto:support@example.com" className="text-blue-600 hover:underline">
-              support@example.com
-            </a>
-          </p>
-        </div>
       </div>
     </div>
   );
