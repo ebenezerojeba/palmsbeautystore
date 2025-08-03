@@ -136,12 +136,18 @@ const Appointment = () => {
   };
 
   // Calculate total duration
-  const getTotalDuration = () => {
-    return selectedServices.reduce((total, service) => total + Number(service.duration || 90), 0);
-  }
+  // const getTotalDuration = () => {
+  //   return selectedServices.reduce((total, service) => total + Number(service.duration || 90), 0);
+  // }
 
-
+// In your getTotalDuration function
+const getTotalDuration = () => {
+  const total = selectedServices.reduce((total, service) => total + Number(service.duration || 90), 0);
+  console.log('Total duration calculated:', total, 'from services:', selectedServices);
+  return total;
+}
   
+// Updated useEffect for fetching available slots
 // Updated useEffect for fetching available slots
 useEffect(() => {
   const fetchAvailableSlots = async () => {
@@ -152,12 +158,28 @@ useEffect(() => {
       const startDate = new Date().toISOString().split('T')[0];
       const endDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
+      // Prepare services data with better structure
+      const servicesForSlots = selectedServices.map(service => ({
+        _id: service._id,
+        title: service.title,
+        duration: service.duration || 90,
+        price: service.price
+      }));
+
       // Prepare query parameters
       const queryParams = new URLSearchParams({
         serviceId: id,
         startDate,
         endDate,
-        selectedServices: JSON.stringify(selectedServices) // Send selected services for duration calculation
+        selectedServices: JSON.stringify(servicesForSlots)
+      });
+
+      console.log('Fetching slots with params:', {
+        serviceId: id,
+        startDate,
+        endDate,
+        selectedServices: servicesForSlots,
+        totalDuration: getTotalDuration()
       });
 
       const res = await fetch(
@@ -169,6 +191,7 @@ useEffect(() => {
       }
       
       const data = await res.json();
+      console.log('Received slots data:', data);
 
       if (data.availableSlots) {
         setAvailableSlots(data.availableSlots);
@@ -185,7 +208,7 @@ useEffect(() => {
   };
 
   fetchAvailableSlots();
-  }, [selectedServices, id, backendUrl]);
+}, [selectedServices, id, backendUrl]);
 
   // Add service to selection
   const addService = (service) => {
@@ -649,20 +672,7 @@ useEffect(() => {
                   </div>
                 )}
 
-                {/* <div className="flex items-center space-x-3">
-                  <input
-                    type="radio"
-                    id="new-card"
-                    name="paymentMethod"
-                    value="new"
-                    checked={selectedPaymentMethod === "new"}
-                    onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                  />
-                  <label htmlFor="new-card" className="text-sm text-gray-700">
-                    Use new payment method
-                  </label>
-                </div> */}
+                
 
                 <div className="flex items-center space-x-3 mt-4">
                   <input
