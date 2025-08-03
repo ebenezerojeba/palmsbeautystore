@@ -1043,6 +1043,8 @@ const bookMultipleAppointment = async (req, res) => {
     const { services, date, time, totalAmount } = req.body;
     const userId = req.userId;
 
+    console.log('Received booking data:', { services, date, time, totalAmount });
+
     // Validation
     if (!services || !Array.isArray(services) || services.length === 0) {
       return res.status(400).json({ message: "At least one service is required" });
@@ -1058,22 +1060,41 @@ const bookMultipleAppointment = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Calculate total duration for the appointment
+    // Calculate total duration and amount for the appointment
     let calculatedDuration = 0;
     let calculatedAmount = 0;
+    
     const processedServices = services.map((service, index) => {
-      calculatedAmount += service.price;
-      calculatedDuration += service.duration;
+      // CRITICAL FIX: Ensure we're working with numbers, not strings
+      const servicePrice = parseFloat(service.price) || 0;
+      const serviceDuration = parseInt(service.duration) || 90;
+      
+      calculatedAmount += servicePrice;
+      calculatedDuration += serviceDuration;
+      
+      console.log(`Service ${index + 1}:`, {
+        title: service.serviceTitle,
+        price: servicePrice,
+        duration: serviceDuration,
+        runningTotal: calculatedAmount
+      });
+      
       return {
         serviceId: service.serviceId,
         serviceTitle: service.serviceTitle,
-        duration: service.duration,
-        price: service.price,
+        duration: serviceDuration,
+        price: servicePrice,
         order: index + 1
       };
     });
 
-    // FIX 8: Comprehensive slot availability check
+    console.log('Final calculated values:', {
+      calculatedAmount,
+      calculatedDuration,
+      totalAmountFromFrontend: totalAmount
+    });
+
+    // Comprehensive slot availability check
     const appointmentDate = new Date(date);
     const [requestHour, requestMinute] = time.split(':').map(Number);
     const requestStart = new Date(appointmentDate);
@@ -1097,7 +1118,7 @@ const bookMultipleAppointment = async (req, res) => {
       if (existingApt.totalDuration && existingApt.totalDuration > 0) {
         existingDuration = existingApt.totalDuration;
       } else if (existingApt.services && existingApt.services.length > 0) {
-        existingDuration = existingApt.services.reduce((total, service) => total + (service.duration || 90), 0);
+        existingDuration = existingApt.services.reduce((total, service) => total + (parseInt(service.duration) || 90), 0);
       } else {
         existingDuration = parseInt(existingApt.duration) || 90;
       }
@@ -1112,15 +1133,22 @@ const bookMultipleAppointment = async (req, res) => {
       }
     }
 
-    // Use calculated amount if totalAmount is not provided or invalid
-    const finalAmount = totalAmount && totalAmount > 0 ? totalAmount : calculatedAmount;
+    // CRITICAL FIX: Use calculated amount and ensure it's a number
+    const finalAmount = parseFloat(calculatedAmount.toFixed(2));
 
-    // Security check: verify amounts match (with small tolerance for rounding)
-    if (Math.abs(finalAmount - calculatedAmount) > 0.01) {
+    // Security check: verify amounts match (if totalAmount is provided)
+    if (totalAmount && Math.abs(finalAmount - parseFloat(totalAmount)) > 0.01) {
+      console.log('Amount mismatch:', {
+        calculated: finalAmount,
+        provided: parseFloat(totalAmount),
+        difference: Math.abs(finalAmount - parseFloat(totalAmount))
+      });
       return res.status(400).json({ 
         message: "Price calculation mismatch. Please refresh and try again." 
       });
     }
+
+    console.log('Creating appointment with final amount:', finalAmount);
 
     // Create appointment with multiple services
     const newAppointment = await appointmentModel.create({
@@ -1138,10 +1166,10 @@ const bookMultipleAppointment = async (req, res) => {
       userPhone: userData.phone,
       date: appointmentDate,
       time,
-      totalDuration: calculatedDuration, // CRITICAL: Store total duration
+      totalDuration: calculatedDuration,
       status: 'pending',
       payment: {
-        amount: finalAmount,
+        amount: finalAmount, // This should now be a proper number
         currency: 'CAD',
         status: 'pending'
       }
@@ -1155,7 +1183,7 @@ const bookMultipleAppointment = async (req, res) => {
           name: service.serviceTitle,
           description: `Duration: ${service.duration} minutes`
         },
-        unit_amount: Math.round(service.price * 100),
+        unit_amount: Math.round(service.price * 100), // Convert to cents
       },
       quantity: 1
     }));
