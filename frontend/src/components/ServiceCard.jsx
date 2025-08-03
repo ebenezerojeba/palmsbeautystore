@@ -116,8 +116,8 @@ const ServiceCard = ({
         {/* Duration & Price */}
         <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
           <div className="flex items-center gap-1 text-gray-700 text-sm">
-            {/* <Clock className="w-4 h-4 text-gray-500" /> */}
-            {/* {formatDuration(duration)} */}
+            <Clock className="w-4 h-4 text-gray-500" />
+            {formatDuration(duration)}
           </div>
           <div className="flex items-center gap-2">
             {originalPrice && (

@@ -851,7 +851,7 @@ useEffect(() => {
                     </label>
                   </div>
 
-                  {/* <div className="flex items-start space-x-3">
+                   <div className="flex items-start space-x-3">
                     <input
                       type="checkbox"
                       id="agree-terms"
@@ -876,7 +876,7 @@ useEffect(() => {
                       </button>
                       *
                     </label>
-                  </div> */}
+                  </div> 
                 </div>
               </div>
             </div>
