@@ -861,10 +861,10 @@ const getAvailableSlots = async (req, res) => {
       }
     }
     
-    // Calculate total duration needed for the services
-    const totalServiceDuration = servicesToBook.length > 0 
-      ? servicesToBook.reduce((total, service) => total + (service.duration || 90), 0)
-      : 90; // Default duration if no services specified
+ // Calculate total duration needed for the services
+const totalServiceDuration = servicesToBook.length > 0 
+  ? servicesToBook.reduce((total, service) => total + (parseInt(service.duration) || 90, 0))
+  : 90; // Default duration if no services specified
     
     // Get business hours with caching
     const businessHours = await getBusinessHours();
@@ -916,6 +916,8 @@ const getAvailableSlots = async (req, res) => {
 
 // FIX 3: Completely rewritten slot generation logic
 const generateTimeSlots = (businessDay, existingAppointments, date, currentDateTime, requiredDuration = 90) => {
+   // Make sure requiredDuration is a number
+  requiredDuration = parseInt(requiredDuration) || 90;
   const slots = [];
   const isToday = date.toDateString() === currentDateTime.toDateString();
   
@@ -1064,19 +1066,37 @@ const bookMultipleAppointment = async (req, res) => {
     }
 
     // Calculate total duration for the appointment
+    // let calculatedDuration = 0;
+    // let calculatedAmount = 0;
+    // const processedServices = services.map((service, index) => {
+    //   calculatedAmount += service.price;
+    //   calculatedDuration += service.duration;
+    //   return {
+    //     serviceId: service.serviceId,
+    //     serviceTitle: service.serviceTitle,
+    //     duration: service.duration,
+    //     price: service.price,
+    //     order: index + 1
+    //   };
+    // });
+
+
+     // Calculate total duration for the appointment
     let calculatedDuration = 0;
     let calculatedAmount = 0;
     const processedServices = services.map((service, index) => {
       calculatedAmount += service.price;
-      calculatedDuration += service.duration;
+      calculatedDuration += parseInt(service.duration) || 90;  // Ensure duration is a number
       return {
         serviceId: service.serviceId,
         serviceTitle: service.serviceTitle,
-        duration: service.duration,
+        duration: parseInt(service.duration) || 90,  // Ensure duration is a number
         price: service.price,
         order: index + 1
       };
     });
+
+
 
     // FIX 8: Comprehensive slot availability check
     const appointmentDate = new Date(date);
