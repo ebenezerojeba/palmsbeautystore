@@ -997,8 +997,26 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
     const slotEnd = new Date(currentSlotTime.getTime() + requiredDuration * 60000);
     
     // Skip if slot would extend past closing time
+    // if (slotEnd > businessEnd) {
+    //   break;
+    // }
+
     if (slotEnd > businessEnd) {
-      break;
+  currentSlotTime = new Date(currentSlotTime.getTime() + slotInterval * 60000);
+  continue;
+}
+// Check if slot conflicts with blocked periods
+const conflicts = blockedPeriods.filter((period) => {
+  return (
+    (currentSlotTime >= period.start && currentSlotTime < period.end) ||
+    (slotEnd > period.start && slotEnd <= period.end) ||
+    (currentSlotTime <= period.start && slotEnd >= period.end)
+    );
+    });
+    if (conflicts.length > 0) {
+      // If there are conflicts, skip this slot and move to the next one
+      currentSlotTime = new Date(currentSlotTime.getTime() + slotInterval * 60000);
+      continue;
     }
     
     // FIX 6: Comprehensive conflict checking
