@@ -280,15 +280,17 @@ useEffect(() => {
     setIsBooking(true);
 
     try {
-      const bookingData = {
-        // Services with proper order
-        services: selectedServices.map((service, index) => ({
-          serviceId: service._id,
-          serviceTitle: service.title,
-          duration: service.duration || 90,
-          price: service.price,
-          order: index + 1
-        })),
+     // In your frontend handleBooking function, ensure services are properly formatted:
+const bookingData = {
+  services: selectedServices.map((service, index) => ({
+    serviceId: service._id,
+    serviceTitle: service.title,
+    duration: parseInt(service.duration) || 90, // Ensure it's a number
+    price: parseFloat(service.price) || 0,      // Ensure it's a number
+    order: index + 1
+  })),
+  // ... rest of your booking data
+
         
         // Appointment details
         date: selectedDate,
