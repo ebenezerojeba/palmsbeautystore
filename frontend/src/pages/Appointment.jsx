@@ -466,8 +466,9 @@ const bookingData = {
 
 
 
-          
+          <div className="flex flex-col absolute px-9 p-20 ">
 
+          </div>
             {/* Selected Services */}
             <div className="bg-white rounded-lg shadow-sm">
               <div className="p-6 border-b border-gray-200">
@@ -934,7 +935,6 @@ const bookingData = {
   </ul>
 </div>
 </div>
-
 
             <div className="p-6 border-t border-gray-200">
               <button
