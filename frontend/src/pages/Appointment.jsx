@@ -462,7 +462,7 @@ const bookingData = {
                   </div>
                 </div>
               </div> */}
-            </div>
+            {/* </div> */}
 
 
 
