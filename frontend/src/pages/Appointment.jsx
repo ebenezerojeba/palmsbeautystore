@@ -135,64 +135,14 @@ const Appointment = () => {
     return selectedServices.reduce((total, service) => total + Number(service.price || 0), 0);
   };
 
-//   // Calculate total duration
-//   const getTotalDuration = () => {
-//     return selectedServices.reduce((total, service) => total + Number(service.duration || 90), 0);
-//   }
+  // Calculate total duration
+  const getTotalDuration = () => {
+    return selectedServices.reduce((total, service) => total + Number(service.duration || 90), 0);
+  }
 
 
   
-// // Updated useEffect for fetching available slots
-// useEffect(() => {
-//   const fetchAvailableSlots = async () => {
-//     if (selectedServices.length === 0) return;
-
-//     setIsLoading(true);
-//     try {
-//       const startDate = new Date().toISOString().split('T')[0];
-//       const endDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-//       // Prepare query parameters
-//       const queryParams = new URLSearchParams({
-//         serviceId: id,
-//         startDate,
-//         endDate,
-//         selectedServices: JSON.stringify(selectedServices) // Send selected services for duration calculation
-//       });
-
-//       const res = await fetch(
-//         `${backendUrl}/api/appointment/available-slots?${queryParams.toString()}`
-//       );
-      
-//       if (!res.ok) {
-//         throw new Error(`HTTP error! status: ${res.status}`);
-//       }
-      
-//       const data = await res.json();
-
-//       if (data.availableSlots) {
-//         setAvailableSlots(data.availableSlots);
-//       } else {
-//         setAvailableSlots([]);
-//       }
-//     } catch (err) {
-//       console.error('Error fetching slots:', err);
-//       toast.error("Failed to fetch available slots");
-//       setAvailableSlots([]);
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-//   fetchAvailableSlots();
-//   }, [selectedServices, id, backendUrl]);
-
-// Calculate total duration
-const getTotalDuration = () => {
-  return selectedServices.reduce((total, service) => total + (parseInt(service.duration) || 90), 0);
-}
-
-// When fetching slots:
+// Updated useEffect for fetching available slots
 useEffect(() => {
   const fetchAvailableSlots = async () => {
     if (selectedServices.length === 0) return;
@@ -207,13 +157,24 @@ useEffect(() => {
         serviceId: id,
         startDate,
         endDate,
-        selectedServices: JSON.stringify(selectedServices.map(s => ({
-          serviceId: s._id,
-          duration: parseInt(s.duration) || 90  // Ensure duration is a number
-        })))
+        selectedServices: JSON.stringify(selectedServices) // Send selected services for duration calculation
       });
 
-      // ... rest of the fetch
+      const res = await fetch(
+        `${backendUrl}/api/appointment/available-slots?${queryParams.toString()}`
+      );
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      const data = await res.json();
+
+      if (data.availableSlots) {
+        setAvailableSlots(data.availableSlots);
+      } else {
+        setAvailableSlots([]);
+      }
     } catch (err) {
       console.error('Error fetching slots:', err);
       toast.error("Failed to fetch available slots");
@@ -224,7 +185,7 @@ useEffect(() => {
   };
 
   fetchAvailableSlots();
-}, [selectedServices, id, backendUrl]);
+  }, [selectedServices, id, backendUrl]);
 
   // Add service to selection
   const addService = (service) => {
