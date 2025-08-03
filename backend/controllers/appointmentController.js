@@ -851,20 +851,26 @@ const getAvailableSlots = async (req, res) => {
   try {
     const { serviceId, startDate, endDate, selectedServices } = req.query;
     
-    // Parse selectedServices if provided (for multiple service bookings)
+    console.log('Received query params:', { serviceId, startDate, endDate, selectedServices });
+    
+    // Parse selectedServices if provided
     let servicesToBook = [];
     if (selectedServices) {
       try {
         servicesToBook = JSON.parse(selectedServices);
+        console.log('Parsed services:', servicesToBook);
       } catch (e) {
         console.error('Error parsing selectedServices:', e);
+        return res.status(400).json({ message: "Invalid selectedServices format" });
       }
     }
     
     // Calculate total duration needed for the services
     const totalServiceDuration = servicesToBook.length > 0 
-      ? servicesToBook.reduce((total, service) => total + (service.duration || 90), 0)
-      : 90; // Default duration if no services specified
+      ? servicesToBook.reduce((total, service) => total + (parseInt(service.duration) || 90), 0)
+      : 90;
+    
+    console.log('Total service duration calculated:', totalServiceDuration);
     
     // Get business hours with caching
     const businessHours = await getBusinessHours();
@@ -874,12 +880,12 @@ const getAvailableSlots = async (req, res) => {
     }
     
     const start = new Date(startDate || new Date());
-    const end = new Date(endDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)); // 14 days ahead
+    const end = new Date(endDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000));
     
     const availableSlots = [];
-    const now = new Date(); // Get current time once for consistency
+    const now = new Date();
     
-    // FIX 1: Proper date loop that doesn't modify the loop variable
+    // Proper date loop
     for (let d = new Date(start); d <= end; d = new Date(d.getTime() + 24 * 60 * 60 * 1000)) {
       const dayOfWeek = d.getDay();
       const businessDay = businessHours.find(bh => bh.dayOfWeek === dayOfWeek);
@@ -895,17 +901,23 @@ const getAvailableSlots = async (req, res) => {
         status: { $in: ['pending', 'confirmed'] }
       }).select('time duration totalDuration services');
       
+      console.log(`Existing appointments for ${dateStr}:`, existingAppointments);
+      
       const slots = generateTimeSlots(businessDay, existingAppointments, new Date(d), now, totalServiceDuration);
       
-      // FIX 2: Only include dates that have available slots
+      console.log(`Generated ${slots.length} slots for ${dateStr}`);
+      
+      // Only include dates that have available slots
       if (slots.length > 0) {
         availableSlots.push({
           date: dateStr,
-          dayOfWeek: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayOfWeek],
+          dayOfWeek: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek],
           slots
         });
       }
     }
+    
+    console.log('Final available slots:', availableSlots.length);
     
     res.status(200).json({ availableSlots });
   } catch (error) {
@@ -933,13 +945,13 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
   // For today, calculate minimum start time (current time + 30 min buffer)
   let earliestStartTime = new Date(businessStart);
   if (isToday) {
-    const minTime = new Date(currentDateTime.getTime() + 30 * 60 * 1000); // 30 minutes buffer
+    const minTime = new Date(currentDateTime.getTime() + 30 * 60 * 1000);
     if (minTime > businessStart) {
       earliestStartTime = new Date(minTime);
     }
   }
   
-  // FIX 4: Create comprehensive blocked time periods
+  // Create comprehensive blocked time periods
   const blockedPeriods = [];
   
   // Add existing appointments as blocked periods
@@ -957,7 +969,7 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
     } else if (apt.duration) {
       aptDuration = parseInt(apt.duration) || 90;
     } else {
-      aptDuration = 90; // Default fallback
+      aptDuration = 90;
     }
     
     const aptEnd = new Date(aptStart.getTime() + aptDuration * 60000);
@@ -977,8 +989,8 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
     blockedPeriods.push({ start: breakStart, end: breakEnd });
   }
   
-  // FIX 5: Use consistent slot intervals
-  const slotInterval = businessDay.slotDuration || 30; // Default 30-minute intervals
+  // Use consistent slot intervals
+  const slotInterval = businessDay.slotDuration || 30;
   
   // Generate potential time slots
   let currentSlotTime = new Date(earliestStartTime);
@@ -997,29 +1009,12 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
     const slotEnd = new Date(currentSlotTime.getTime() + requiredDuration * 60000);
     
     // Skip if slot would extend past closing time
-    // if (slotEnd > businessEnd) {
-    //   break;
-    // }
-
     if (slotEnd > businessEnd) {
-  currentSlotTime = new Date(currentSlotTime.getTime() + slotInterval * 60000);
-  continue;
-}
-// Check if slot conflicts with blocked periods
-const conflicts = blockedPeriods.filter((period) => {
-  return (
-    (currentSlotTime >= period.start && currentSlotTime < period.end) ||
-    (slotEnd > period.start && slotEnd <= period.end) ||
-    (currentSlotTime <= period.start && slotEnd >= period.end)
-    );
-    });
-    if (conflicts.length > 0) {
-      // If there are conflicts, skip this slot and move to the next one
       currentSlotTime = new Date(currentSlotTime.getTime() + slotInterval * 60000);
       continue;
     }
     
-    // FIX 6: Comprehensive conflict checking
+    // FIXED: Single conflict checking logic
     const hasConflict = blockedPeriods.some(blocked => {
       // Check if there's any overlap between the slot and blocked period
       return currentSlotTime < blocked.end && slotEnd > blocked.start;
