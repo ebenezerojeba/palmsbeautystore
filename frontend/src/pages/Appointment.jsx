@@ -24,7 +24,8 @@ import {
   User,
   Phone,
   Mail,
-  MessageSquare
+  MessageSquare,
+  Loader2
 } from "lucide-react";
 
 const Appointment = () => {
@@ -140,9 +141,7 @@ const getTotalDuration = () => {
   console.log('Total duration calculated:', total, 'from services:', selectedServices);
   return total;
 }
-  
-// Updated useEffect for fetching available slots
-// Updated useEffect for fetching available slots
+//Updated useEffect for fetching available slots
 useEffect(() => {
   const fetchAvailableSlots = async () => {
     if (selectedServices.length === 0) return;
@@ -217,7 +216,6 @@ useEffect(() => {
       toast.info("This service is already selected");
     }
   };
-
   // Remove service from selection
   const removeService = (serviceId) => {
     if (selectedServices.length === 1) {
@@ -467,8 +465,8 @@ const bookingData = {
                     onClick={() => setShowAddService(true)}
                     className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Service
+                    <Plus className="h-4 w-4" />
+                    {/* Add Service */}
                   </button>
                 </div>
               </div>
@@ -511,7 +509,7 @@ const bookingData = {
             <div className="bg-white rounded-lg shadow-sm">
               <div className="p-6 border-b border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <MessageSquare className="h-5 w-5 mr-2" />
+                  {/* <MessageSquare className="h-5 w-5 mr-2" /> */}
                   Additional Information
                 </h3>
               </div>
@@ -525,10 +523,10 @@ const bookingData = {
                     onChange={(e) => setClientNotes(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     rows="3"
-                    placeholder="Any specific concerns, preferences, or information you'd like us to know..."
+                    placeholder=""
                   />
                 </div>
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Special Requests
                   </label>
@@ -539,7 +537,7 @@ const bookingData = {
                     rows="2"
                     placeholder="Any special accommodations or requests..."
                   />
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -560,7 +558,7 @@ const bookingData = {
 
                   {isLoading ? (
                     <div className="flex items-center justify-center py-12">
-                      <Loader className="animate-spin h-6 w-6 text-blue-600 mr-2" />
+                      <Loader2 className="animate-spin h-6 w-6 text-blue-600 mr-2" />
                       <span className="text-gray-600">Loading available dates...</span>
                     </div>
                   ) : availableSlots.length > 0 ? (
@@ -591,7 +589,7 @@ const bookingData = {
                     </div>
                   ) : (
                     <div className="text-center py-12 text-gray-500">
-                      <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                      {/* <AlertCircle className="h-8 w-8 mx-auto mb-2" /> */}
                       <p>No available slots found</p>
                       <p className="text-sm">Please try different services or contact us</p>
                     </div>
@@ -633,7 +631,7 @@ const bookingData = {
             <div className="bg-white rounded-lg shadow-sm">
               <div className="p-6 border-b border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <CardIcon className="h-5 w-5 mr-2" />
+                  {/* <CardIcon className="h-5 w-5 mr-2" /> */}
                   Payment Method
                 </h3>
               </div>
@@ -685,22 +683,22 @@ const bookingData = {
             <div className="bg-white rounded-lg shadow-sm">
               <div className="p-6 border-b border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <Shield className="h-5 w-5 mr-2" />
+                  {/* <Shield className="h-5 w-5 mr-2" /> */}
                   Terms & Policies
                 </h3>
               </div>
               <div className="p-6 space-y-4">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <div className="flex items-start">
-                    <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" />
+                    {/* <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" /> */}
                     <div>
-                      <h4 className="text-sm font-medium text-yellow-800 mb-2">
+                      <h4 className="text-sm font-medium text-gray-800 mb-2">
                         Cancellation Policy
                       </h4>
                    
                       <button
                         onClick={() => setShowCancellationPolicy(true)}
-                        className="text-sm text-yellow-800 underline hover:text-yellow-900"
+                        className="text-sm text-gray-800 underline hover:text-gray-900"
                       >
                         Read full cancellation policy
                       </button>
@@ -765,15 +763,15 @@ const bookingData = {
               <div className="p-6 space-y-4">
                 {selectedDate && selectedTime ? (
                   <>
-                    <div className="bg-blue-50 rounded-lg p-4">
-                      <div className="flex items-center text-blue-700 mb-2">
-                        <Calendar className="h-4 w-4 mr-2" />
+                    <div className="bg-gray-100 rounded-lg p-4">
+                      <div className="flex items-center text-gray-700 mb-2">
+                        {/* <Calendar className="h-4 w-4 mr-2" /> */}
                         <span className="font-medium">
                           {formatDate(selectedDate)}
                         </span>
                       </div>
-                      <div className="flex items-center text-blue-700">
-                        <Clock className="h-4 w-4 mr-2" />
+                      <div className="flex items-center text-gray-700">
+                        {/* <Clock className="h-4 w-4 mr-2" /> */}
                         <span className="font-medium">{selectedTime}</span>
                       </div>
                     </div>
@@ -788,11 +786,11 @@ const bookingData = {
 
                       <div className="border-t border-gray-200 pt-3 space-y-2">
                         <div className="flex justify-between text-sm text-gray-600">
-                          <span>Total Duration:</span>
+                          <span>Duration:</span>
                           <span>{formatDuration(getTotalDuration())}</span>
                         </div>
                         <div className="flex justify-between text-base font-semibold">
-                          <span>Total Price:</span>
+                          <span>Price:</span>
                           <span>{formatNaira(getTotalPrice())}</span>
                         </div>
                       </div>
@@ -803,17 +801,17 @@ const bookingData = {
                   </>
                 ) :(
                   <div className="text-center py-8 text-gray-500">
-                    <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    {/* <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" /> */}
                     <p>Select date and time to see summary</p>
                   </div>
                 )}
               </div>
 
-              <div className="p-6 border-t border-gray-200">
+              <div className="p-6 flex justify-center">
                 <button
                   onClick={handleBooking}
                   disabled={isBooking || !selectedDate || !selectedTime || !agreeToCancellationPolicy}
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  className= "bg-black text-white py-3 px-4 rounded-lg justify-center items-center font-medium hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed "
                 >
                   {isBooking ? (
                     <>
@@ -1046,9 +1044,7 @@ const bookingData = {
                 Pay Now - {formatNaira(getTotalPrice())}
               </button>
 
-              <p className="text-xs text-gray-500">
-                Secure payment powered by our payment processor
-              </p>
+             
             </div>
           </div>
         </div>

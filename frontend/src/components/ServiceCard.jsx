@@ -138,16 +138,18 @@ const ServiceCard = ({
         </div>
 
         {/* Book Button */}
-        <button
+     <div className='flex justify-end'>
+         <button
           onClick={handleBooking}
-          className={`mt-3 w-full py-2.5 px-4 rounded-xl cursor-pointer font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 group/btn ${
+          className={`mt-3 py-2.5 px-4 rounded-xl cursor-pointer font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 group/btn ${
             isHovered ? 'bg-gray-800 shadow-md' : 'bg-gray-700'
           }`}
         >
-          <Calendar className="w-4 h-4" />
+          {/* <Calendar className="w-4 h-4" /> */}
           Book Now
-          <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+          {/* <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" /> */}
         </button>
+     </div>
       </div>
 
       {/* Hover Overlay */}

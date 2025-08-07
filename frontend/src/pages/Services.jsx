@@ -34,8 +34,6 @@ useEffect(() => {
   }
 }, [category, scrollY]);
 
-
-
   const fetchServices = async () => {
     try {
       setLoading(true);
