@@ -135,12 +135,6 @@ const Appointment = () => {
     return selectedServices.reduce((total, service) => total + Number(service.price || 0), 0);
   };
 
-  // Calculate total duration
-  // const getTotalDuration = () => {
-  //   return selectedServices.reduce((total, service) => total + Number(service.duration || 90), 0);
-  // }
-
-// In your getTotalDuration function
 const getTotalDuration = () => {
   const total = selectedServices.reduce((total, service) => total + Number(service.duration || 90), 0);
   console.log('Total duration calculated:', total, 'from services:', selectedServices);
@@ -732,7 +726,7 @@ const bookingData = {
                       I understand and agree to the cancellation policy *
                     </label>
                   </div>
-
+{/* 
                    <div className="flex items-start space-x-3">
                     <input
                       type="checkbox"
@@ -758,7 +752,7 @@ const bookingData = {
                       </button>
                       *
                     </label>
-                  </div> 
+                  </div>  */}
                 </div>
               </div>
             </div>
@@ -823,7 +817,7 @@ const bookingData = {
               <div className="p-6 border-t border-gray-200">
                 <button
                   onClick={handleBooking}
-                  disabled={isBooking || !selectedDate || !selectedTime || !agreeToCancellationPolicy || !agreeToTerms}
+                  disabled={isBooking || !selectedDate || !selectedTime || !agreeToCancellationPolicy}
                   className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {isBooking ? (
