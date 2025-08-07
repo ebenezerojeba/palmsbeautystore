@@ -248,11 +248,6 @@ useEffect(() => {
       return false;
     }
 
-    if (!agreeToTerms) {
-      toast.warn("Please agree to the terms and conditions");
-      return false;
-    }
-
     return true;
   };
 
