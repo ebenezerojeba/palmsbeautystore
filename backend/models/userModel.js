@@ -20,8 +20,33 @@ const userSchema = new mongoose.Schema(
   gender: { type: String, default: "Not Selected" },
   dob: { type: String, default: "Not Selected" },
   phone: { type: String },
+    lastLogin: {
+    type: Date,
+    default: null
   },
-  { minimize: false }
+  loginHistory: [{
+    timestamp: {
+      type: Date,
+      default: Date.now
+    },
+    ip: {
+      type: String,
+      required: false
+    },
+    userAgent: {
+      type: String,
+      required: false
+    }
+  }],
+  loginCount: {
+    type: Number,
+    default: 0
+  },
+  },
+  { minimize: false },
+   {
+  timestamps: true // This adds createdAt and updatedAt automatically
+}
 );
 const userModel = mongoose.models.user || mongoose.model('user', userSchema)
 export default userModel 

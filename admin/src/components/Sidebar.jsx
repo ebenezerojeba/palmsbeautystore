@@ -94,7 +94,7 @@ const Sidebar = ({ onLogout, notifications = 0, className = '' }) => {
       className={({ isActive }) =>
         `flex items-center gap-3 px-3 py-2.5 rounded-xl group relative transition-all
         ${isActive
-          ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-100'
+          ? 'bg-blue-50 text-pink-500 ring-1 ring-blue-100'
           : 'text-gray-700 hover:bg-gray-100'}`
       }
       title={!isExpanded ? item.label : ''}
@@ -104,7 +104,7 @@ const Sidebar = ({ onLogout, notifications = 0, className = '' }) => {
       {item.icon}
       {isExpanded && <span className="text-sm font-medium truncate">{item.label}</span>}
       {!isExpanded && (
-        <div className="absolute left-full ml-3 px-3 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 shadow-lg z-50">
+        <div className="absolute left-full ml-3 px-3 py-1 bg-pink-\ text-white text-xs rounded opacity-0 group-hover:opacity-100 shadow-lg z-50">
           {item.label}
         </div>
       )}
@@ -113,7 +113,7 @@ const Sidebar = ({ onLogout, notifications = 0, className = '' }) => {
 
   const SidebarContent = () => (
     <>
-      <div className="flex items-center justify-between p-4 bg-gray-900 text-white">
+      <div className="flex items-center justify-between p-4 bg-pink-800 text-white">
         <div
           onClick={handleLogoClick}
           className="flex items-center gap-3 cursor-pointer focus:outline-none"
@@ -121,9 +121,9 @@ const Sidebar = ({ onLogout, notifications = 0, className = '' }) => {
           tabIndex={0}
           onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleLogoClick()}
         >
-          <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+          {/* <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
             <span className="font-bold text-sm">{isExpanded ? 'P' : 'PB'}</span>
-          </div>
+          </div> */}
           {isExpanded && (
             <div>
               <div className="font-bold text-lg">Palmsbeauty</div>

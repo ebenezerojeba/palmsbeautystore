@@ -14,102 +14,6 @@ const createToken = (userId) => {
   });
 };
 
-// // Route for Login
-// const loginUser = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-    
-//     if (!email || !password) {
-//       return res.status(400).json({ success: false, message: "All fields are required" });
-//     }
-
-//     const user = await userModel.findOne({ email });
-//     if (!user) {
-//       return res.status(404).json({ success: false, message: "User doesn't exist" });
-//     }
-
-//     const isMatch = await bcrypt.compare(password, user.password);
-//     if (!isMatch) {
-//       return res.status(401).json({ success: false, message: "Invalid credentials" });
-//     }
-
-//     const token = createToken(user._id);
-//     res.status(200).json({ 
-//       success: true, 
-//       token,
-//       user: {
-//         id: user._id,
-//         name: user.name,
-//         email: user.email
-//       }
-//     });
-    
-
-//   } catch (error) {
-//     console.error("Login error:", error);
-//     res.status(500).json({ success: false, message: "Internal server error" });
-//   }
-// };
-
-// // Register user
-// const registerUser = async (req, res) => {
-//   try {
-//     const { name, email, password } = req.body;
-
-//     // Validate input
-//     if (!name || !email || !password) {
-//       return res.status(400).json({ success: false, message: "All fields are required" });
-//     }
-
-//     if (!validator.isEmail(email)) {
-//       return res.status(400).json({ success: false, message: "Please enter a valid email" });
-//     }
-
-//     if (password.length < 8) {
-//       return res.status(400).json({ 
-//         success: false, 
-//         message: "Password must be at least 8 characters" 
-//       });
-//     }
-
-//     // Check if user exists
-//     const exists = await userModel.findOne({ email });
-//     if (exists) {
-//       return res.status(409).json({ success: false, message: "User already exists" });
-//     }
-
-//     // Hash password
-//     const salt = await bcrypt.genSalt(10);
-//     const hashedPassword = await bcrypt.hash(password, salt);
-
-//     // Create user
-//     const newUser = new userModel({
-//       name,
-//       email,
-//       password: hashedPassword
-//     });
-
-//     const user = await newUser.save();
-//     const token = createToken(user._id);
-    
-
-//     res.status(201).json({ 
-//       success: true, 
-//       token,
-//       user: {
-//         id: user._id,
-//         name: user.name,
-//         email: user.email
-//       }
-//     });
-
-//   } catch (error) {
-//     console.error("Registration error:", error);
-//     res.status(500).json({ success: false, message: "Internal server error" });
-//   }
-// };
-
-
 const listAppointment = async (req, res) => {
   try {
     const { userId } = req.body;
@@ -159,7 +63,7 @@ const registerUser = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      phone // ✅ Added phone
+      phone 
     });
 
     const user = await newUser.save();
@@ -186,12 +90,13 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+ 
     if (!email || !password) {
       return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
     const user = await userModel.findOne({ email });
+
     if (!user) {
       return res.status(404).json({ success: false, message: "User doesn't exist" });
     }
@@ -219,8 +124,6 @@ const loginUser = async (req, res) => {
   }
 };
 
-
-
 // Route for admin login
 const adminLogin = async (req, res) => {
     try {
@@ -233,7 +136,6 @@ const adminLogin = async (req, res) => {
             res.json({success: false, message: "Invalid Credentials"})
         }
 
-
     } catch (error) {
         console.log(error);
         res.json({success: false, message: error.message})
@@ -241,9 +143,7 @@ const adminLogin = async (req, res) => {
 }
 
 
-
 // API to update user profile - supports partial updates
-
 const updateProfile = async (req, res) => {
   try {
     const { userId, name, phone, address, dob, gender } = req.body;
@@ -346,10 +246,6 @@ const updateProfile = async (req, res) => {
     });
   }
 };
-
-
-
-
 
 // API to get userData if it's verified or not
 const getUserData = async (req, res) => {

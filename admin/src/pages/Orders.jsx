@@ -251,17 +251,12 @@ const Orders = ({ token }) => {
                         <div className="flex items-center gap-2">
                           <CreditCard className="h-4 w-4 text-gray-400" />
                           <span className="text-sm text-gray-600">
-                            {order.paymentMethod} - {order.paymentMethod === "Online" ? "Paid" : "Pending"}
+                             {order.paymentMethod === "Online" ? "Paid" : "Pending"}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Truck className="h-4 w-4 text-gray-400" />
-                          {/* <span className="text-sm text-gray-600">
-                            Delivery: ₦{order.deliveryFee}
-                          </span> */}
-                        </div>
+                 
                         <div className="text-lg font-bold text-gray-900">
-                          Total: ${order.amount}
+                          Total: ${order.amount.toLocaleString()}
                         </div>
                       </div>
                     </div>

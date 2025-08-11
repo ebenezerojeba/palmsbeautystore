@@ -105,50 +105,40 @@ const ServiceCard = ({
       <div className="flex-1 p-4 flex flex-col justify-between">
         {/* Title & Description */}
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-gray-900 leading-tight">
-            {title}
-          </h3>
-          <p className="text-gray-600 text-sm leading-relaxed line-clamp-2">
-            {description}
-          </p>
-        </div>
+<h3 className="font-semibold text-gray-900 leading-tight text-base sm:text-lg">
+  {title}
+</h3>
 
-        {/* Duration & Price */}
-        <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
-          <div className="flex items-center gap-1 text-gray-700 text-sm">
-            <Clock className="w-4 h-4 text-gray-500" />
-            {formatDuration(duration)}
-          </div>
-          <div className="flex items-center gap-2">
-            {originalPrice && (
-              <span className="line-through text-gray-400 text-sm">${originalPrice}</span>
-            )}
-            <span className="text-lg font-bold text-gray-800">
-              ${price || '85'}
-            </span>
-          </div>
-        </div>
+<p className="text-gray-600 leading-relaxed line-clamp-2">
+  {description}
+</p>
 
-        {/* Availability */}
-        <div className="flex items-center gap-2 text-sm text-green-600 mt-2">
-          {/* <span className="w-2 h-2 bg-green-500 rounded-full animate-ping" /> */}
-          <span className="font-medium">
-            {/* {isActive ? "Available Now" : "Not Available"} */}
-          </span>
-        </div>
+<div className="flex items-center gap-1 text-gray-700 text-xs sm:text-sm">
+  <Clock className="w-4 h-4 text-gray-500" />
+  {formatDuration(duration)}
+</div>
 
-        {/* Book Button */}
-     <div className='flex justify-end'>
-         <button
-          onClick={handleBooking}
-          className={`mt-3 py-2.5 px-4 rounded-xl cursor-pointer font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 group/btn ${
-            isHovered ? 'bg-gray-800 shadow-md' : 'bg-gray-700'
-          }`}
-        >
-          {/* <Calendar className="w-4 h-4" /> */}
-          Book Now
-          {/* <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" /> */}
-        </button>
+{originalPrice && (
+  <span className="line-through text-gray-400 text-xs sm:text-sm">
+    ${originalPrice}
+  </span>
+)}
+
+<span className="font-bold text-gray-800 text-sm sm:text-base">
+  ${price || '85'}
+</span>
+
+<div className='flex justify-end'>
+  <button
+  onClick={handleBooking}
+  className={`mt-2 py-2 px-3 cursor-pointer font-medium text-white transition-all duration-300 flex items-center justify-center group/btn text-xs sm:text-sm ${
+    isHovered ? 'bg-gray-800 shadow-md' : 'bg-gray-700'
+  }`}
+>
+  Book Now
+</button>
+</div>
+
      </div>
       </div>
 

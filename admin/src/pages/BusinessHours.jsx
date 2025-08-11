@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { AdminContexts } from '../context/AdminContexts';
 
 const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const AdminBusinessHours = ({ token }) => {
   const [businessHours, setBusinessHours] = useState([]);
   const [loading, setLoading] = useState(false);
-  const backendUrl = 'http://localhost:3000'
-
+  // const {backendUrl} = useContext(AdminContexts);
+  const backendUrl = "https://palmsbeautystore-backend.onrender.com"
+  // const backendUrl = "http://localhost:3000"
   // Load current hours
   useEffect(() => {
     fetchHours();
@@ -80,7 +82,7 @@ const AdminBusinessHours = ({ token }) => {
               <th className="p-2">Close Time</th>
               <th className="p-2">Break Start</th>
               <th className="p-2">Break End</th>
-              <th className="p-2">Slot Duration (min)</th>
+              {/* <th className="p-2">Slot Duration (min)</th> */}
             </tr>
           </thead>
           <tbody>
@@ -129,7 +131,7 @@ const AdminBusinessHours = ({ token }) => {
                     className="border p-1"
                   />
                 </td>
-                <td className="p-2">
+                {/* <td className="p-2">
                   <input
                     type="number"
                     value={hour.slotDuration}
@@ -138,7 +140,7 @@ const AdminBusinessHours = ({ token }) => {
                     min="15"
                     step="15"
                   />
-                </td>
+                </td> */}
               </tr>
             ))}
           </tbody>

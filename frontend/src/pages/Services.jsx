@@ -80,12 +80,8 @@ useEffect(() => {
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <h1 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-10">
-        Book a Service
-      </h1>
-
-      <div className="max-w-xl mx-auto mb-10">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-10 flex justify-end ">
         <input
           type="text"
           placeholder="Search services..."
@@ -109,10 +105,10 @@ useEffect(() => {
             if (filteredSubServices.length === 0) return null;
 
             return (
-              <div key={category._id}>
+              <div key={category._id} className='bg-gray-50 border-b border-gray-100 pb-2 mb-6'>
                 <button
                   onClick={() => toggleCategory(category._id)}
-                  className="flex items-center gap-3 w-full text-left text-2xl font-semibold text-gray-800 hover:text-gray-600 transition-all"
+                  className="flex items-center gap-2 w-full text-left text-lg font-semibold text-gray-800 hover:text-gray-600 transition-all"
                 >
                   {expanded[category._id] ? (
                     <ChevronDown className="w-5 h-5" />
@@ -123,7 +119,7 @@ useEffect(() => {
                 </button>
 
                 {expanded[category._id] && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-6 mt-6 sm:text-sm ">
                     {filteredSubServices.map((service) => (
                       <ServiceCard
                         key={service._id}

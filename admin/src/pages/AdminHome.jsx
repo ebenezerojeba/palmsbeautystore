@@ -11,7 +11,7 @@ const AdminHome = ({token}) => {
       icon: <BarChart2 className="w-6 h-6" />,
       path: "/dashboard",
       color: "bg-blue-50 text-blue-600",
-      borderColor: "border-blue-200"
+      borderColor: "border-gray-100"
     },
     {
       title: "Appointments",
@@ -19,7 +19,7 @@ const AdminHome = ({token}) => {
       icon: <Calendar className="w-6 h-6" />,
       path: "/appointments",
       color: "bg-purple-50 text-purple-600",
-      borderColor: "border-purple-200"
+      borderColor: "border-gray-100"
     },
     {
       title: "Orders",
@@ -27,7 +27,7 @@ const AdminHome = ({token}) => {
       icon: <Box className="w-6 h-6" />,
       path: "/orders",
       color: "bg-gray-50 text-gray-600",
-      borderColor: "border-pink-200"
+      borderColor: "border-gray-100"
     },
     {
       title: "Services",
@@ -35,7 +35,7 @@ const AdminHome = ({token}) => {
       icon: <Clock className="w-6 h-6" />,
       path: "/services",
       color: "bg-green-50 text-green-600",
-      borderColor: "border-green-200"
+      borderColor: "border-gray-100"
     },
     {
       title: "Products",
