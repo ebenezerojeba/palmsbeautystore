@@ -176,7 +176,7 @@ const Login = () => {
   }, [token, redirectInfo, navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-pink-900 to-pink-900 flex items-center justify-center p-4">
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-primary/30 blur-3xl animate-pulse"></div>
@@ -191,7 +191,7 @@ const Login = () => {
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-10 w-10 text-primary"
+              className="h-10 w-10 text-primary bg-gray-300 rounded-full p-2"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"

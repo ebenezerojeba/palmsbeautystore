@@ -847,6 +847,7 @@ const cancelAppointment = async (req, res) => {
 //   }
 // };
 
+// Enhanced getAvailableSlots with duration validation
 const getAvailableSlots = async (req, res) => {
   try {
     const { serviceId, startDate, endDate, selectedServices } = req.query;
@@ -872,6 +873,15 @@ const getAvailableSlots = async (req, res) => {
     
     console.log('Total service duration calculated:', totalServiceDuration);
     
+    // VALIDATION: Check if duration is reasonable
+    const MAX_SINGLE_DAY_DURATION = 600; // 10 hours in minutes
+    if (totalServiceDuration > MAX_SINGLE_DAY_DURATION) {
+      return res.status(400).json({ 
+        message: `Service duration (${totalServiceDuration} minutes) exceeds maximum allowed duration of ${MAX_SINGLE_DAY_DURATION} minutes (10 hours). Please book multiple appointments or contact us directly.`,
+        code: 'DURATION_TOO_LONG'
+      });
+    }
+    
     // Get business hours with caching
     const businessHours = await getBusinessHours();
     
@@ -893,6 +903,13 @@ const getAvailableSlots = async (req, res) => {
       // Skip if business is closed on this day
       if (!businessDay || !businessDay.isOpen) continue;
       
+      // Check if the business day is long enough for the service
+      const businessDayDuration = calculateBusinessDayDuration(businessDay);
+      if (businessDayDuration < totalServiceDuration) {
+        console.log(`Skipping ${d.toISOString().split('T')[0]} - business day too short (${businessDayDuration} min) for service (${totalServiceDuration} min)`);
+        continue;
+      }
+      
       const dateStr = d.toISOString().split('T')[0];
       
       // Get existing appointments for this date
@@ -912,12 +929,22 @@ const getAvailableSlots = async (req, res) => {
         availableSlots.push({
           date: dateStr,
           dayOfWeek: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek],
-          slots
+          slots,
+          businessDayDuration // Include this for frontend reference
         });
       }
     }
     
     console.log('Final available slots:', availableSlots.length);
+    
+    // If no slots available due to duration, provide helpful message
+    if (availableSlots.length === 0 && totalServiceDuration > 300) { // 5+ hours
+      return res.status(200).json({ 
+        availableSlots: [],
+        message: `No available time slots found for services requiring ${totalServiceDuration} minutes. Consider booking multiple shorter appointments or contact us directly.`,
+        suggestedAction: 'SPLIT_APPOINTMENT'
+      });
+    }
     
     res.status(200).json({ availableSlots });
   } catch (error) {
@@ -926,7 +953,31 @@ const getAvailableSlots = async (req, res) => {
   }
 };
 
-// FIX 3: Completely rewritten slot generation logic
+// Helper function to calculate business day duration
+const calculateBusinessDayDuration = (businessDay) => {
+  const [openHour, openMinute] = businessDay.openTime.split(':').map(Number);
+  const [closeHour, closeMinute] = businessDay.closeTime.split(':').map(Number);
+  
+  const openTime = openHour * 60 + openMinute;
+  const closeTime = closeHour * 60 + closeMinute;
+  let totalDuration = closeTime - openTime;
+  
+  // Subtract break time if exists
+  if (businessDay.breakStart && businessDay.breakEnd) {
+    const [breakStartHour, breakStartMinute] = businessDay.breakStart.split(':').map(Number);
+    const [breakEndHour, breakEndMinute] = businessDay.breakEnd.split(':').map(Number);
+    
+    const breakStart = breakStartHour * 60 + breakStartMinute;
+    const breakEnd = breakEndHour * 60 + breakEndMinute;
+    const breakDuration = breakEnd - breakStart;
+    
+    totalDuration -= breakDuration;
+  }
+  
+  return totalDuration;
+};
+
+// Enhanced slot generation with better validation
 const generateTimeSlots = (businessDay, existingAppointments, date, currentDateTime, requiredDuration = 90) => {
   const slots = [];
   const isToday = date.toDateString() === currentDateTime.toDateString();
@@ -941,6 +992,15 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
   
   const businessEnd = new Date(date);
   businessEnd.setHours(closeHour, closeMinute, 0, 0);
+  
+  // Calculate actual available duration (considering breaks)
+  const businessDayDuration = calculateBusinessDayDuration(businessDay);
+  
+  // Early return if service is too long for this business day
+  if (requiredDuration > businessDayDuration) {
+    console.log(`Service duration (${requiredDuration} min) exceeds business day duration (${businessDayDuration} min)`);
+    return slots;
+  }
   
   // For today, calculate minimum start time (current time + 30 min buffer)
   let earliestStartTime = new Date(businessStart);
@@ -989,8 +1049,11 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
     blockedPeriods.push({ start: breakStart, end: breakEnd });
   }
   
-  // Use consistent slot intervals
-  const slotInterval = businessDay.slotDuration || 30;
+  // Use appropriate slot intervals - for long services, use larger intervals
+  let slotInterval = businessDay.slotDuration || 30;
+  if (requiredDuration >= 300) { // 5+ hours
+    slotInterval = Math.max(slotInterval, 60); // Use at least 1-hour intervals
+  }
   
   // Generate potential time slots
   let currentSlotTime = new Date(earliestStartTime);
@@ -1014,9 +1077,8 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
       continue;
     }
     
-    // FIXED: Single conflict checking logic
+    // Check for conflicts with blocked periods
     const hasConflict = blockedPeriods.some(blocked => {
-      // Check if there's any overlap between the slot and blocked period
       return currentSlotTime < blocked.end && slotEnd > blocked.start;
     });
     
@@ -1026,7 +1088,8 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
       slots.push({
         time: timeStr,
         available: true,
-        duration: requiredDuration
+        duration: requiredDuration,
+        endTime: slotEnd.toTimeString().slice(0, 5) // Add end time for reference
       });
     }
     

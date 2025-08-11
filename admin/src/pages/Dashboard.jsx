@@ -840,7 +840,7 @@ const Dashboard = () => {
             status="cancelled"
             onClick={handleFilterClick}
           />
-          <StatCard
+          {/* <StatCard
             icon={<AlertCircle />}
             value={stats.noShow}
             label="No Shows"
@@ -848,7 +848,7 @@ const Dashboard = () => {
             textColor="text-gray-600"
             status="no-show"
             onClick={handleFilterClick}
-          />
+          /> */}
         </div>
 
         {/* Appointments Table */}

@@ -147,8 +147,8 @@ const Home = () => {
                   <Link
                     to="/services"
                     className="group inline-flex items-center justify-center px-6 py-3 
-                             bg-gray-900 text-white rounded-lg font-medium 
-                             transition-all duration-200 hover:bg-gray-800 shadow-sm"
+                             bg-pink-900 text-white rounded-lg font-medium 
+                             transition-all duration-200 hover:bg-pink-800 shadow-sm"
                   >
                     Book Appointment
                     <Calendar className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />

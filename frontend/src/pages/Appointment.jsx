@@ -558,7 +558,7 @@ const bookingData = {
 
                   {isLoading ? (
                     <div className="flex items-center justify-center py-12">
-                      <Loader2 className="animate-spin h-6 w-6 text-blue-600 mr-2" />
+                      <Loader2 className="animate-spin h-6 w-6 text-pink-600 mr-2" />
                       <span className="text-gray-600">Loading available dates...</span>
                     </div>
                   ) : availableSlots.length > 0 ? (
@@ -571,7 +571,7 @@ const bookingData = {
                             setSelectedTime("");
                           }}
                           className={`p-3 text-center rounded-lg border transition-all ${selectedDate === daySlot.date
-                              ? "border-blue-500 bg-blue-50 text-blue-700"
+                              ? "border-pink-500 bg-pink-50 text-gray-700"
                               : "border-gray-200 hover:border-gray-300 text-gray-700"
                             }`}
                         >
@@ -612,7 +612,7 @@ const bookingData = {
                               key={index}
                               onClick={() => setSelectedTime(timeSlot.time)}
                               className={`p-3 text-sm font-medium rounded-lg border transition-all ${selectedTime === timeSlot.time
-                                  ? "border-blue-500 bg-blue-50 text-blue-700"
+                                  ? "border-pink-500 bg-pink-50 text-gray-900"
                                   : "border-gray-200 hover:border-gray-300 text-gray-700"
                                 }`}
                             >
@@ -811,7 +811,7 @@ const bookingData = {
                 <button
                   onClick={handleBooking}
                   disabled={isBooking || !selectedDate || !selectedTime || !agreeToCancellationPolicy}
-                  className= "bg-black text-white py-3 px-4 rounded-lg justify-center items-center font-medium hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed "
+                  className= "bg-pink-900 text-white py-3 px-4 rounded-lg justify-center items-center font-medium hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed "
                 >
                   {isBooking ? (
                     <>
@@ -924,7 +924,7 @@ const bookingData = {
             <div className="p-6 border-t border-gray-200">
               <button
                 onClick={() => setShowCancellationPolicy(false)}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                className="w-full bg-pink-900 text-white py-2 px-4 rounded-lg hover:bg-pink-700 transition-colors"
               >
                 I Understand
               </button>

@@ -49,13 +49,13 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-gray-900 shadow-lg sticky top-0 z-50">
+    <nav className="bg-pink-900 shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 sm:py-1 md:py-2">
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo and mobile toggle */}
           <div className="flex items-center space-x-2 sm:space-x-4">
             <button
-              className="md:hidden p-1.5 sm:p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-600 transition-all duration-200"
+              className="md:hidden p-1.5 sm:p-2 rounded-lg text-gray-300 hover:text-white hover:bg-pink-800 focus:outline-none focus:ring-2 focus:ring-gray-600 transition-all duration-200"
               onClick={toggleMenu}
               aria-label="Toggle mobile menu"
             >
@@ -82,8 +82,8 @@ const Navbar = () => {
                 className={({ isActive }) =>
                   `px-3 lg:px-4 py-2 rounded-md text-xs lg:text-sm font-medium transition-all duration-200 ${
                     isActive
-                      ? "text-white font-semibold bg-gray-800 shadow-sm"
-                      : "text-gray-300 hover:text-white hover:bg-gray-700"
+                      ? "text-white font-semibold bg-pink-800 shadow-sm"
+                      : "text-gray-300 hover:text-white hover:bg-pink-700"
                   }`
                 }
               >
@@ -97,8 +97,8 @@ const Navbar = () => {
                   className={({ isActive }) =>
                     `px-3 lg:px-4 py-2 rounded-md text-xs lg:text-sm font-medium transition-all duration-200 ${
                       isActive
-                        ? "text-white font-semibold bg-gray-800 shadow-sm"
-                        : "text-gray-300 hover:text-white hover:bg-gray-700"
+                        ? "text-white font-semibold bg-pink-800 shadow-sm"
+                        : "text-gray-300 hover:text-white hover:bg-pink-700"
                     }`
                   }
                 >
@@ -113,7 +113,7 @@ const Navbar = () => {
             {/* Shopping Cart */}
             <Link
               to="/cart"
-              className="relative p-1.5 sm:p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-600"
+              className="relative p-1.5 sm:p-2 rounded-lg text-gray-300 hover:text-white hover:bg-pink-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-600"
               aria-label={`Cart with ${getCartCount()} items`}
             >
               <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -128,7 +128,7 @@ const Navbar = () => {
             {token && userData ? (
               <div ref={dropdownRef} className="relative">
                 <button 
-                  className="flex items-center space-x-1 sm:space-x-2 p-1 rounded-lg hover:bg-gray-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-600"
+                  className="flex items-center space-x-1 sm:space-x-2 p-1 rounded-lg hover:bg-pink-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-600"
                   onClick={() => {
                     const dropdown = document.getElementById('profile-dropdown');
                     dropdown?.classList.toggle('hidden');
