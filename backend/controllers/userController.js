@@ -10,7 +10,7 @@ import appointmentModel from "../models/appointment.js";
 
 const createToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: '1h' // Token will expire in 1 hour
+    expiresIn: '7d' // Token will expire in 1 hour
   });
 };
 
