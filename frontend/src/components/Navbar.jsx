@@ -214,16 +214,16 @@ const Navbar = () => {
             onClick={toggleMenu}
           />
 
-          <div className="fixed inset-y-0 left-0 w-full max-w-xs bg-gray-900 shadow-xl z-50 md:hidden">
+          <div className="fixed inset-y-0 left-0 w-full max-w-xs bg-pink-900 shadow-xl z-50 md:hidden">
             {/* Mobile Menu Header */}
-            <div className="flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 border-b border-gray-800">
+            <div className="flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 border-b border-pink-800">
               <img
                 src={assets.plog}
                 alt="PalmsBeauty Logo"
                 className="w-24 sm:w-32 h-auto object-contain"
               />
               <button
-                className="p-1.5 sm:p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                className="p-1.5 sm:p-2 rounded-lg text-gray-300 hover:text-white hover:bg-pink-800 transition-colors"
                 onClick={toggleMenu}
               >
                 <X className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -238,8 +238,8 @@ const Navbar = () => {
                   className={({ isActive }) =>
                     `flex items-center px-3 py-2.5 sm:py-3 rounded-md text-sm sm:text-base font-medium transition-all duration-200 ${
                       isActive
-                        ? "bg-gray-800 text-white shadow-sm"
-                        : "text-gray-300 hover:text-white hover:bg-gray-800"
+                        ? "bg-pink-900 text-white shadow-sm"
+                        : "text-gray-300 hover:text-white hover:bg-pink-800"
                     }`
                   }
                   onClick={toggleMenu}
@@ -254,8 +254,8 @@ const Navbar = () => {
                     className={({ isActive }) =>
                       `flex items-center px-3 py-2.5 sm:py-3 rounded-md text-sm sm:text-base font-medium transition-all duration-200 ${
                         isActive
-                          ? "bg-gray-800 text-white shadow-sm"
-                          : "text-gray-300 hover:text-white hover:bg-gray-800"
+                          ? "bg-pink-800 text-white shadow-sm"
+                          : "text-gray-300 hover:text-white hover:bg-pink-800"
                       }`
                     }
                     onClick={toggleMenu}
