@@ -94,7 +94,28 @@ const appointmentSchema = new mongoose.Schema({
     emailSent: { type: Boolean, default: false },
     feedbackRequested: { type: Boolean, default: false },
     rating: { type: Number, min: 1, max: 5 }
-  }
+  },
+  // Additional fields for multi-day support
+estimatedEndDate: {
+  type: Date,
+  required: false
+},
+estimatedEndTime: {
+  type: String,
+  required: false
+},
+spansDays: {
+  type: Number,
+  default: 1
+},
+isMultiDay: {
+  type: Boolean,
+  default: false
+},
+totalBusinessHoursNeeded: {
+  type: Number,
+  required: false
+}
 }, {
   timestamps: true
 });

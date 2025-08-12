@@ -848,6 +848,259 @@ const cancelAppointment = async (req, res) => {
 // };
 
 // Enhanced getAvailableSlots with duration validation
+// const getAvailableSlots = async (req, res) => {
+//   try {
+//     const { serviceId, startDate, endDate, selectedServices } = req.query;
+    
+//     console.log('Received query params:', { serviceId, startDate, endDate, selectedServices });
+    
+//     // Parse selectedServices if provided
+//     let servicesToBook = [];
+//     if (selectedServices) {
+//       try {
+//         servicesToBook = JSON.parse(selectedServices);
+//         console.log('Parsed services:', servicesToBook);
+//       } catch (e) {
+//         console.error('Error parsing selectedServices:', e);
+//         return res.status(400).json({ message: "Invalid selectedServices format" });
+//       }
+//     }
+    
+//     // Calculate total duration needed for the services
+//     const totalServiceDuration = servicesToBook.length > 0 
+//       ? servicesToBook.reduce((total, service) => total + (parseInt(service.duration) || 90), 0)
+//       : 90;
+    
+//     console.log('Total service duration calculated:', totalServiceDuration);
+    
+//     // VALIDATION: Check if duration is reasonable
+//     const MAX_SINGLE_DAY_DURATION = 600; // 10 hours in minutes
+//     if (totalServiceDuration > MAX_SINGLE_DAY_DURATION) {
+//       return res.status(400).json({ 
+//         message: `Service duration (${totalServiceDuration} minutes) exceeds maximum allowed duration of ${MAX_SINGLE_DAY_DURATION} minutes (10 hours). Please book multiple appointments or contact us directly.`,
+//         code: 'DURATION_TOO_LONG'
+//       });
+//     }
+    
+//     // Get business hours with caching
+//     const businessHours = await getBusinessHours();
+    
+//     if (!businessHours.length) {
+//       return res.status(404).json({ message: "Business hours not configured" });
+//     }
+    
+//     const start = new Date(startDate || new Date());
+//     const end = new Date(endDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000));
+    
+//     const availableSlots = [];
+//     const now = new Date();
+    
+//     // Proper date loop
+//     for (let d = new Date(start); d <= end; d = new Date(d.getTime() + 24 * 60 * 60 * 1000)) {
+//       const dayOfWeek = d.getDay();
+//       const businessDay = businessHours.find(bh => bh.dayOfWeek === dayOfWeek);
+      
+//       // Skip if business is closed on this day
+//       if (!businessDay || !businessDay.isOpen) continue;
+      
+//       // Check if the business day is long enough for the service
+//       const businessDayDuration = calculateBusinessDayDuration(businessDay);
+//       if (businessDayDuration < totalServiceDuration) {
+//         console.log(`Skipping ${d.toISOString().split('T')[0]} - business day too short (${businessDayDuration} min) for service (${totalServiceDuration} min)`);
+//         continue;
+//       }
+      
+//       const dateStr = d.toISOString().split('T')[0];
+      
+//       // Get existing appointments for this date
+//       const existingAppointments = await appointmentModel.find({
+//         date: new Date(dateStr),
+//         status: { $in: ['pending', 'confirmed'] }
+//       }).select('time duration totalDuration services');
+      
+//       console.log(`Existing appointments for ${dateStr}:`, existingAppointments);
+      
+//       const slots = generateTimeSlots(businessDay, existingAppointments, new Date(d), now, totalServiceDuration);
+      
+//       console.log(`Generated ${slots.length} slots for ${dateStr}`);
+      
+//       // Only include dates that have available slots
+//       if (slots.length > 0) {
+//         availableSlots.push({
+//           date: dateStr,
+//           dayOfWeek: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek],
+//           slots,
+//           businessDayDuration // Include this for frontend reference
+//         });
+//       }
+//     }
+    
+//     console.log('Final available slots:', availableSlots.length);
+    
+//     // If no slots available due to duration, provide helpful message
+//     if (availableSlots.length === 0 && totalServiceDuration > 300) { // 5+ hours
+//       return res.status(200).json({ 
+//         availableSlots: [],
+//         message: `No available time slots found for services requiring ${totalServiceDuration} minutes. Consider booking multiple shorter appointments or contact us directly.`,
+//         suggestedAction: 'SPLIT_APPOINTMENT'
+//       });
+//     }
+    
+//     res.status(200).json({ availableSlots });
+//   } catch (error) {
+//     console.error("Error fetching available slots:", error);
+//     res.status(500).json({ message: "Failed to fetch available slots" });
+//   }
+// };
+
+// // Helper function to calculate business day duration
+// const calculateBusinessDayDuration = (businessDay) => {
+//   const [openHour, openMinute] = businessDay.openTime.split(':').map(Number);
+//   const [closeHour, closeMinute] = businessDay.closeTime.split(':').map(Number);
+  
+//   const openTime = openHour * 60 + openMinute;
+//   const closeTime = closeHour * 60 + closeMinute;
+//   let totalDuration = closeTime - openTime;
+  
+//   // Subtract break time if exists
+//   if (businessDay.breakStart && businessDay.breakEnd) {
+//     const [breakStartHour, breakStartMinute] = businessDay.breakStart.split(':').map(Number);
+//     const [breakEndHour, breakEndMinute] = businessDay.breakEnd.split(':').map(Number);
+    
+//     const breakStart = breakStartHour * 60 + breakStartMinute;
+//     const breakEnd = breakEndHour * 60 + breakEndMinute;
+//     const breakDuration = breakEnd - breakStart;
+    
+//     totalDuration -= breakDuration;
+//   }
+  
+//   return totalDuration;
+// };
+
+// // Enhanced slot generation with better validation
+// const generateTimeSlots = (businessDay, existingAppointments, date, currentDateTime, requiredDuration = 90) => {
+//   const slots = [];
+//   const isToday = date.toDateString() === currentDateTime.toDateString();
+  
+//   // Parse business hours
+//   const [openHour, openMinute] = businessDay.openTime.split(':').map(Number);
+//   const [closeHour, closeMinute] = businessDay.closeTime.split(':').map(Number);
+  
+//   // Set up time boundaries
+//   const businessStart = new Date(date);
+//   businessStart.setHours(openHour, openMinute, 0, 0);
+  
+//   const businessEnd = new Date(date);
+//   businessEnd.setHours(closeHour, closeMinute, 0, 0);
+  
+//   // Calculate actual available duration (considering breaks)
+//   const businessDayDuration = calculateBusinessDayDuration(businessDay);
+  
+//   // Early return if service is too long for this business day
+//   if (requiredDuration > businessDayDuration) {
+//     console.log(`Service duration (${requiredDuration} min) exceeds business day duration (${businessDayDuration} min)`);
+//     return slots;
+//   }
+  
+//   // For today, calculate minimum start time (current time + 30 min buffer)
+//   let earliestStartTime = new Date(businessStart);
+//   if (isToday) {
+//     const minTime = new Date(currentDateTime.getTime() + 30 * 60 * 1000);
+//     if (minTime > businessStart) {
+//       earliestStartTime = new Date(minTime);
+//     }
+//   }
+  
+//   // Create comprehensive blocked time periods
+//   const blockedPeriods = [];
+  
+//   // Add existing appointments as blocked periods
+//   existingAppointments.forEach(apt => {
+//     const [aptHour, aptMinute] = apt.time.split(':').map(Number);
+//     const aptStart = new Date(date);
+//     aptStart.setHours(aptHour, aptMinute, 0, 0);
+    
+//     // Calculate appointment duration properly
+//     let aptDuration;
+//     if (apt.totalDuration && apt.totalDuration > 0) {
+//       aptDuration = apt.totalDuration;
+//     } else if (apt.services && apt.services.length > 0) {
+//       aptDuration = apt.services.reduce((total, service) => total + (service.duration || 90), 0);
+//     } else if (apt.duration) {
+//       aptDuration = parseInt(apt.duration) || 90;
+//     } else {
+//       aptDuration = 90;
+//     }
+    
+//     const aptEnd = new Date(aptStart.getTime() + aptDuration * 60000);
+//     blockedPeriods.push({ start: aptStart, end: aptEnd });
+//   });
+  
+//   // Add break times as blocked periods
+//   if (businessDay.breakStart && businessDay.breakEnd) {
+//     const [breakStartHour, breakStartMinute] = businessDay.breakStart.split(':').map(Number);
+//     const [breakEndHour, breakEndMinute] = businessDay.breakEnd.split(':').map(Number);
+    
+//     const breakStart = new Date(date);
+//     breakStart.setHours(breakStartHour, breakStartMinute, 0, 0);
+//     const breakEnd = new Date(date);
+//     breakEnd.setHours(breakEndHour, breakEndMinute, 0, 0);
+    
+//     blockedPeriods.push({ start: breakStart, end: breakEnd });
+//   }
+  
+//   // Use appropriate slot intervals - for long services, use larger intervals
+//   let slotInterval = businessDay.slotDuration || 30;
+//   if (requiredDuration >= 300) { // 5+ hours
+//     slotInterval = Math.max(slotInterval, 60); // Use at least 1-hour intervals
+//   }
+  
+//   // Generate potential time slots
+//   let currentSlotTime = new Date(earliestStartTime);
+  
+//   // Round up to next slot interval
+//   const currentMinutes = currentSlotTime.getMinutes();
+//   const remainder = currentMinutes % slotInterval;
+//   if (remainder !== 0) {
+//     currentSlotTime.setMinutes(currentMinutes + (slotInterval - remainder));
+//   }
+//   currentSlotTime.setSeconds(0);
+//   currentSlotTime.setMilliseconds(0);
+  
+//   // Generate slots until business closes
+//   while (currentSlotTime < businessEnd) {
+//     const slotEnd = new Date(currentSlotTime.getTime() + requiredDuration * 60000);
+    
+//     // Skip if slot would extend past closing time
+//     if (slotEnd > businessEnd) {
+//       currentSlotTime = new Date(currentSlotTime.getTime() + slotInterval * 60000);
+//       continue;
+//     }
+    
+//     // Check for conflicts with blocked periods
+//     const hasConflict = blockedPeriods.some(blocked => {
+//       return currentSlotTime < blocked.end && slotEnd > blocked.start;
+//     });
+    
+//     // Only add slot if there's no conflict
+//     if (!hasConflict) {
+//       const timeStr = currentSlotTime.toTimeString().slice(0, 5);
+//       slots.push({
+//         time: timeStr,
+//         available: true,
+//         duration: requiredDuration,
+//         endTime: slotEnd.toTimeString().slice(0, 5) // Add end time for reference
+//       });
+//     }
+    
+//     // Move to next slot interval
+//     currentSlotTime = new Date(currentSlotTime.getTime() + slotInterval * 60000);
+//   }
+  
+//   return slots;
+// };
+
+
 const getAvailableSlots = async (req, res) => {
   try {
     const { serviceId, startDate, endDate, selectedServices } = req.query;
@@ -873,15 +1126,6 @@ const getAvailableSlots = async (req, res) => {
     
     console.log('Total service duration calculated:', totalServiceDuration);
     
-    // VALIDATION: Check if duration is reasonable
-    const MAX_SINGLE_DAY_DURATION = 600; // 10 hours in minutes
-    if (totalServiceDuration > MAX_SINGLE_DAY_DURATION) {
-      return res.status(400).json({ 
-        message: `Service duration (${totalServiceDuration} minutes) exceeds maximum allowed duration of ${MAX_SINGLE_DAY_DURATION} minutes (10 hours). Please book multiple appointments or contact us directly.`,
-        code: 'DURATION_TOO_LONG'
-      });
-    }
-    
     // Get business hours with caching
     const businessHours = await getBusinessHours();
     
@@ -903,13 +1147,6 @@ const getAvailableSlots = async (req, res) => {
       // Skip if business is closed on this day
       if (!businessDay || !businessDay.isOpen) continue;
       
-      // Check if the business day is long enough for the service
-      const businessDayDuration = calculateBusinessDayDuration(businessDay);
-      if (businessDayDuration < totalServiceDuration) {
-        console.log(`Skipping ${d.toISOString().split('T')[0]} - business day too short (${businessDayDuration} min) for service (${totalServiceDuration} min)`);
-        continue;
-      }
-      
       const dateStr = d.toISOString().split('T')[0];
       
       // Get existing appointments for this date
@@ -930,21 +1167,13 @@ const getAvailableSlots = async (req, res) => {
           date: dateStr,
           dayOfWeek: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek],
           slots,
-          businessDayDuration // Include this for frontend reference
+          totaDuration: totalServiceDuration,
+            isMultiDay: totalServiceDuration > 480 
         });
       }
     }
     
     console.log('Final available slots:', availableSlots.length);
-    
-    // If no slots available due to duration, provide helpful message
-    if (availableSlots.length === 0 && totalServiceDuration > 300) { // 5+ hours
-      return res.status(200).json({ 
-        availableSlots: [],
-        message: `No available time slots found for services requiring ${totalServiceDuration} minutes. Consider booking multiple shorter appointments or contact us directly.`,
-        suggestedAction: 'SPLIT_APPOINTMENT'
-      });
-    }
     
     res.status(200).json({ availableSlots });
   } catch (error) {
@@ -953,31 +1182,7 @@ const getAvailableSlots = async (req, res) => {
   }
 };
 
-// Helper function to calculate business day duration
-const calculateBusinessDayDuration = (businessDay) => {
-  const [openHour, openMinute] = businessDay.openTime.split(':').map(Number);
-  const [closeHour, closeMinute] = businessDay.closeTime.split(':').map(Number);
-  
-  const openTime = openHour * 60 + openMinute;
-  const closeTime = closeHour * 60 + closeMinute;
-  let totalDuration = closeTime - openTime;
-  
-  // Subtract break time if exists
-  if (businessDay.breakStart && businessDay.breakEnd) {
-    const [breakStartHour, breakStartMinute] = businessDay.breakStart.split(':').map(Number);
-    const [breakEndHour, breakEndMinute] = businessDay.breakEnd.split(':').map(Number);
-    
-    const breakStart = breakStartHour * 60 + breakStartMinute;
-    const breakEnd = breakEndHour * 60 + breakEndMinute;
-    const breakDuration = breakEnd - breakStart;
-    
-    totalDuration -= breakDuration;
-  }
-  
-  return totalDuration;
-};
-
-// Enhanced slot generation with better validation
+// FIX 3: Completely rewritten slot generation logic
 const generateTimeSlots = (businessDay, existingAppointments, date, currentDateTime, requiredDuration = 90) => {
   const slots = [];
   const isToday = date.toDateString() === currentDateTime.toDateString();
@@ -992,15 +1197,6 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
   
   const businessEnd = new Date(date);
   businessEnd.setHours(closeHour, closeMinute, 0, 0);
-  
-  // Calculate actual available duration (considering breaks)
-  const businessDayDuration = calculateBusinessDayDuration(businessDay);
-  
-  // Early return if service is too long for this business day
-  if (requiredDuration > businessDayDuration) {
-    console.log(`Service duration (${requiredDuration} min) exceeds business day duration (${businessDayDuration} min)`);
-    return slots;
-  }
   
   // For today, calculate minimum start time (current time + 30 min buffer)
   let earliestStartTime = new Date(businessStart);
@@ -1049,11 +1245,8 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
     blockedPeriods.push({ start: breakStart, end: breakEnd });
   }
   
-  // Use appropriate slot intervals - for long services, use larger intervals
-  let slotInterval = businessDay.slotDuration || 30;
-  if (requiredDuration >= 300) { // 5+ hours
-    slotInterval = Math.max(slotInterval, 60); // Use at least 1-hour intervals
-  }
+  // Use consistent slot intervals
+  const slotInterval = businessDay.slotDuration || 30;
   
   // Generate potential time slots
   let currentSlotTime = new Date(earliestStartTime);
@@ -1077,8 +1270,9 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
       continue;
     }
     
-    // Check for conflicts with blocked periods
+    // FIXED: Single conflict checking logic
     const hasConflict = blockedPeriods.some(blocked => {
+      // Check if there's any overlap between the slot and blocked period
       return currentSlotTime < blocked.end && slotEnd > blocked.start;
     });
     
@@ -1088,8 +1282,7 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
       slots.push({
         time: timeStr,
         available: true,
-        duration: requiredDuration,
-        endTime: slotEnd.toTimeString().slice(0, 5) // Add end time for reference
+        duration: requiredDuration
       });
     }
     
@@ -1099,6 +1292,9 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
   
   return slots;
 };
+
+
+
 
 // FIX 7: Enhanced booking validation
 const bookMultipleAppointment = async (req, res) => {
