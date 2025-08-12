@@ -1019,9 +1019,10 @@ const AllAppointments = () => {
     appointments,
     getAllAppointments,
     cancelAppointment,
-    isCompleted,
+    completeAppointment, // Use the correct function name
     slotDateFormat,
-    loadingStates
+    loadingStates,
+    loadingId // Use loadingId from context
   } = useContext(AdminContexts);
 
   useEffect(() => {
@@ -1029,18 +1030,11 @@ const AllAppointments = () => {
   }, []);
 
   // State management
-  const [view, setView] = useState('list'); // Default to list for better mobile experience
+  const [view, setView] = useState('list');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [processingIds, setProcessingIds] = useState(new Set());
-  const [localAppointments, setLocalAppointments] = useState([]);
-
-  // Update local state when appointments change
-  useEffect(() => {
-    setLocalAppointments(appointments);
-  }, [appointments]);
 
   // Color palette for appointments
   const appointmentColors = [
@@ -1059,93 +1053,33 @@ const AllAppointments = () => {
   ];
 
   // Function to get consistent color for an appointment
-  const getAppointmentColor = (appointmentId, isCompleted, isCancelled) => {
-    if (isCompleted) return 'bg-green-100 text-green-800 border-green-200';
-    if (isCancelled) return 'bg-red-100 text-red-800 border-red-200';
+  const getAppointmentColor = (appointmentId, status) => {
+    if (status === 'completed') return 'bg-green-100 text-green-800 border-green-200';
+    if (status === 'cancelled') return 'bg-red-100 text-red-800 border-red-200';
+    if (status === 'confirmed') return 'bg-blue-100 text-blue-800 border-blue-200';
+    if (status === 'no-show') return 'bg-gray-100 text-gray-800 border-gray-200';
     
-    // Use appointment ID to generate consistent color
+    // Use appointment ID to generate consistent color for pending appointments
     const colorIndex = appointmentId ? appointmentId.length % appointmentColors.length : 0;
     return appointmentColors[colorIndex];
   };
 
-  // Enhanced handlers with optimistic updates
+  // Simplified handlers using context functions directly
   const handleCancelAppointment = async (appointmentId) => {
-    setProcessingIds(prev => new Set(prev).add(`cancel-${appointmentId}`));
-    
-    // Optimistic update - immediately update the UI
-    setLocalAppointments(prev => 
-      prev.map(apt => 
-        apt._id === appointmentId 
-          ? { ...apt, isCancelled: true, isCompleted: false }
-          : apt
-      )
-    );
-
     try {
-      const result = await cancelAppointment(appointmentId);
-      console.log('Cancel result:', result);
-      
-      // Force refresh after a short delay to ensure backend is updated
-      setTimeout(async () => {
-        await getAllAppointments();
-      }, 500);
-      
+      await cancelAppointment(appointmentId);
+      // The context will handle all state updates automatically
     } catch (error) {
       console.error('Error cancelling appointment:', error);
-      // Revert optimistic update on error
-      setLocalAppointments(prev => 
-        prev.map(apt => 
-          apt._id === appointmentId 
-            ? { ...apt, isCancelled: false }
-            : apt
-        )
-      );
-    } finally {
-      setProcessingIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(`cancel-${appointmentId}`);
-        return newSet;
-      });
     }
   };
 
   const handleCompleteAppointment = async (appointmentId) => {
-    setProcessingIds(prev => new Set(prev).add(`complete-${appointmentId}`));
-    
-    // Optimistic update - immediately update the UI
-    setLocalAppointments(prev => 
-      prev.map(apt => 
-        apt._id === appointmentId 
-          ? { ...apt, isCompleted: true, isCancelled: false }
-          : apt
-      )
-    );
-
     try {
-      const result = await isCompleted(appointmentId);
-      console.log('Complete result:', result);
-      
-      // Force refresh after a short delay to ensure backend is updated
-      setTimeout(async () => {
-        await getAllAppointments();
-      }, 500);
-      
+      await completeAppointment(appointmentId);
+      // The context will handle all state updates automatically
     } catch (error) {
       console.error('Error completing appointment:', error);
-      // Revert optimistic update on error
-      setLocalAppointments(prev => 
-        prev.map(apt => 
-          apt._id === appointmentId 
-            ? { ...apt, isCompleted: false }
-            : apt
-        )
-      );
-    } finally {
-      setProcessingIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(`complete-${appointmentId}`);
-        return newSet;
-      });
     }
   };
 
@@ -1183,7 +1117,7 @@ const AllAppointments = () => {
 
   const getAppointmentsForDate = (date) => {
     if (!date) return [];
-    return localAppointments.filter(apt => isSameDay(apt.date, date));
+    return appointments.filter(apt => isSameDay(apt.date, date));
   };
 
   const navigateMonth = (direction) => {
@@ -1194,24 +1128,27 @@ const AllAppointments = () => {
     });
   };
 
-  // Filter appointments - use localAppointments instead of appointments
-  const filteredAppointments = localAppointments.filter(apt => {
+  // Filter appointments using the status field from your updated backend
+  const filteredAppointments = appointments.filter(apt => {
     const matchesSearch = apt.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       apt.serviceTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
       apt.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
       apt.userPhone.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === 'all' ||
-      (statusFilter === 'pending' && !apt.isCancelled && !apt.isCompleted) ||
-      (statusFilter === 'completed' && apt.isCompleted) ||
-      (statusFilter === 'cancelled' && apt.isCancelled);
+      (statusFilter === 'pending' && (!apt.status || apt.status === 'pending')) ||
+      (statusFilter === 'completed' && apt.status === 'completed') ||
+      (statusFilter === 'cancelled' && apt.status === 'cancelled');
 
     return matchesSearch && matchesStatus;
   });
 
-  // Components
+  // Updated StatusBadge component to use the status field
   const StatusBadge = ({ item }) => {
-    if (item.isCompleted) {
+    // Support both old and new status format for backward compatibility
+    const status = item.status || (item.isCompleted ? 'completed' : item.isCancelled ? 'cancelled' : 'pending');
+    
+    if (status === 'completed') {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full font-medium">
           <CheckCircle2 className="w-3 h-3" />
@@ -1219,11 +1156,27 @@ const AllAppointments = () => {
         </span>
       );
     }
-    if (item.isCancelled) {
+    if (status === 'cancelled') {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full font-medium">
           <XCircle className="w-3 h-3" />
           Cancelled
+        </span>
+      );
+    }
+    if (status === 'confirmed') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full font-medium">
+          <CheckCircle2 className="w-3 h-3" />
+          Confirmed
+        </span>
+      );
+    }
+    if (status === 'no-show') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full font-medium">
+          <XCircle className="w-3 h-3" />
+          No Show
         </span>
       );
     }
@@ -1236,7 +1189,7 @@ const AllAppointments = () => {
   };
 
   const ActionButton = ({ color, icon, onClick, label, disabled, appointmentId, action }) => {
-    const isProcessing = processingIds.has(`${action}-${appointmentId}`);
+    const isProcessing = loadingId === appointmentId;
     
     return (
       <button
@@ -1268,7 +1221,8 @@ const AllAppointments = () => {
             </div>
             <div className="space-y-0.5 sm:space-y-1">
               {dayAppointments.slice(0, 2).map((apt, idx) => {
-                const colorClass = getAppointmentColor(apt._id, apt.isCompleted, apt.isCancelled);
+                const status = apt.status || (apt.isCompleted ? 'completed' : apt.isCancelled ? 'cancelled' : 'pending');
+                const colorClass = getAppointmentColor(apt._id, status);
                 return (
                   <div
                     key={idx}
@@ -1281,9 +1235,6 @@ const AllAppointments = () => {
                     <div className="font-semibold text-xs truncate">
                       {apt.serviceTitle}
                     </div>
-                    {/* <div className="text-xs opacity-75 hidden sm:block">
-                      {apt.time.split(' ')[0]}
-                    </div> */}
                   </div>
                 );
               })}
@@ -1299,64 +1250,70 @@ const AllAppointments = () => {
     );
   };
 
-  const AppointmentCard = ({ appointment }) => (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 mb-3">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-lg text-gray-900 truncate">{appointment.userName}</h3>
-          <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-            <Phone className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{appointment.userPhone}</span>
+  const AppointmentCard = ({ appointment }) => {
+    // Support both old and new status format
+    const status = appointment.status || (appointment.isCompleted ? 'completed' : appointment.isCancelled ? 'cancelled' : 'pending');
+    const canTakeAction = status === 'pending' || (!appointment.status && !appointment.isCancelled && !appointment.isCompleted);
+
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 mb-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-lg text-gray-900 truncate">{appointment.userName}</h3>
+            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+              <Phone className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{appointment.userPhone}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1 sm:hidden">
+              <Mail className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{appointment.userEmail}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600 mt-1 sm:hidden">
+          <div className="flex-shrink-0">
+            <StatusBadge item={appointment} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600 mb-4">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 flex-shrink-0" />
+            <span>{appointment.time}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 flex-shrink-0" />
+            <span className="truncate">{appointment.serviceTitle}</span>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 sm:col-span-2">
             <Mail className="w-4 h-4 flex-shrink-0" />
             <span className="truncate">{appointment.userEmail}</span>
           </div>
         </div>
-        <div className="flex-shrink-0">
-          <StatusBadge item={appointment} />
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600 mb-4">
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 flex-shrink-0" />
-          <span>{appointment.time}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <User className="w-4 h-4 flex-shrink-0" />
-          <span className="truncate">{appointment.serviceTitle}</span>
-        </div>
-        <div className="hidden sm:flex items-center gap-2 sm:col-span-2">
-          <Mail className="w-4 h-4 flex-shrink-0" />
-          <span className="truncate">{appointment.userEmail}</span>
-        </div>
+        {canTakeAction && (
+          <div className="flex gap-2">
+            <ActionButton
+              color="border-red-400 text-red-600 focus:ring-red-500"
+              icon={<X className="w-3 h-3" />}
+              onClick={() => handleCancelAppointment(appointment._id)}
+              label="Cancel"
+              appointmentId={appointment._id}
+              action="cancel"
+              disabled={loadingId === appointment._id}
+            />
+            <ActionButton
+              color="border-green-500 text-green-600 focus:ring-green-500"
+              icon={<Check className="w-3 h-3" />}
+              onClick={() => handleCompleteAppointment(appointment._id)}
+              label="Complete"
+              appointmentId={appointment._id}
+              action="complete"
+              disabled={loadingId === appointment._id}
+            />
+          </div>
+        )}
       </div>
-
-      {!appointment.isCancelled && !appointment.isCompleted && (
-        <div className="flex gap-2">
-          <ActionButton
-            color="border-red-400 text-red-600 focus:ring-red-500"
-            icon={<X className="w-3 h-3" />}
-            onClick={() => handleCancelAppointment(appointment._id)}
-            label="Cancel"
-            appointmentId={appointment._id}
-            action="cancel"
-            disabled={processingIds.has(`complete-${appointment._id}`)}
-          />
-          <ActionButton
-            color="border-green-500 text-green-600 focus:ring-green-500"
-            icon={<Check className="w-3 h-3" />}
-            onClick={() => handleCompleteAppointment(appointment._id)}
-            label="Complete"
-            appointmentId={appointment._id}
-            action="complete"
-            disabled={processingIds.has(`cancel-${appointment._id}`)}
-          />
-        </div>
-      )}
-    </div>
-  );
+    );
+  };
 
   if (loadingStates.appointments) {
     return (
@@ -1434,11 +1391,6 @@ const AllAppointments = () => {
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
-
-                {/* <button className="flex items-center gap-2 px-3 py-2 bg-pink-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex-shrink-0">
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">Export</span>
-                </button> */}
               </div>
             </div>
           </div>
@@ -1574,57 +1526,62 @@ const AllAppointments = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredAppointments.map((appointment, index) => (
-                    <tr key={index} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {appointment.userName}
+                  {filteredAppointments.map((appointment, index) => {
+                    const status = appointment.status || (appointment.isCompleted ? 'completed' : appointment.isCancelled ? 'cancelled' : 'pending');
+                    const canTakeAction = status === 'pending' || (!appointment.status && !appointment.isCancelled && !appointment.isCompleted);
+
+                    return (
+                      <tr key={index} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {appointment.userName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {appointment.userEmail}
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {appointment.userEmail}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {appointment.serviceTitle}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        <div>{slotDateFormat(appointment.date)}</div>
-                        <div className="text-gray-500">{appointment.time}</div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {appointment.userPhone}
-                      </td>
-                      <td className="px-6 py-4">
-                        <StatusBadge item={appointment} />
-                      </td>
-                      <td className="px-6 py-4">
-                        {!appointment.isCancelled && !appointment.isCompleted && (
-                          <div className="flex gap-2">
-                            <ActionButton
-                              color="border-red-400 text-red-600 focus:ring-red-500"
-                              icon={<X className="w-3 h-3" />}
-                              onClick={() => handleCancelAppointment(appointment._id)}
-                              label="Cancel"
-                              appointmentId={appointment._id}
-                              action="cancel"
-                              disabled={processingIds.has(`complete-${appointment._id}`)}
-                            />
-                            <ActionButton
-                              color="border-green-500 text-green-600 focus:ring-green-500"
-                              icon={<Check className="w-3 h-3" />}
-                              onClick={() => handleCompleteAppointment(appointment._id)}
-                              label="Complete"
-                              appointmentId={appointment._id}
-                              action="complete"
-                              disabled={processingIds.has(`cancel-${appointment._id}`)}
-                            />
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {appointment.serviceTitle}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          <div>{slotDateFormat(appointment.date)}</div>
+                          <div className="text-gray-500">{appointment.time}</div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {appointment.userPhone}
+                        </td>
+                        <td className="px-6 py-4">
+                          <StatusBadge item={appointment} />
+                        </td>
+                        <td className="px-6 py-4">
+                          {canTakeAction && (
+                            <div className="flex gap-2">
+                              <ActionButton
+                                color="border-red-400 text-red-600 focus:ring-red-500"
+                                icon={<X className="w-3 h-3" />}
+                                onClick={() => handleCancelAppointment(appointment._id)}
+                                label="Cancel"
+                                appointmentId={appointment._id}
+                                action="cancel"
+                                disabled={loadingId === appointment._id}
+                              />
+                              <ActionButton
+                                color="border-green-500 text-green-600 focus:ring-green-500"
+                                icon={<Check className="w-3 h-3" />}
+                                onClick={() => handleCompleteAppointment(appointment._id)}
+                                label="Complete"
+                                appointmentId={appointment._id}
+                                action="complete"
+                                disabled={loadingId === appointment._id}
+                              />
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
 

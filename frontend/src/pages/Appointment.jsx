@@ -31,7 +31,6 @@ import {
 const Appointment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  // const backendUrl = "http://localhost:3000"
   const {  userData, backendUrl } = useContext(AppContext);
   const { formatNaira } = useContext(ShopContext);
 
