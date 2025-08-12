@@ -59,7 +59,7 @@ const appointmentSchema = new mongoose.Schema({
   userPhone: { type: String },
 
   // Client's note
-  clientNotes: { type: String },
+  clientNotes: { type: String, default: '' },
 
   // Professional Notes
   serviceProviderNotes: {

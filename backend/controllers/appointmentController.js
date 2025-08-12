@@ -1299,7 +1299,7 @@ const generateTimeSlots = (businessDay, existingAppointments, date, currentDateT
 // FIX 7: Enhanced booking validation
 const bookMultipleAppointment = async (req, res) => {
   try {
-    const { services, date, time, totalAmount } = req.body;
+    const { services, date, time, totalAmount, clientNotes } = req.body;
     const userId = req.userId;
 
     console.log('Received booking data:', { services, date, time, totalAmount });
