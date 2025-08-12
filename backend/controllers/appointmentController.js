@@ -1423,8 +1423,9 @@ const bookMultipleAppointment = async (req, res) => {
       userName: userData.name,
       userEmail: userData.email,
       userPhone: userData.phone,
-      date: appointmentDate,
+      date: appointmentDate,      
       time,
+      clientNotes,
       totalDuration: calculatedDuration,
       status: 'pending',
       payment: {

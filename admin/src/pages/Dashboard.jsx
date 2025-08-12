@@ -966,6 +966,10 @@ const Dashboard = () => {
                           <span>{item.userPhone}</span>
                         </div>
                         <div className="flex items-center">
+                          <Phone className="w-4 h-4 mr-2 text-gray-400" />
+                          <span>{item.clientNotes}</span>
+                        </div>
+                        <div className="flex items-center">
                           <Calendar className="w-4 h-4 mr-2 text-gray-400" />
                           <span>
                             {slotDateFormat(item.date)} at {slotDateFormat(item.time)}

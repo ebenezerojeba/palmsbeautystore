@@ -58,6 +58,9 @@ const appointmentSchema = new mongoose.Schema({
   userEmail: { type: String, required: true },
   userPhone: { type: String },
 
+  // Client's note
+  clientNotes: { type: String },
+
   // Professional Notes
   serviceProviderNotes: {
     preAppointment: { type: String },
