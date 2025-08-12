@@ -371,6 +371,53 @@ const bookingData = {
     }
   };
 
+   // Format time range display
+  const formatTimeRange = (startTime, duration) => {
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const startDate = new Date();
+    startDate.setHours(startHour, startMinute, 0, 0);
+    
+    const endDate = new Date(startDate.getTime() + duration * 60 * 1000);
+    const endTime = endDate.toTimeString().slice(0, 5);
+    
+    return `${startTime} - ${endTime}`;
+  };
+
+// Toggle date expansion
+  const toggleDateExpansion = (date) => {
+    setExpandedDates(prev => ({
+      ...prev,
+      [date]: !prev[date]
+    }));
+  };
+
+  // Get service duration category
+  const getDurationCategory = (duration) => {
+    if (duration <= 120) return 'short'; // ≤ 2 hours
+    if (duration <= 480) return 'medium'; // ≤ 8 hours
+    return 'long'; // > 8 hours
+  };
+
+  // Get category styling
+  const getCategoryStyle = (category) => {
+    switch (category) {
+      case 'short':
+        return 'bg-green-50 border-green-200 text-green-800';
+      case 'medium':
+        return 'bg-yellow-50 border-yellow-200 text-yellow-800';
+      case 'long':
+        return 'bg-red-50 border-red-200 text-red-800';
+      default:
+        return 'bg-gray-50 border-gray-200 text-gray-800';
+    }
+  }
+
+    const totalDuration = getTotalDuration();
+  const durationCategory = getDurationCategory(totalDuration);
+  const isLongService = totalDuration > 480; // More than 8 hours
+
+
+
   if (!serviceInfo) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -868,7 +915,7 @@ const bookingData = {
                         </div>
                         <button
                           onClick={() => addService(service)}
-                          className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                          className="ml-4 px-4 py-2 bg-pink-800 text-white rounded-lg hover:bg-pink-700 transition-colors text-sm font-medium"
                         >
                           Add
                         </button>
