@@ -20,6 +20,7 @@ import MyProfile from './pages/MyProfile';
 import Orders from './pages/MyOrders';
 import VerifyAppointment from './pages/VerifyAppointment';
 import SuccessPage from './pages/SuccessPage';
+import MyAppointmentsWithErrorBoundary from './pages/MyAppointment';
 
 const App = () => {
   return (
@@ -47,6 +48,7 @@ const App = () => {
             <Route path="/my-profile" element={<MyProfile />} />
             <Route path="/my-orders" element={<Orders />} />
             <Route path="/my-appointments" element={<MyAppointment />} />
+            {/* <Route path="/my-appointments" element={<MyAppointmentsWithErrorBoundary />} /> */}
           </Routes>
         </div>
       </main>

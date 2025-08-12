@@ -1842,6 +1842,8 @@ const Dashboard = () => {
     }
   };
 
+
+  
   const getFilteredAppointments = () => {
     let appointmentsToFilter = filterStatus === 'all' 
       ? dashData?.latestAppointments || []
