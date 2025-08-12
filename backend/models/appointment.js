@@ -115,6 +115,7 @@ isMultiDay: {
   type: Boolean,
   default: false
 },
+
 totalBusinessHoursNeeded: {
   type: Number,
   required: false
