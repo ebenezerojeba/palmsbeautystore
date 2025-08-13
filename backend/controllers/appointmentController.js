@@ -1284,8 +1284,6 @@ const generateTimeSlotsForDay = (businessDay, existingAppointments, date, curren
       if (isMultiDay) {
         spansMultipleDays = true;
         actualEndTime = 'Next Day';
-      } else if (slotEnd > businessEnd) {
-        actualEndTime = slotEnd.toTimeString().slice(0, 5) + ' (Extended)';
       } else {
         actualEndTime = slotEnd.toTimeString().slice(0, 5);
       }
