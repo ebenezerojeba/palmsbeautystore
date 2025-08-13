@@ -47,6 +47,7 @@ const backendUrl = "http://localhost:3000"; // Replace with your actual backend 
   const [showAddService, setShowAddService] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState("");
   const [appointmentId, setAppointmentId] = useState("");
+  const [expandedDates, setExpandedDates] = useState({});
 
   // New enhanced state
   const [clientNotes, setClientNotes] = useState("");
@@ -135,11 +136,19 @@ const backendUrl = "http://localhost:3000"; // Replace with your actual backend 
     return selectedServices.reduce((total, service) => total + Number(service.price || 0), 0);
   };
 
+// const getTotalDuration = () => {
+//   const total = selectedServices.reduce((total, service) => total + Number(service.duration || 90), 0);
+//   console.log('Total duration calculated:', total, 'from services:', selectedServices);
+//   return total;
+// }
 const getTotalDuration = () => {
-  const total = selectedServices.reduce((total, service) => total + Number(service.duration || 90), 0);
+  const total = selectedServices.reduce((total, service) => {
+    const duration = parseInt(service.duration) || 90; // Ensure consistent parsing
+    return total + duration;
+  }, 0);
   console.log('Total duration calculated:', total, 'from services:', selectedServices);
   return total;
-}
+};
 //Updated useEffect for fetching available slots
 useEffect(() => {
   const fetchAvailableSlots = async () => {
@@ -203,18 +212,43 @@ useEffect(() => {
 }, [selectedServices, id, backendUrl]);
 
   // Add service to selection
+  // const addService = (service) => {
+  //   const isAlreadySelected = selectedServices.some(s => s._id === service._id);
+  //   if (!isAlreadySelected) {
+  //     setSelectedServices([...selectedServices, service]);
+  //     setShowAddService(false);
+  //     setSelectedDate("");
+  //     setSelectedTime("");
+  //     toast.success(`${service.title} added to your appointment`);
+  //   } else {
+  //     toast.info("This service is already selected");
+  //   }
+  // };
+
   const addService = (service) => {
-    const isAlreadySelected = selectedServices.some(s => s._id === service._id);
-    if (!isAlreadySelected) {
-      setSelectedServices([...selectedServices, service]);
-      setShowAddService(false);
-      setSelectedDate("");
-      setSelectedTime("");
-      toast.success(`${service.title} added to your appointment`);
-    } else {
-      toast.info("This service is already selected");
-    }
-  };
+  const isAlreadySelected = selectedServices.some(s => s._id === service._id);
+  if (!isAlreadySelected) {
+    const serviceToAdd = {
+      ...service,
+      _id: service._id,
+      title: service.title,
+      duration: parseInt(service.duration) || 90, // Consistent parsing
+      price: parseFloat(service.price) || 0
+    };
+    
+    setSelectedServices(prev => [...prev, serviceToAdd]);
+    setShowAddService(false);
+    
+    // Reset date/time when services change
+    setSelectedDate("");
+    setSelectedTime("");
+    
+    toast.success(`${service.title} added to your appointment`);
+  } else {
+    toast.info("This service is already selected");
+  }
+};
+
   // Remove service from selection
   const removeService = (serviceId) => {
     if (selectedServices.length === 1) {
@@ -644,32 +678,50 @@ const bookingData = {
 
                 {/* Time Selection */}
                 {selectedDate && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Select Time
-                    </label>
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-3">
+      Select Time
+      {getTotalDuration() > 480 && (
+        <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
+          Extended Service ({formatDuration(getTotalDuration())})
+        </span>
+      )}
+    </label>
 
-                    {(() => {
-                      const selectedDay = availableSlots.find(slot => slot.date === selectedDate);
-                      return selectedDay ? (
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                          {selectedDay.slots.map((timeSlot, index) => (
-                            <button
-                              key={index}
-                              onClick={() => setSelectedTime(timeSlot.time)}
-                              className={`p-3 text-sm font-medium rounded-lg border transition-all ${selectedTime === timeSlot.time
-                                  ? "border-pink-500 bg-pink-50 text-gray-900"
-                                  : "border-gray-200 hover:border-gray-300 text-gray-700"
-                                }`}
-                            >
-                              {timeSlot.time}
-                            </button>
-                          ))}
-                        </div>
-                      ) : null;
-                    })()}
-                  </div>
-                )}
+    {(() => {
+      const selectedDay = availableSlots.find(slot => slot.date === selectedDate);
+      return selectedDay ? (
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+          {selectedDay.slots.map((timeSlot, index) => (
+            <button
+              key={index}
+              onClick={() => setSelectedTime(timeSlot.time)}
+              className={`p-3 text-sm font-medium rounded-lg border transition-all ${
+                selectedTime === timeSlot.time
+                  ? "border-pink-500 bg-pink-50 text-gray-900"
+                  : "border-gray-200 hover:border-gray-300 text-gray-700"
+              }`}
+            >
+              <div>{timeSlot.time}</div>
+              {timeSlot.spansMultipleDays && (
+                <div className="text-xs text-orange-600 mt-1">Multi-day</div>
+              )}
+              {timeSlot.estimatedEndTime && timeSlot.estimatedEndTime !== 'Next Day' && (
+                <div className="text-xs text-gray-500">
+                  End: {timeSlot.estimatedEndTime}
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-8 text-gray-500">
+          <p>No available time slots for this date</p>
+        </div>
+      );
+    })()}
+  </div>
+)}
               </div>
             </div>
 
