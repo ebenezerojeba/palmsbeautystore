@@ -25,8 +25,38 @@ const appointmentSchema = new mongoose.Schema({
   serviceTitle: { type: String }, // Keep for existing single service appointments
   
   // Appointment Details
-  date: { type: Date, required: true },
-  time: { type: String, required: true },
+ // IMPORTANT: Store date and time separately
+  date: {
+    type: Date,
+    required: true,
+    // This will store just the date part (YYYY-MM-DD)
+    set: function(value) {
+      if (typeof value === 'string') {
+        // If it's a string like "2025-08-15", convert to proper Date
+        const dateOnly = new Date(value);
+        dateOnly.setHours(0, 0, 0, 0);
+        return dateOnly;
+      }
+      if (value instanceof Date) {
+        const dateOnly = new Date(value);
+        dateOnly.setHours(0, 0, 0, 0);
+        return dateOnly;
+      }
+      return value;
+    }
+  },
+  
+  // Store time as string in HH:MM format
+  time: {
+    type: String,
+    required: true,
+    validate: {
+      validator: function(v) {
+        return /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v);
+      },
+      message: 'Time must be in HH:MM format'
+    }
+  },
   totalDuration: { type: Number }, // Total duration in minutes
   duration: { type: String }, // Keep for backward compatibility
   
