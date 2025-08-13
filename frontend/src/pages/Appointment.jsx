@@ -31,9 +31,9 @@ import {
 const Appointment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const {  userData, backendUrl } = useContext(AppContext);
-  const { formatNaira } = useContext(ShopContext);
-
+  const {  userData } = useContext(AppContext);
+  const { formatNaira, backendUrl } = useContext(ShopContext);
+// const backendUrl = "http://localhost:3000"; // Replace with your actual backend URL
   // State management
   const [serviceInfo, setServiceInfo] = useState(null);
   const [allServices, setAllServices] = useState([]);
