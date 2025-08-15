@@ -31,9 +31,9 @@ import {
 const Appointment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const {  userData } = useContext(AppContext);
+  const {  userData, backendUrl } = useContext(AppContext);
   const { formatNaira } = useContext(ShopContext);
-const backendUrl = "http://localhost:3000"; // Replace with your actual backend URL
+// const backendUrl = "http://localhost:3000"; // Replace with your actual backend URL
   // State management
   const [serviceInfo, setServiceInfo] = useState(null);
   const [allServices, setAllServices] = useState([]);
@@ -601,7 +601,7 @@ const bookingData = {
                   <textarea
                     value={clientNotes}
                     onChange={(e) => setClientNotes(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
                     rows="3"
                     placeholder=""
                   />
@@ -704,7 +704,7 @@ const bookingData = {
             >
               <div>{timeSlot.time}</div>
               {timeSlot.spansMultipleDays && (
-                <div className="text-xs text-orange-600 mt-1">Multi-day</div>
+                <div className="text-xs text-orange-600 hidden mt-1">Multi-day</div>
               )}
               {timeSlot.estimatedEndTime && timeSlot.estimatedEndTime !== 'Next Day' && (
                 <div className="text-xs text-gray-500">
