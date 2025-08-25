@@ -99,7 +99,7 @@ const placeOrder = async (req, res) => {
 
     // Save order to database for guest users
     const orderData = {
-      userId: null, // Guest order - no user ID required
+      userId: req.userId || null, // Guest order - no user ID required
       items: items.map(item => ({
         product: item._id,
         quantity: item.quantity,
