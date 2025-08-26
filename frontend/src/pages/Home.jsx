@@ -15,7 +15,7 @@ const services = [
   {
     title: "Hair Styling",
     description: "Expert cuts, colors, and styling for all hair types",
-    bgColor: "bg-amber-50",
+    bgColor: "bg-pink-50",
   },
   {
     title: "Natural Hair",
@@ -30,12 +30,12 @@ const services = [
   {
     title: "Makeup",
     description: "Professional makeup for any occasion",
-    bgColor: "bg-amber-50",
+    bgColor: "bg-pink-50",
   },
   {
     title: "Lash Extension",
     description: "Enhance your lashes with expert extensions",
-    bgColor: "bg-amber-50",
+    bgColor: "bg-pink-50",
   },
   {
     title: "Microblading",
@@ -100,7 +100,7 @@ const Home = () => {
           {/* Location Badge */}
           <AnimatedText delay={200}>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm mb-8">
-              <Star className="h-4 w-4 text-amber-400" aria-hidden="true" />
+              <Star className="h-4 w-4 text-pink-400" aria-hidden="true" />
               <span className="text-sm font-medium text-gray-600">
                 St. John's, Newfoundland and Labrador
               </span>
@@ -126,7 +126,7 @@ const Home = () => {
                     >
                       {word}
                       {word === "PalmsBeauty" && (
-                        <span className="absolute bottom-2 left-0 w-full h-3 bg-amber-200/30 -z-10"></span>
+                        <span className="absolute bottom-2 left-0 w-full h-3 bg-pink-200/30 -z-10"></span>
                       )}
                     </span>
                   </span>
