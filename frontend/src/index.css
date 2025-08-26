@@ -19,30 +19,3 @@
     }
 }
 
-
-/* @theme {
-  --color-pink-50:  #F1F5F1;
-  --color-pink-100: #ADB6AA; 
-  --color-pink-200: #97A493;
-  --color-pink-300: #81917D;
-  --color-pink-400: #6B7E67;
-  --color-pink-500: #566B52;
-  --color-pink-600: #455744;
-  --color-pink-700: #566B52;
-  --color-pink-800: #252F26;
-  --color-pink-900: #6B7E67;
-} */
-
-
-@theme {
-  --color-pink-50: #F1F5F1;
-  --color-pink-100: #222222;
-  --color-pink-200: #242424;
-  --color-pink-300: #262626;
-  --color-pink-400: #272727;
-  --color-pink-500:  #242424; /* base matte black */
-  --color-pink-600:  #242424;
-  --color-pink-700: #262626;
-  --color-pink-800:  #242424;
-  --color-pink-900: #262626;
-}
