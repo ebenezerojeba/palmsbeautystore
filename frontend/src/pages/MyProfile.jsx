@@ -15,13 +15,6 @@ const MyProfile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
 
-  // Load user profile data on component mount
-  // useEffect(() => {
-  //   if (!userData || !userData._id) {
-  //     loadUserProfileData();
-  //   }
-  // }, []);
-
     // Cleanup image preview on unmount
   useEffect(() => {
     return () => {
@@ -30,27 +23,6 @@ const MyProfile = () => {
       }
     };
   }, [imagePreview]);
-
-
-  // const loadUserProfileData = async () => {
-  //   setIsLoading(true);
-  //   try {
-  //     const { data } = await axios.get(`${backendUrl}/api/user/profile`, {
-  //       headers: { Authorization: `Bearer ${token}` },
-  //     });
-  //     if (data.success) {
-  //       setUserData({
-  //         ...data.user,
-  //         dob: data.user.dob ? data.user.dob.split("T")[0] : ""
-  //       });
-  //     }
-  //   } catch (error) {
-  //     toast.error("Failed to load profile data");
-  //     console.error("Profile load error:", error);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
 
 
   const updateUserProfileData = async () => {
@@ -184,22 +156,6 @@ const MyProfile = () => {
       </div>
     );
   }
-
-  // if (!userData) {
-  //   return (
-  //     <div className="min-h-screen flex justify-center items-center bg-gray-50">
-  //       <div className="text-center">
-  //         <p className="text-gray-600 text-lg">No profile data available</p>
-  //         <button 
-  //           onClick={loadUserProfileData}
-  //           className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
-  //         >
-  //           Retry Loading
-  //         </button>
-  //       </div>
-  //     </div>
-  //   );
-  // }
 
   return (
     <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
