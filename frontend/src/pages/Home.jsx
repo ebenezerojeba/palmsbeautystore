@@ -15,7 +15,7 @@ const services = [
   {
     title: "Hair Styling",
     description: "Expert cuts, colors, and styling for all hair types",
-    bgColor: "bg-pink-50",
+    bgColor: "bg-amber-50",
   },
   {
     title: "Natural Hair",
@@ -30,12 +30,12 @@ const services = [
   {
     title: "Makeup",
     description: "Professional makeup for any occasion",
-    bgColor: "bg-pink-50",
+    bgColor: "bg-amber-50",
   },
   {
     title: "Lash Extension",
     description: "Enhance your lashes with expert extensions",
-    bgColor: "bg-pink-50",
+    bgColor: "bg-amber-50",
   },
   {
     title: "Microblading",
