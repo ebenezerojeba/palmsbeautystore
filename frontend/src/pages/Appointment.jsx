@@ -725,11 +725,22 @@ const bookingData = {
               </div>
             </div>
 
+          <div class="bg-gray-50 p-6 rounded-2xl shadow-sm space-y-4 text-gray-700 text-sm leading-relaxed">
+  <p>
+    Thanks for booking with us. All prices displayed on the website are tax inclusive. Add-ons such as braiding, extensions, wash, and detangling will be calculated during checkout.
+  </p>
+  <p>
+    We ask that you reschedule or cancel your appointment 48 hours beforehand to allow us to give another client your spot. Otherwise, you may be charged 50% of the appointment price.
+  </p>
+</div>
+
+
             {/* Payment Method Selection */}
-            <div className="bg-white rounded-lg shadow-sm">
-              <div className="p-6 border-b border-gray-200">
+            {/* <div className="bg-white rounded-lg shadow-sm"> */}
+              {/* <div className="p-6 border-b border-gray-200">
+
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  {/* <CardIcon className="h-5 w-5 mr-2" /> */}
+                  <CardIcon className="h-5 w-5 mr-2" />
                   Payment Method
                 </h3>
               </div>
@@ -756,10 +767,9 @@ const bookingData = {
                       </div>
                     ))}
                   </div>
-                )}
+                )} 
 
                 
-
                 <div className="flex items-center space-x-3 mt-4">
                   <input
                     type="checkbox"
@@ -771,9 +781,9 @@ const bookingData = {
                   <label htmlFor="save-payment" className="text-sm text-gray-700">
                     Save this payment method for future appointments
                   </label>
-                </div>
-              </div>
-            </div>
+                </div> */}
+              {/* </div>  */}
+            {/* </div> */}
 
            
 
@@ -997,6 +1007,32 @@ const bookingData = {
               </div>
             </div>
 
+            <div class="bg-gray-50 p-6 rounded-2xl shadow-md text-gray-700 text-sm leading-relaxed space-y-4">
+  <p>
+    We ask that you please reschedule or cancel your appointment 48 before hand to enable us give a  client your spot  or you may be charged 50% of the price of your appointment .
+  </p>
+
+  <p>
+    All prices displayed on the website are <span class="font-semibold">taxes included</span> and finalized. Add-ons (braiding extensions, wash, or detangling services) will be calculated during checkout.
+  </p>
+
+  <div>
+    <h2 class="text-base font-bold text-gray-900 mb-2">Service Cancellation Policy</h2>
+    <ol class="list-decimal list-inside space-y-2">
+      <li>
+        <span class="font-semibold">Cancellation by the Customer:</span> Customers may reschedule their service once by providing written notice to 
+        <a href="mailto:Stylebyesther@palmsbeautystore.com" class="text-blue-600 underline">Stylebyesther@palmsbeautystore.com</a> 
+        <span class="font-semibold">48 hours</span> before their appointment. The notice must include the customer's name, contact information, and service details. 
+        <span class="font-semibold">Booking fees are not refundable.</span>
+      </li>
+      <li>
+        <span class="font-semibold">Cancellations by Palmsbeautystore:</span> Palmsbeautystore reserves the right to cancel a service in cases of non-payment, violation of terms, or breach of agreement. Notice will be provided, and refunds will apply only if the service provider is unavailable due to unforeseen circumstances.
+      </li>
+    </ol>
+  </div>
+</div>
+
+{/* 
             <div className="p-6 overflow-y-auto max-h-[60vh]">
              <div className="prose prose-sm max-w-none">
   <h4 className="text-base font-semibold mb-3">Appointment Cancellation Policy</h4>
@@ -1017,7 +1053,7 @@ const bookingData = {
     </li>
   </ul>
 </div>
-</div>
+</div> */}
 
             <div className="p-6 border-t border-gray-200">
               <button
