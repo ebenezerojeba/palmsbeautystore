@@ -729,9 +729,7 @@ const bookingData = {
   <p>
     Thanks for booking with us. All prices displayed on the website are tax inclusive. Add-ons such as braiding, extensions, wash, and detangling will be calculated during checkout.
   </p>
-  <p>
-    We ask that you reschedule or cancel your appointment 48 hours beforehand to allow us to give another client your spot. Otherwise, you may be charged 50% of the appointment price.
-  </p>
+ 
 </div>
 
 
