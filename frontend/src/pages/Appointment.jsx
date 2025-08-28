@@ -727,8 +727,10 @@ const bookingData = {
 
           <div class="bg-gray-50 p-6 rounded-2xl shadow-sm space-y-4 text-gray-700 text-sm leading-relaxed">
   <p>
-    Thanks for booking with us. All prices displayed on the website are tax inclusive. Add-ons such as braiding, extensions, wash, and detangling will be calculated during checkout.
+     <span className="font-extra-bold">Thanks for booking with us</span>. All prices displayed on the website are tax inclusive. Add-ons such as braiding, extensions, wash, and detangling will be calculated during checkout.
   </p>
+
+  <p className="text-lg">Please note ; the time indicated per appointment are estimations and can vary based on size of head, quantity of braids and length in comparison to your height. </p>
  
 </div>
 

@@ -28,11 +28,6 @@ const services = [
     bgColor: "bg-stone-50",
   },
   {
-    title: "Makeup",
-    description: "Professional makeup for any occasion",
-    bgColor: "bg-amber-50",
-  },
-  {
     title: "Lash Extension",
     description: "Enhance your lashes with expert extensions",
     bgColor: "bg-amber-50",
