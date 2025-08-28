@@ -166,7 +166,7 @@ const userOrders = async (req, res) => {
     res.json({ success: true, orders });
   } catch (error) {
     console.log(error);
-    res.json({ succcess: false, message: error.message });
+    res.json2({ succcess: false, message: error.message });
   }
 };
 
