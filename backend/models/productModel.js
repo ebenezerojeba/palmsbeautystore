@@ -1,27 +1,88 @@
-import mongoose from "mongoose";
+// import mongoose from "mongoose";
 
+// const productSchema = new mongoose.Schema({
+//     name: {type:String, required:true},
+//     description : {type:String, required:true},
+//     price: {type: Number, required:true},
+//     image: {type:Array, required:true},
+//     category: {type:String, required:true},
+//     subCategory: {type:String, required:true},
+//     // sizes: {type:Array, required:true},
+//    sizes: { type: [String], required: true },
+//      inStock: {
+//     type: Boolean,
+//     default: true // assume it's in stock by default
+//   },
+
+//     bestSeller: {type: Boolean, default: false},
+//     date: {type: Date, required: true, default: Date.now}
+// },{
+//     timestamps: true
+// })
+
+// const productModel = mongoose.models.product || mongoose.model("product", productSchema)
+// export default productModel
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// In your productModel.js, expand the pricing structure
+// In your productModel.js, expand the pricing structure
 const productSchema = new mongoose.Schema({
-    name: {type:String, required:true},
-    description : {type:String, required:true},
-    price: {type: Number, required:true},
-    image: {type:Array, required:true},
-    category: {type:String, required:true},
-    subCategory: {type:String, required:true},
-    // sizes: {type:Array, required:true},
-   sizes: { type: [String], required: true },
-     inStock: {
-    type: Boolean,
-    default: true // assume it's in stock by default
-  },
+  name: { type: String, required: true },
+  description: { type: String, required: true },
+  // Enhanced pricing structure for multiple variations
+  pricing: [{
+    size: { type: String },
+    length: { type: String }, // in inches
+    color: { type: String },
+    price: { type: Number, required: true },
+    sku: { type: String } // optional: for inventory tracking
+  }],
+  basePrice: { type: Number, required: true },
+  category: { type: String, required: true },
+  subCategory: { type: String, required: true },
+  sizes: [{ type: String }],
+  lengths: [{ type: String }], // Available lengths
+  colors: [{ type: String }], // Available colors
+  bestSeller: { type: Boolean, default: false },
+  image: [{ type: String, required: true }],
+  date: { type: Number, required: true }
+});
 
-    bestSeller: {type: Boolean, default: false},
-    date: {type: Date, required: true, default: Date.now}
-},{
-    timestamps: true
-})
 
-const productModel = mongoose.models.product || mongoose.model("product", productSchema)
-export default productModel
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

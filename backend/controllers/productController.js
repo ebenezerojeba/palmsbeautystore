@@ -3,7 +3,7 @@ import productModel from '../models/productModel.js'
 // Fucntion for add product
 const addProduct = async (req, res) => {
     try {
-        const {name,description,price,category,subCategory,sizes,bestSeller} = req.body
+        const {name,description,price,category,subCategory,sizes,bestSeller, lengths, colors, pricing} = req.body
 
         const image1 = req.files.image1 && req.files.image1[0]
         const image2 = req.files.image2 && req.files.image2[0]
@@ -19,17 +19,29 @@ const addProduct = async (req, res) => {
             })
         )
 
-        let parsedSizes = [];
-try {
-  const temp = JSON.parse(req.body.sizes);
-  if (Array.isArray(temp)) {
-    parsedSizes = temp;
-  } else {
-    throw new Error("Sizes must be an array");
-  }
-} catch (err) {
-  return res.json({ success: false, message: "Invalid sizes format" });
-}
+        // Parse all arrays
+    let parsedSizes = [], parsedLengths = [], parsedColors = [], parsedPricing = [];
+    
+    try {
+      parsedSizes = JSON.parse(sizes || '[]');
+      parsedLengths = JSON.parse(lengths || '[]');
+      parsedColors = JSON.parse(colors || '[]');
+      parsedPricing = JSON.parse(pricing || '[]');
+    } catch (err) {
+      return res.json({ success: false, message: "Invalid data format" });
+    }
+
+//         let parsedSizes = [];
+// try {
+//   const temp = JSON.parse(req.body.sizes);
+//   if (Array.isArray(temp)) {
+//     parsedSizes = temp;
+//   } else {
+//     throw new Error("Sizes must be an array");
+//   }
+// } catch (err) {
+//   return res.json({ success: false, message: "Invalid sizes format" });
+// }
 
 
         const productData ={
@@ -40,6 +52,9 @@ try {
             subCategory,
             bestSeller: bestSeller  === "true",
             sizes: parsedSizes,
+            lengths: parsedLengths,
+            colors: parsedColors,
+            pricing: parsedPricing,
             image: imagesUrl,
             date: Date.now()
         }
