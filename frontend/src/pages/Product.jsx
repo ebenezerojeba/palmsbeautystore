@@ -16,6 +16,10 @@ const Product = () => {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
   const [isImageLoading, setIsImageLoading] = useState(true);
+  const [selectedLength, setSelectedLength] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
+  const [currentPrice, setCurrentPrice] = useState(null);
+
 
   const { productId } = useParams();
 
@@ -42,17 +46,66 @@ const Product = () => {
     }).format(price);
   };
 
-  const handleAddToCart = () => {
-    if (!size) {
-      alert("Please select a size");
-      return;
-    }
-    addToCart(productData._id, size);
-  };
+  // Update the price calculation function
+const updatePrice = (newSize = size, newLength = selectedLength, newColor = selectedColor) => {
+  if (productData.pricing && productData.pricing.length > 0) {
+    const priceItem = productData.pricing.find(p => 
+      p.size === newSize && p.length === newLength && p.color === newColor
+    );
+    setCurrentPrice(priceItem ? priceItem.price : productData.basePrice);
+  } else {
+    setCurrentPrice(productData.basePrice || productData.price || 0);
+  }
+};
+
+ const handleAddToCart = () => {
+  const missingOptions = [];
+  
+  if (productData.sizes && productData.sizes.length > 0 && !size) {
+    missingOptions.push("size");
+  }
+  if (productData.lengths && productData.lengths.length > 0 && !selectedLength) {
+    missingOptions.push("length");
+  }
+  if (productData.colors && productData.colors.length > 0 && !selectedColor) {
+    missingOptions.push("color");
+  }
+  
+  if (missingOptions.length > 0) {
+    alert(`Please select: ${missingOptions.join(", ")}`);
+    return;
+  }
+  
+  // Include all selected options when adding to cart
+  addToCart(productData._id, {
+    size,
+    length: selectedLength,
+    color: selectedColor,
+    price: currentPrice
+  });
+};
 
   const handleImageLoad = () => {
     setIsImageLoading(false);
   };
+
+
+// Add selection handlers
+const handleSizeSelect = (selectedSize) => {
+  setSize(selectedSize);
+  updatePrice(selectedSize, selectedLength, selectedColor);
+};
+
+const handleLengthSelect = (selectedLen) => {
+  setSelectedLength(selectedLen);
+  updatePrice(size, selectedLen, selectedColor);
+};
+
+const handleColorSelect = (selectedCol) => {
+  setSelectedColor(selectedCol);
+  updatePrice(size, selectedLength, selectedCol);
+};
+
 
   return productData ? (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -166,6 +219,58 @@ const Product = () => {
                 ))}
               </div>
             </div>
+
+            {/* Length Selection */}
+{productData.lengths && productData.lengths.length > 0 && (
+  <div className="space-y-4">
+    <div>
+      <label className="block text-sm font-medium text-gray-900 mb-3">
+        Length {selectedLength && <span className="text-blue-600">({selectedLength})</span>}
+      </label>
+      <div className="flex flex-wrap gap-2">
+        {productData.lengths.map((length, index) => (
+          <button
+            key={index}
+            onClick={() => handleLengthSelect(length)}
+            className={`px-4 py-2 border rounded-md text-sm font-medium transition-all duration-200 ${
+              length === selectedLength
+                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+            }`}
+          >
+            {length}
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+
+{/* Color Selection */}
+{productData.colors && productData.colors.length > 0 && (
+  <div className="space-y-4">
+    <div>
+      <label className="block text-sm font-medium text-gray-900 mb-3">
+        Color {selectedColor && <span className="text-blue-600">({selectedColor})</span>}
+      </label>
+      <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+        {productData.colors.map((color, index) => (
+          <button
+            key={index}
+            onClick={() => handleColorSelect(color)}
+            className={`px-3 py-1 border rounded-md text-sm font-medium transition-all duration-200 ${
+              color === selectedColor
+                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+            }`}
+          >
+            {color}
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
 
             {/* Quantity Selection */}
             <div>
