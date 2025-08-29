@@ -17,28 +17,42 @@ const Footer = () => {
   return (
     <footer className="bg-pink-900 text-gray-300">
       {/* Main Footer Content */}
-      <div className="max-w-7xl px-2 sm:px-6 lg:px-8 py-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-12">
           {/* Company Info */}
-          <div className="">
+          <div className="md:col-span-2 lg:col-span-1">
             <img 
               src={assets.plog} 
               alt="PalmsBeauty Logo" 
-              className="w-36 md:w-34 object-contain cursor-pointer"
+              className="w-32 sm:w-36 md:w-40 object-contain cursor-pointer mb-4"
             />
-            <p className="text-sm leading-relaxed">
+            <p className="text-sm leading-relaxed mb-4 sm:mb-6">
               Your premier destination for beauty services in St. John's, 
               Newfoundland and Labrador. Specializing in hair styling, 
               natural hair care, and professional makeup services.
             </p>
-            <div className="flex space-x-4 mt-4">
-              <a href="#" className="hover:text-white transition-colors">
+            <div className="flex space-x-4">
+              <a 
+                href="#" 
+                className="hover:text-white transition-colors duration-200 p-2 hover:bg-pink-800 rounded-full"
+                aria-label="Follow us on Facebook"
+              >
                 <Facebook size={20} />
               </a>
-              <a href="https://www.instagram.com/palms_beauty_store/" className="hover:text-white transition-colors">
+              <a 
+                href="https://www.instagram.com/palms_beauty_store/" 
+                className="hover:text-white transition-colors duration-200 p-2 hover:bg-pink-800 rounded-full"
+                aria-label="Follow us on Instagram"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <Instagram size={20} />
               </a>
-              <a href="#" className="hover:text-white transition-colors">
+              <a 
+                href="#" 
+                className="hover:text-white transition-colors duration-200 p-2 hover:bg-pink-800 rounded-full"
+                aria-label="Follow us on Twitter"
+              >
                 <Twitter size={20} />
               </a>
             </div>
@@ -46,74 +60,86 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-white font-semibold mb-6">Quick Links</h3>
-            <ul className="space-y-4">
+            <h3 className="text-white font-semibold mb-4 sm:mb-6 text-lg">Quick Links</h3>
+            <ul className="space-y-2 sm:space-y-3">
               <li>
-                <NavLink to="/" onClick={()=> scrollTo(0,0)} className="hover:text-white transition-colors">
+                <NavLink 
+                  to="/" 
+                  onClick={() => window.scrollTo(0, 0)} 
+                  className="hover:text-white transition-colors duration-200 text-sm block py-1"
+                >
                   Home
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/services" onClick={()=> scrollTo(0,0)} className="hover:text-white transition-colors">
+                <NavLink 
+                  to="/services" 
+                  onClick={() => window.scrollTo(0, 0)} 
+                  className="hover:text-white transition-colors duration-200 text-sm block py-1"
+                >
                   Our Services
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/about" onClick={()=> scrollTo(0,0)} className="hover:text-white transition-colors">
+                <NavLink 
+                  to="/about" 
+                  onClick={() => window.scrollTo(0, 0)} 
+                  className="hover:text-white transition-colors duration-200 text-sm block py-1"
+                >
                   About Us
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/contact" onClick={()=> scrollTo(0,0)} className="hover:text-white transition-colors">
+                <NavLink 
+                  to="/contact" 
+                  onClick={() => window.scrollTo(0, 0)} 
+                  className="hover:text-white transition-colors duration-200 text-sm block py-1"
+                >
                   Contact
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/services"
-                onClick={()=> scrollTo(0,0)}
-                 className="hover:text-white transition-colors">
+                <NavLink 
+                  to="/services"
+                  onClick={() => window.scrollTo(0, 0)}
+                  className="hover:text-white transition-colors duration-200 text-sm block py-1 font-medium"
+                >
                   Book Appointment
                 </NavLink>
               </li>
             </ul>
           </div>
 
-          {/* Services */}
-          <div>
-            <h3 className="text-white font-semibold mb-6">Our Services</h3>
-            <ul className="space-y-4">
-              <li>Hair Styling</li>
-              <li>Natural Hair Care</li>
-              <li>Hair Replacement</li>
-              <li>Makeup Services</li>
-              <li>Hair Extensions</li>
-              <li>Bridal Services</li>
-            </ul>
-          </div>
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-white font-semibold mb-6">Contact Us</h3>
+            <h3 className="text-white font-semibold mb-6 text-lg">Contact Us</h3>
             <ul className="space-y-4">
-              <li className="flex items-center gap-3">
-                <MapPin size={20} />
-                <span>430 Topsail Road, St. John's, CA-NL A1E 4N1</span>
+              <li className="flex items-start gap-3">
+                <MapPin size={18} className="mt-0.5 flex-shrink-0" />
+                <span className="text-sm">430 Topsail Road, St. John's, CA-NL A1E 4N1</span>
               </li>
               <li className="flex items-center gap-3">
-                <Phone size={20} />
-                <a href="tel:+1234567890" className="hover:text-white transition-colors">
+                <Phone size={18} className="flex-shrink-0" />
+                <a 
+                  href="tel:+17096903673" 
+                  className="hover:text-white transition-colors duration-200 text-sm"
+                >
                   (709) 690-3673
                 </a>
               </li>
               <li className="flex items-center gap-3">
-                <Mail size={20} />
-                <a href="mailto:info@palmsbeauty.com" className="hover:text-white transition-colors">
+                <Mail size={18} className="flex-shrink-0" />
+                <a 
+                  href="mailto:info@palmsbeauty.com" 
+                  className="hover:text-white transition-colors duration-200 text-sm break-all"
+                >
                   info@palmsbeauty.com
                 </a>
               </li>
-              <li className="flex items-center gap-3">
-                <Clock size={20} />
-                <div>
+              <li className="flex items-start gap-3">
+                <Clock size={18} className="mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
                   <p>Mon-Fri: 9:00 AM - 7:00 PM</p>
                   <p>Sat: 10:00 AM - 6:00 PM</p>
                   <p>Sun: Closed</p>
@@ -122,16 +148,33 @@ const Footer = () => {
             </ul>
           </div>
         </div>
+
+        {/* Map Section - Full width on mobile */}
+        <div className="mt-12 border-t border-pink-800 pt-8">
+          <div className="w-full">
+            <iframe
+              title="PalmsBeauty Location"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2693.6857649775193!2d-52.753323123720506!3d47.53498047118326!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4b0ca33b9db2499b%3A0x46298c81147432b3!2s430%20Topsail%20Rd%2C%20St.%20John&#39;s%2C%20NL%20A1E%204N1%2C%20Canada!5e0!3m2!1sen!2sng!4v1756472056493!5m2!1sen!2sng"
+              width="100%"
+              height="300"
+              style={{ border: 0 }}
+              allowFullScreen=""
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="rounded-lg shadow-lg w-full"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-gray-800">
+      <div className="border-t border-pink-800 mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="md:flex md:items-center md:justify-between">
-            <div className="text-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-center sm:text-left">
+            <div className="text-sm mb-4 sm:mb-0">
               © {currentYear} PalmsBeauty. All rights reserved.
             </div>
-    
+          
           </div>
         </div>
       </div>

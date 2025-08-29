@@ -725,65 +725,29 @@ const bookingData = {
               </div>
             </div>
 
-          <div class="bg-gray-50 p-6 rounded-2xl shadow-sm space-y-4 text-gray-700 text-sm leading-relaxed">
-  <p>
-     <span className="font-extra-bold">Thanks for booking with us</span>. All prices displayed on the website are tax inclusive. Add-ons such as braiding, extensions, wash, and detangling will be calculated during checkout.
-  </p>
+  {/* <!-- Thank you message --> */}
+  
 
-  <p className="text-lg">Please note ; the time indicated per appointment are estimations and can vary based on size of head, quantity of braids and length in comparison to your height. </p>
- 
+  
+            <p class="text-gray-700">
+                <span class="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-800 to-gray-700 text-lg">
+                    Thank you for booking with us!
+                </span> All prices displayed on the website are tax inclusive. Add-ons such as braiding, extensions, wash, and detangling will be calculated during checkout.
+            </p>
+
+            {/* <!-- Important note --> */}
+            <div class="bg-gray-100 border-l-4 border-gray-500 p-4 rounded-r">
+                <p class="text-gray-800 font-medium">Please note:</p>
+                <p class="text-gray-700">The time indicated per appointment are estimations and can vary based on size of head, quantity of braids and length in comparison to your height.</p>
+            </div>
+            
+            {/* <!-- Additional information --> */}
+            <div class="">
+                <p class="text-gray-600 text-sm">
+                    {/* <span class="font-semibold">Next steps:</span> You will receive a confirmation email shortly with your appointment details. Please arrive 10 minutes early for your appointment. */}
+                </p>
+
 </div>
-
-
-            {/* Payment Method Selection */}
-            {/* <div className="bg-white rounded-lg shadow-sm"> */}
-              {/* <div className="p-6 border-b border-gray-200">
-
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <CardIcon className="h-5 w-5 mr-2" />
-                  Payment Method
-                </h3>
-              </div>
-              <div className="p-6 space-y-4">
-                {savedCards.length > 0 && (
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium text-gray-700">Saved Payment Methods</h4>
-                    {savedCards.map((card) => (
-                      <div key={card.id} className="flex items-center space-x-3">
-                        <input
-                          type="radio"
-                          id={`card-${card.id}`}
-                          name="paymentMethod"
-                          value={card.id}
-                          checked={selectedPaymentMethod === card.id}
-                          onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                          className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                        />
-                        <label htmlFor={`card-${card.id}`} className="flex items-center space-x-2 text-sm text-gray-700">
-                          <CreditCard className="h-4 w-4" />
-                          <span>**** **** **** {card.last4}</span>
-                          <span className="text-gray-500">({card.brand})</span>
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                )} 
-
-                
-                <div className="flex items-center space-x-3 mt-4">
-                  <input
-                    type="checkbox"
-                    id="save-payment"
-                    checked={savePaymentMethod}
-                    onChange={(e) => setSavePaymentMethod(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded"
-                  />
-                  <label htmlFor="save-payment" className="text-sm text-gray-700">
-                    Save this payment method for future appointments
-                  </label>
-                </div> */}
-              {/* </div>  */}
-            {/* </div> */}
 
            
 
