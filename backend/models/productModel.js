@@ -43,8 +43,10 @@
 
 
 
+
 // In your productModel.js, expand the pricing structure
-// In your productModel.js, expand the pricing structure
+import mongoose from "mongoose";
+
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: { type: String, required: true },
@@ -65,7 +67,12 @@ const productSchema = new mongoose.Schema({
   bestSeller: { type: Boolean, default: false },
   image: [{ type: String, required: true }],
   date: { type: Number, required: true }
-});
+},
+{timestamps: true}
+);
+
+const productModel = mongoose.models.product || mongoose.model("product", productSchema)
+export default productModel
 
 
 

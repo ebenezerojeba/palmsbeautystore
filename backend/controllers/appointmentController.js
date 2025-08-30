@@ -473,12 +473,18 @@ const checkMultiDayConflicts = async (consecutiveDays) => {
 // Book appointment endpoint
 const bookMultipleAppointment = async (req, res) => {
   try {
-    const { services, date, time, totalAmount, clientNotes } = req.body;
+    const { services, date, time, totalAmount, clientNotes, consentForm } = req.body;
     const userId = req.userId;
 
     // Validation
     if (!services || !Array.isArray(services) || services.length === 0) {
       return res.status(400).json({ message: "At least one service is required" });
+    }
+      // Validate required consent
+    if (!consentForm?.consentToTreatment) {
+      return res.status(400).json({
+        message: "Treatment consent is required"
+      });
     }
 
     // Get user data
@@ -530,16 +536,27 @@ if (calculatedDuration > 480) { // 8+ hours
 }
 
     // Create the appointment
-    const newAppointment = await createAppointment(
-      userId,
-      userData,
-      processedServices,
-      appointmentDate,
-      time,
-      calculatedDuration,
-      clientNotes,
-      calculatedAmount
-    );
+  const newAppointment = await createAppointment({
+  userId,
+  userData,
+  processedServices,
+  appointmentDate,
+  time,
+  calculatedDuration,
+  clientNotes,
+  consentForm: {
+    healthConditions: consentForm.healthConditions || "",
+    allergies: consentForm.allergies || "",
+    medications: consentForm.medications || "",
+    pregnancyStatus: consentForm.pregnancyStatus || false,
+    consentToTreatment: consentForm.consentToTreatment,
+    consentToPhotography: consentForm.consentToPhotography || false,
+    emergencyContact: consentForm.emergencyContact || {},
+    submittedAt: consentForm.submittedAt || new Date()
+  },
+  calculatedAmount
+});
+
 
     // Create Stripe checkout session
     const session = await createStripeSession(userData, processedServices, newAppointment);

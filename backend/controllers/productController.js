@@ -31,24 +31,11 @@ const addProduct = async (req, res) => {
       return res.json({ success: false, message: "Invalid data format" });
     }
 
-//         let parsedSizes = [];
-// try {
-//   const temp = JSON.parse(req.body.sizes);
-//   if (Array.isArray(temp)) {
-//     parsedSizes = temp;
-//   } else {
-//     throw new Error("Sizes must be an array");
-//   }
-// } catch (err) {
-//   return res.json({ success: false, message: "Invalid sizes format" });
-// }
-
-
         const productData ={
             name,
             description,
             category,
-            price: Number(price),
+            basePrice: Number(price),
             subCategory,
             bestSeller: bestSeller  === "true",
             sizes: parsedSizes,
