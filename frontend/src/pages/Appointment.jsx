@@ -66,7 +66,24 @@ const Appointment = () => {
     sms24h: false,
     sms2h: false
   });
- 
+
+  // Consent form
+ const [consentForm, setConsentForm] = useState({
+  healthConditions: "",
+  allergies: "",
+  medications: "",
+  previousTreatments: "",
+  skinSensitivities: "",
+  pregnancyStatus: false,
+  consentToTreatment: false,
+  consentToPhotography: false,
+  emergencyContact: {
+    name: "",
+    phone: "",
+    relationship: ""
+  }
+});
+const [showConsentForm, setShowConsentForm] = useState(true);
 
   // Fetch service information and all services
   useEffect(() => {
@@ -278,6 +295,10 @@ useEffect(() => {
       toast.warn("Please agree to the cancellation policy");
       return false;
     }
+    if (!consentForm.consentToTreatment) {
+  toast.warn("Please provide consent for treatment");
+  return false;
+}
 
     return true;
   };
@@ -332,6 +353,7 @@ const bookingData = {
         // Notes and requests
         clientNotes,
         specialRequests,
+    
         
         // Preferences
         reminderPreferences,
@@ -346,7 +368,22 @@ const bookingData = {
         agreementConfirmations: {
           cancellationPolicy: agreeToCancellationPolicy,
           termsAndConditions: agreeToTerms
-        }
+        }, 
+
+        // Consent form
+        
+  consentForm: {
+    healthConditions: consentForm.healthConditions,
+    allergies: consentForm.allergies,
+    consentToTreatment: consentForm.consentToTreatment,
+    // medications: consentForm.medications,
+    // previousTreatments: consentForm.previousTreatments,
+    // skinSensitivities: consentForm.skinSensitivities,
+    // pregnancyStatus: consentForm.pregnancyStatus,
+    // consentToPhotography: consentForm.consentToPhotography,
+    // emergencyContact: consentForm.emergencyContact,
+    submittedAt: new Date().toISOString()
+  },
       };
 
       const res = await fetch(`${backendUrl}/api/appointment/book-multiple-appointment`, {
@@ -742,24 +779,18 @@ const bookingData = {
             </div>
             
             {/* <!-- Additional information --> */}
-            <div class="">
-                <p class="text-gray-600 text-sm">
-                    {/* <span class="font-semibold">Next steps:</span> You will receive a confirmation email shortly with your appointment details. Please arrive 10 minutes early for your appointment. */}
-                </p>
-
-</div>
 
            
 
             {/* Terms and Policies */}
             <div className="bg-white rounded-lg shadow-sm">
-              <div className="p-6 border-b border-gray-200">
+              {/* <div className="p-6 border-b border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  {/* <Shield className="h-5 w-5 mr-2" /> */}
+                  <Shield className="h-5 w-5 mr-2" />
                   Terms & Policies
                 </h3>
-              </div>
-              <div className="p-6 space-y-4">
+              </div> */}
+              <div className="p-1 space-y-4">
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <div className="flex items-start">
                     {/* <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" /> */}
@@ -823,6 +854,174 @@ const bookingData = {
             </div>
           </div>
 
+            {/* Consent Form */}
+<div className="bg-white rounded-lg shadow-sm">
+  <div className="p-1 border-b border-gray-200">
+    <div className="flex items-center justify-between">
+      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+        <FileText className="h-5 w-5 mr-2" />
+        Consent Form
+      </h3>
+      <button
+        // onClick={() => setShowConsentForm(!showConsentForm)}
+        className="text-sm text-blue-600 hover:text-blue-800"
+      >
+        {/* {showConsentForm ? 'Hide Form' : 'Show Form'} */}
+      </button>
+    </div>
+  </div>
+  
+  {showConsentForm && (
+    <div className="p-6 space-y-6">
+      {/* Health Information */}
+      <div className="space-y-4">
+        {/* <h4 className="font-medium text-gray-900">Health Information</h4> */}
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Do you have any health conditions we should be aware of?
+          </label>
+          <textarea
+            value={consentForm.healthConditions}
+            onChange={(e) => setConsentForm({...consentForm, healthConditions: e.target.value})}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows="2"
+            placeholder="Please list any relevant health conditions..."
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Allergies (especially to hair products, chemicals, or materials)
+          </label>
+          <textarea
+            value={consentForm.allergies}
+            onChange={(e) => setConsentForm({...consentForm, allergies: e.target.value})}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows="2"
+            placeholder="List any known allergies..."
+          />
+        </div>
+{/* 
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Current medications
+          </label>
+          <input
+            type="text"
+            value={consentForm.medications}
+            onChange={(e) => setConsentForm({...consentForm, medications: e.target.value})}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="List current medications..."
+          />
+        </div> */}
+{/* 
+        <div className="flex items-start space-x-2">
+          <input
+            type="checkbox"
+            id="pregnancy-status"
+            checked={consentForm.pregnancyStatus}
+            onChange={(e) => setConsentForm({...consentForm, pregnancyStatus: e.target.checked})}
+            className="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded mt-1"
+          />
+          <label htmlFor="pregnancy-status" className="text-sm text-gray-700">
+            I am currently pregnant or nursing
+          </label>
+        </div> */}
+      </div>
+
+      {/* Emergency Contact */}
+      {/* <div className="space-y-4">
+        <h4 className="font-medium text-gray-900">Emergency Contact</h4>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Contact Name
+            </label>
+            <input
+              type="text"
+              value={consentForm.emergencyContact.name}
+              onChange={(e) => setConsentForm({
+                ...consentForm, 
+                emergencyContact: {...consentForm.emergencyContact, name: e.target.value}
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Emergency contact name"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone Number
+            </label>
+            <input
+              type="tel"
+              value={consentForm.emergencyContact.phone}
+              onChange={(e) => setConsentForm({
+                ...consentForm, 
+                emergencyContact: {...consentForm.emergencyContact, phone: e.target.value}
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Emergency contact phone"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Relationship
+          </label>
+          <input
+            type="text"
+            value={consentForm.emergencyContact.relationship}
+            onChange={(e) => setConsentForm({
+              ...consentForm, 
+              emergencyContact: {...consentForm.emergencyContact, relationship: e.target.value}
+            })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Relationship to you"
+          />
+        </div>
+      </div> */}
+
+      {/* Consent Checkboxes */}
+      <div className="space-y-4">
+        {/* <h4 className="font-medium text-gray-900">Consent & Agreement</h4> */}
+        
+        <div className="space-y-3">
+          <div className="flex items-start space-x-3">
+            <input
+              type="checkbox"
+              id="consent-treatment"
+              checked={consentForm.consentToTreatment}
+              onChange={(e) => setConsentForm({...consentForm, consentToTreatment: e.target.checked})}
+              className="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded mt-1"
+            />
+            <label htmlFor="consent-treatment" className="text-sm text-gray-700">
+              I consent to receive the selected beauty/hair services and understand the procedures involved 
+            </label>
+          </div>
+
+          {/* <div className="flex items-start space-x-3">
+            <input
+              type="checkbox"
+              id="consent-photography"
+              checked={consentForm.consentToPhotography}
+              onChange={(e) => setConsentForm({...consentForm, consentToPhotography: e.target.checked})}
+              className="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded mt-1"
+            />
+            <label htmlFor="consent-photography" className="text-sm text-gray-700">
+              I consent to before/after photos being taken for portfolio purposes (optional)
+            </label>
+          </div> */}
+        </div>
+      </div>
+    </div>
+  )}
+</div>
+
+
           {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm sticky top-8">
@@ -882,7 +1081,7 @@ const bookingData = {
               <div className="p-6 flex justify-center">
                 <button
                   onClick={handleBooking}
-                  disabled={isBooking || !selectedDate || !selectedTime || !agreeToCancellationPolicy}
+                  disabled={isBooking || !selectedDate || !selectedTime || !agreeToCancellationPolicy || !consentForm.consentToTreatment }
                   className= "bg-pink-900 text-white py-3 px-4 rounded-lg justify-center items-center font-medium hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed "
                 >
                   {isBooking ? (
@@ -996,29 +1195,6 @@ const bookingData = {
   </div>
 </div>
 
-{/* 
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
-             <div className="prose prose-sm max-w-none">
-  <h4 className="text-base font-semibold mb-3">Appointment Cancellation Policy</h4>
-  <p className="mb-4">
-    We ask that you please reschedule or cancel at least <strong>1 hour</strong> before the beginning of your appointment or you may be charged a <strong>50% cancellation fee</strong> based on the price of your scheduled appointment.
-  </p>
-  <p className="mb-4">
-    All prices displayed on the website are <strong>tax-inclusive</strong> and final. Add-ons such as braiding extensions, wash, or detangling services (if provided by the client) will be calculated during checkout.
-  </p>
-
-  <h4 className="text-base font-semibold mb-3">Service Cancellation Policy</h4>
-  <ul className="list-disc pl-6 space-y-2 mb-4">
-    <li>
-      <strong>Cancellation by the Customer:</strong> Customers may reschedule their service once by providing written notice to <a href="mailto:Stylebyesther@palmsbeautystore.com" className="text-blue-600 underline">Stylebyesther@palmsbeautystore.com</a> at least <strong>48 hours</strong> before their appointment time. The cancellation notice must include the customer’s name, contact information, and service details. <strong>Booking fees are not refundable.</strong>
-    </li>
-    <li>
-      <strong>Cancellation by Palmsbeautystore:</strong> Palmsbeautystore reserves the right to cancel a service in the event of non-payment, violation of terms and conditions, or any other breach of the service agreement. Customers will be notified in such cases. <strong>Refunds will apply</strong> only in the event of unavailability of a service provider due to unforeseen circumstances.
-    </li>
-  </ul>
-</div>
-</div> */}
-
             <div className="p-6 border-t border-gray-200">
               <button
                 onClick={() => setShowCancellationPolicy(false)}
@@ -1104,6 +1280,8 @@ const bookingData = {
           </div>
         </div>
       )}
+
+
 
       {/* Payment Modal */}
       {showPayment && (
