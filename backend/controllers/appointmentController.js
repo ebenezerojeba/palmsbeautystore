@@ -539,11 +539,11 @@ if (calculatedDuration > 480) { // 8+ hours
   const newAppointment = await createAppointment({
   userId,
   userData,
-  processedServices,
-  appointmentDate,
+ services: processedServices,
+ date: appointmentDate,
   time,
-  calculatedDuration,
-  clientNotes,
+  duration: calculatedDuration,
+  notes: clientNotes,
   consentForm: {
     healthConditions: consentForm.healthConditions || "",
     allergies: consentForm.allergies || "",
@@ -554,7 +554,7 @@ if (calculatedDuration > 480) { // 8+ hours
     // emergencyContact: consentForm.emergencyContact || {},
     submittedAt: consentForm.submittedAt || new Date()
   },
-  calculatedAmount
+  amount: calculatedAmount
 });
 
 
@@ -696,7 +696,7 @@ const findAlternativeSlots = async (originalDate, originalTime, duration) => {
 };
 
 // Create appointment record
-const createAppointment = async (
+const createAppointment = async ({
   userId,
   userData,
   services,
@@ -705,7 +705,7 @@ const createAppointment = async (
   duration,
   notes,
   amount
-) => {
+}) => {
   const isLongDuration = duration > 480;
   
   return await appointmentModel.create({
@@ -732,7 +732,7 @@ const createAppointment = async (
   });
 };
 
-// From here above
+
 
 // Create Stripe checkout session
 const createStripeSession = async (userData, services, appointment) => {

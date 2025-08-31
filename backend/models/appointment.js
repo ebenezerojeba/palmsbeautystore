@@ -96,7 +96,7 @@ const appointmentSchema = new mongoose.Schema({
   consentForm: {
     healthConditions: { type: String, default: "" },
     allergies: { type: String, default: "" },
-    consentToTreatment: { type: Boolean, required: true },
+    consentToTreatment: { type: Boolean, required: false },
     // medications: { type: String, default: "" },
     // previousTreatments: { type: String, default: "" },
     // skinSensitivities: { type: String, default: "" },
