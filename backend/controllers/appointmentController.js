@@ -547,11 +547,11 @@ if (calculatedDuration > 480) { // 8+ hours
   consentForm: {
     healthConditions: consentForm.healthConditions || "",
     allergies: consentForm.allergies || "",
-    medications: consentForm.medications || "",
-    pregnancyStatus: consentForm.pregnancyStatus || false,
     consentToTreatment: consentForm.consentToTreatment,
-    consentToPhotography: consentForm.consentToPhotography || false,
-    emergencyContact: consentForm.emergencyContact || {},
+    // medications: consentForm.medications || "",
+    // pregnancyStatus: consentForm.pregnancyStatus || false,
+    // consentToPhotography: consentForm.consentToPhotography || false,
+    // emergencyContact: consentForm.emergencyContact || {},
     submittedAt: consentForm.submittedAt || new Date()
   },
   calculatedAmount
