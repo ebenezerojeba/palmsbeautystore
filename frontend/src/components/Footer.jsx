@@ -117,7 +117,7 @@ const Footer = () => {
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                 <MapPin size={18} className="mt-0.5 flex-shrink-0" />
-                <span className="text-sm">430 Topsail Road, St. John's, CA-NL A1E 4N1</span>
+                <span className="text-sm">33 Kenmount Rd, St. John's, NL A1B 1W1  </span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone size={18} className="flex-shrink-0" />
@@ -149,12 +149,13 @@ const Footer = () => {
           </div>
         </div>
 
+
         {/* Map Section - Full width on mobile */}
         <div className="mt-12 border-t border-pink-800 pt-8">
           <div className="w-full">
             <iframe
               title="PalmsBeauty Location"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2693.6857649775193!2d-52.753323123720506!3d47.53498047118326!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4b0ca33b9db2499b%3A0x46298c81147432b3!2s430%20Topsail%20Rd%2C%20St.%20John&#39;s%2C%20NL%20A1E%204N1%2C%20Canada!5e0!3m2!1sen!2sng!4v1756472056493!5m2!1sen!2sng"
+             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2692.4259456595037!2d-52.752546824723034!3d47.55950039123032!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4b0ca379e19de9a1%3A0x9a5d2c6b1212f317!2s33%20Kenmount%20Rd%2C%20St.%20John&#39;s%2C%20NL%20A1B%201W1%2C%20Canada!5e0!3m2!1sen!2sng!4v1756900778528!5m2!1sen!2sng"
               width="100%"
               height="300"
               style={{ border: 0 }}

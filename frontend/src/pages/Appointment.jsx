@@ -31,9 +31,9 @@ import {
 const Appointment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const {  userData, backendUrl } = useContext(AppContext);
+  const {  userData } = useContext(AppContext);
   const { formatNaira } = useContext(ShopContext);
-// const backendUrl = "http://localhost:3000"; // Replace with your actual backend URL
+const backendUrl = "http://localhost:3000"; // Replace with your actual backend URL
   // State management
   const [serviceInfo, setServiceInfo] = useState(null);
   const [allServices, setAllServices] = useState([]);
@@ -174,7 +174,7 @@ useEffect(() => {
     setIsLoading(true);
     try {
       const startDate = new Date().toISOString().split('T')[0];
-      const endDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const endDate = new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
       // Prepare services data with better structure
       const servicesForSlots = selectedServices.map(service => ({
@@ -1329,4 +1329,4 @@ const bookingData = {
   );
 };
 
-export default Appointment
+export default Appointment;
