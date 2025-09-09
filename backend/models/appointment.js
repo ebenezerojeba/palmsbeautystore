@@ -168,7 +168,26 @@ isMultiDay: {
 totalBusinessHoursNeeded: {
   type: Number,
   required: false
-}
+},
+providerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Provider',
+    required: true
+  },
+  providerName: {
+    type: String,
+    required: true
+  }
+
+
+// Add these fields to your existing appointment schema
+// staffId: { 
+//   type: mongoose.Schema.Types.ObjectId, 
+//   ref: 'Staff',
+//   required: true 
+// },
+// staffName: { type: String, required: true },
+// staffEmail: { type: String },
 }, {
   timestamps: true
 });

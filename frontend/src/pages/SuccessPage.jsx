@@ -1,8 +1,66 @@
-// / FRONTEND: Updated Success Page Component
+// // / FRONTEND: Updated Success Page Component
+// import { useEffect, useState } from "react";
+// import { useLocation, useParams, useNavigate } from "react-router-dom";
+// import { format } from "date-fns";
+// import axios from "axios";
+
+// export default function SuccessPage() {
+//   const location = useLocation();
+//   const navigate = useNavigate();
+//   const { appointmentId } = useParams();
+//   const [appointment, setAppointment] = useState(null);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState(null);
+
+//   const token = localStorage.getItem("token");
+
+//   const fetchAppointment = async () => {
+//     try {
+//       setLoading(true);
+//       setError(null);
+
+//       // Method 1: Try to get appointment from location state first
+//       if (location.state?.appointment) {
+//         console.log("✅ Using appointment from navigation state");
+//         setAppointment(location.state.appointment);
+//         setLoading(false);
+//         return;
+//       }
+
+//       // Method 2: If no state, fetch the appointment by ID
+//       if (appointmentId) {
+//         console.log("🔍 Fetching appointment by ID:", appointmentId);
+//         const { data } = await axios.get(
+//           `/api/appointment/${appointmentId}`,
+//           {
+//             headers: {
+//               Authorization: `Bearer ${token}`,
+//             },
+//           }
+//         );
+        
+//         if (data.success) {
+//           setAppointment(data.appointment);
+//         } else {
+//           throw new Error(data.message || 'Failed to fetch appointment');
+//         }
+//       } else {
+//         throw new Error('No appointment ID provided');
+//       }
+//     } catch (error) {
+//       console.error("❌ Error fetching appointment:", error);
+//       setError(error.response?.data?.message || error.message || 'Unable to fetch appointment details');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
 import { useEffect, useState } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import axios from "axios";
+import emailjs from '@emailjs/browser';
+// import emailjs from "emailjs-com";
 
 export default function SuccessPage() {
   const location = useLocation();
@@ -19,41 +77,66 @@ export default function SuccessPage() {
       setLoading(true);
       setError(null);
 
-      // Method 1: Try to get appointment from location state first
       if (location.state?.appointment) {
-        console.log("✅ Using appointment from navigation state");
         setAppointment(location.state.appointment);
         setLoading(false);
         return;
       }
 
-      // Method 2: If no state, fetch the appointment by ID
       if (appointmentId) {
-        console.log("🔍 Fetching appointment by ID:", appointmentId);
-        const { data } = await axios.get(
-          `/api/appointment/${appointmentId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        
+        const { data } = await axios.get(`/api/appointment/${appointmentId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (data.success) {
           setAppointment(data.appointment);
         } else {
-          throw new Error(data.message || 'Failed to fetch appointment');
+          throw new Error(data.message || "Failed to fetch appointment");
         }
       } else {
-        throw new Error('No appointment ID provided');
+        throw new Error("No appointment ID provided");
       }
     } catch (error) {
-      console.error("❌ Error fetching appointment:", error);
-      setError(error.response?.data?.message || error.message || 'Unable to fetch appointment details');
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Unable to fetch appointment details"
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  // Send email once appointment is fetched
+  useEffect(() => {
+    if (appointment) {
+      const templateParams = {
+        to_email: appointment.userEmail, // must exist in your appointment object
+        service: appointment.serviceTitle,
+        date: format(new Date(appointment.date), "EEEE, MMMM do, yyyy"),
+        time: appointment.time,
+        amount: appointment.payment?.amount
+          ? `$${appointment.payment.amount}`
+          : "N/A",
+        status: appointment.status,
+      };
+
+      emailjs
+        .send(
+          "service_zjrxg1k", // from EmailJS
+          "template_4zpkil9",
+          templateParams,
+          "eqHzO2GNucYkGcSLo", // from EmailJS
+        )
+        .then(
+          (response) => {
+            console.log("✅ Email sent successfully!", response.status, response.text);
+          },
+          (err) => {
+            console.error("❌ Failed to send email:", err);
+          }
+        );
+    }
+  }, [appointment]);
 
   useEffect(() => {
     if (!token) {

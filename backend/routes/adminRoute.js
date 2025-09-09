@@ -2,6 +2,7 @@ import express from 'express'
 import { cancelAppointment } from '../controllers/appointmentController.js'
 import { addCategory, addService, adminDashboard, allServices, completeAppointment, confirmAppointment, deleteCategory, deleteService, deleteServiceImage, getAllAppointment, getAllAppointments, getAppointmentsByStatus, getCompletedAppointments, markNoShow, toggleServiceStatus, updateCategory, updatePaymentStatus, updateService } from '../controllers/adminController.js'
 import upload from '../middlewares/multer.js'
+import { createStaff, deleteStaff, toggleStaffStatus, updateStaff } from '../controllers/staffController.js'
 // import { bookAppointment } from '../controllers/appointmentController.js'
 
 const adminRouter = express.Router()
@@ -32,7 +33,12 @@ adminRouter.patch('/:id/toggle', toggleServiceStatus)
 adminRouter.delete('/:id', deleteService)
 adminRouter.delete('/:id/image', deleteServiceImage)
 
-
+// Staff
+// Admin routes (protected)
+adminRouter.post('/staff',  upload.single('image'), createStaff);
+adminRouter.put('/staff/:id', upload.single('image'), updateStaff);
+adminRouter.delete('/staff/:id', deleteStaff);
+adminRouter.patch('/staff/:id/toggle', toggleStaffStatus);
 
 
 

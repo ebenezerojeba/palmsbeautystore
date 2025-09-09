@@ -16,6 +16,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import job from "./config/cron.js";
 import businessRouter from "./routes/businessRoute.js";
+import staffRouter from "./routes/staffRoute.js";
 
 // Get __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
@@ -74,6 +75,7 @@ app.use('/api/order', orderRouter)
 app.use('/api/subscribe', subscribeRouter)
 app.use('/api/services', serviceRouter)
 app.use('/api/business', businessRouter)
+app.use('/api/staff', staffRouter)
 
 
 // Serve .ics files for download

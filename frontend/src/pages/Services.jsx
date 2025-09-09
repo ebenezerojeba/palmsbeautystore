@@ -46,6 +46,44 @@ useEffect(() => {
     }
   };
 
+  // Example: Fetch services with providers
+const fetchServicesWithProviders = async () => {
+  try {
+    const response = await fetch('/api/services/services');
+    const data = await response.json();
+    setServices(data.services); // Now includes provider information
+  } catch (error) {
+    console.error('Error fetching services:', error);
+  }
+};
+
+// Example: Fetch providers for a specific service
+const fetchServiceProviders = async (serviceId) => {
+  try {
+    const response = await fetch(`/api/services/${serviceId}/providers`);
+    const data = await response.json();
+    if (data.success) {
+      setProviders(data.providers);
+    }
+  } catch (error) {
+    console.error('Error fetching service providers:', error);
+  }
+};
+
+// Example: Fetch all services offered by a specific provider
+const fetchProviderServices = async (providerId) => {
+  try {
+    const response = await fetch(`/api/services/provider/${providerId}/services`);
+    const data = await response.json();
+    if (data.success) {
+      setServices(data.services);
+      setSelectedProvider(data.provider);
+    }
+  } catch (error) {
+    console.error('Error fetching provider services:', error);
+  }
+};
+
   const toggleCategory = (categoryId) => {
     setExpanded((prev) => ({
       ...prev,

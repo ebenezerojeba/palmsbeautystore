@@ -31,9 +31,9 @@ import {
 const Appointment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const {  userData } = useContext(AppContext);
+  const { userData } = useContext(AppContext);
   const { formatNaira } = useContext(ShopContext);
-const backendUrl = "http://localhost:3000"; // Replace with your actual backend URL
+  const backendUrl = "http://localhost:3000"; // Replace with your actual backend URL
   // State management
   const [serviceInfo, setServiceInfo] = useState(null);
   const [allServices, setAllServices] = useState([]);
@@ -68,22 +68,97 @@ const backendUrl = "http://localhost:3000"; // Replace with your actual backend 
   });
 
   // Consent form
- const [consentForm, setConsentForm] = useState({
-  healthConditions: "",
-  allergies: "",
-  medications: "",
-  previousTreatments: "",
-  skinSensitivities: "",
-  pregnancyStatus: false,
-  consentToTreatment: false,
-  consentToPhotography: false,
-  emergencyContact: {
-    name: "",
-    phone: "",
-    relationship: ""
-  }
-});
-const [showConsentForm, setShowConsentForm] = useState(true);
+  const [consentForm, setConsentForm] = useState({
+    healthConditions: "",
+    allergies: "",
+    medications: "",
+    previousTreatments: "",
+    skinSensitivities: "",
+    pregnancyStatus: false,
+    consentToTreatment: false,
+    consentToPhotography: false,
+    emergencyContact: {
+      name: "",
+      phone: "",
+      relationship: ""
+    }
+  });
+  const [showConsentForm, setShowConsentForm] = useState(true);
+
+  // Add to your state
+  const [providers, setProviders] = useState([]);
+  const [selectedProvider, setSelectedProvider] = useState(null);
+  const [showProviderSelection, setShowProviderSelection] = useState(false);
+  const [providerSchedule, setProviderSchedule] = useState(null);
+  const [showProviderSchedule, setShowProviderSchedule] = useState(false);
+
+
+
+
+  // Function to fetch provider schedule
+  const fetchProviderSchedule = async (providerId) => {
+    try {
+      const startDate = new Date().toISOString().split('T')[0];
+      const endDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      const res = await fetch(
+        `${backendUrl}/api/provider/${providerId}/schedule?startDate=${startDate}&endDate=${endDate}`
+      );
+      const data = await res.json();
+
+      if (data.success) {
+        setProviderSchedule(data.schedule);
+        setShowProviderSchedule(true);
+      }
+    } catch (err) {
+      console.error("Error fetching provider schedule:", err);
+      toast.error("Failed to load schedule");
+    }
+  };
+
+
+  // Add this useEffect to fetch providers
+  // Update your useEffect for fetching providers
+  useEffect(() => {
+    const fetchProviders = async () => {
+      try {
+        setIsLoading(true);
+        const queryParams = new URLSearchParams({
+          serviceId: id,
+          date: selectedDate || new Date().toISOString().split('T')[0]
+        });
+
+        const res = await fetch(`${backendUrl}/api/provider?${queryParams.toString()}`);
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        if (data.success) {
+          setProviders(data.providers || []);
+          // Auto-select first provider if only one exists
+          if (data.providers.length === 1) {
+            setSelectedProvider(data.providers[0]);
+          }
+        } else {
+          console.error("Failed to fetch providers:", data.message);
+          setProviders([]);
+        }
+      } catch (err) {
+        console.error("Error fetching providers:", err);
+        toast.error("Failed to load available stylists");
+        setProviders([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchProviders();
+    }
+  }, [id, selectedDate, backendUrl]);
 
   // Fetch service information and all services
   useEffect(() => {
@@ -116,28 +191,11 @@ const [showConsentForm, setShowConsentForm] = useState(true);
       }
     };
 
-    // Fetch saved payment methods
-    const fetchSavedCards = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) return;
 
-      try {
-        const res = await fetch(`${backendUrl}/api/payment/saved-cards`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (data.cards) {
-          setSavedCards(data.cards);
-        }
-      } catch (err) {
-        console.log("No saved cards found");
-      }
-    };
 
     if (id) {
       fetchService();
       fetchAllServices();
-      fetchSavedCards();
     }
   }, [id, backendUrl, navigate]);
 
@@ -153,118 +211,97 @@ const [showConsentForm, setShowConsentForm] = useState(true);
     return selectedServices.reduce((total, service) => total + Number(service.price || 0), 0);
   };
 
-// const getTotalDuration = () => {
-//   const total = selectedServices.reduce((total, service) => total + Number(service.duration || 90), 0);
-//   console.log('Total duration calculated:', total, 'from services:', selectedServices);
-//   return total;
-// }
-const getTotalDuration = () => {
-  const total = selectedServices.reduce((total, service) => {
-    const duration = parseInt(service.duration) || 90; // Ensure consistent parsing
-    return total + duration;
-  }, 0);
-  console.log('Total duration calculated:', total, 'from services:', selectedServices);
-  return total;
-};
-//Updated useEffect for fetching available slots
-useEffect(() => {
-  const fetchAvailableSlots = async () => {
-    if (selectedServices.length === 0) return;
 
-    setIsLoading(true);
-    try {
-      const startDate = new Date().toISOString().split('T')[0];
-      const endDate = new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-      // Prepare services data with better structure
-      const servicesForSlots = selectedServices.map(service => ({
-        _id: service._id,
-        title: service.title,
-        duration: service.duration || 90,
-        price: service.price
-      }));
-
-      // Prepare query parameters
-      const queryParams = new URLSearchParams({
-        serviceId: id,
-        startDate,
-        endDate,
-        selectedServices: JSON.stringify(servicesForSlots)
-      });
-
-      console.log('Fetching slots with params:', {
-        serviceId: id,
-        startDate,
-        endDate,
-        selectedServices: servicesForSlots,
-        totalDuration: getTotalDuration()
-      });
-
-      const res = await fetch(
-        `${backendUrl}/api/appointment/available-slots?${queryParams.toString()}`
-      );
-      
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      
-      const data = await res.json();
-      console.log('Received slots data:', data);
-
-      if (data.availableSlots) {
-        setAvailableSlots(data.availableSlots);
-      } else {
-        setAvailableSlots([]);
-      }
-    } catch (err) {
-      console.error('Error fetching slots:', err);
-      toast.error("Failed to fetch available slots");
-      setAvailableSlots([]);
-    } finally {
-      setIsLoading(false);
-    }
+  const getTotalDuration = () => {
+    const total = selectedServices.reduce((total, service) => {
+      const duration = parseInt(service.duration) || 90; // Ensure consistent parsing
+      return total + duration;
+    }, 0);
+    console.log('Total duration calculated:', total, 'from services:', selectedServices);
+    return total;
   };
+  // Fetching available slots
+  useEffect(() => {
+    const fetchAvailableSlots = async () => {
+      if (selectedServices.length === 0 || !selectedProvider) return;
 
-  fetchAvailableSlots();
-}, [selectedServices, id, backendUrl]);
+      setIsLoading(true);
+      try {
+        const startDate = new Date().toISOString().split('T')[0];
+        const endDate = new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-  // Add service to selection
-  // const addService = (service) => {
-  //   const isAlreadySelected = selectedServices.some(s => s._id === service._id);
-  //   if (!isAlreadySelected) {
-  //     setSelectedServices([...selectedServices, service]);
-  //     setShowAddService(false);
-  //     setSelectedDate("");
-  //     setSelectedTime("");
-  //     toast.success(`${service.title} added to your appointment`);
-  //   } else {
-  //     toast.info("This service is already selected");
-  //   }
-  // };
+        const servicesForSlots = selectedServices.map(service => ({
+          _id: service._id,
+          title: service.title,
+          duration: service.duration || 90,
+          price: service.price
+        }));
+
+        const queryParams = new URLSearchParams({
+          serviceId: id,
+          providerId: selectedProvider._id, // Add provider ID
+          startDate,
+          endDate,
+          selectedServices: JSON.stringify(servicesForSlots)
+        });
+
+        const res = await fetch(
+          `${backendUrl}/api/appointment/available-slots?${queryParams.toString()}`
+        );
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        const data = await res.json();
+        console.log('Received slots data:', data);
+
+        if (data.availableSlots) {
+          setAvailableSlots(data.availableSlots);
+        } else if (data.providers) {
+          // Handle the new response format with providers
+          setAvailableSlots(data.providers.flatMap(p => p.availableSlots));
+        }
+        else {
+          setAvailableSlots([]);
+        }
+      } catch (err) {
+        console.error('Error fetching slots:', err);
+        toast.error("Failed to fetch available slots");
+        setAvailableSlots([]);
+      } finally {
+        setIsLoading
+
+        setIsLoading(false);
+      }
+    };
+
+    fetchAvailableSlots();
+  }, [selectedServices, selectedProvider, id, backendUrl]);
 
   const addService = (service) => {
-  const isAlreadySelected = selectedServices.some(s => s._id === service._id);
-  if (!isAlreadySelected) {
-    const serviceToAdd = {
-      ...service,
-      _id: service._id,
-      title: service.title,
-      duration: parseInt(service.duration) || 90, // Consistent parsing
-      price: parseFloat(service.price) || 0
-    };
-    
-    setSelectedServices(prev => [...prev, serviceToAdd]);
-    setShowAddService(false);
-    
-    // Reset date/time when services change
-    setSelectedDate("");
-    setSelectedTime("");
-    
-    toast.success(`${service.title} added to your appointment`);
-  } else {
-    toast.info("This service is already selected");
-  }
-};
+    const isAlreadySelected = selectedServices.some(s => s._id === service._id);
+    if (!isAlreadySelected) {
+      const serviceToAdd = {
+        ...service,
+        _id: service._id,
+        title: service.title,
+        duration: parseInt(service.duration) || 90, // Consistent parsing
+        price: parseFloat(service.price) || 0
+      };
+
+      setSelectedServices(prev => [...prev, serviceToAdd]);
+      setShowAddService(false);
+
+      // Reset date/time when services change
+      setSelectedDate("");
+      setSelectedTime("");
+
+      toast.success(`${service.title} added to your appointment`);
+    } else {
+      toast.info("This service is already selected");
+    }
+  };
 
   // Remove service from selection
   const removeService = (serviceId) => {
@@ -296,9 +333,13 @@ useEffect(() => {
       return false;
     }
     if (!consentForm.consentToTreatment) {
-  toast.warn("Please provide consent for treatment");
-  return false;
-}
+      toast.warn("Please provide consent for treatment");
+      return false;
+    }
+    if (!selectedProvider) {
+      toast.warn("Please select a stylist");
+      return false;
+    }
 
     return true;
   };
@@ -321,27 +362,27 @@ useEffect(() => {
     setIsBooking(true);
 
     try {
-     // In your frontend handleBooking function, ensure services are properly formatted:
-const bookingData = {
-  services: selectedServices.map((service, index) => ({
-    serviceId: service._id,
-    serviceTitle: service.title,
-    duration: parseInt(service.duration) || 90, // Ensure it's a number
-    price: parseFloat(service.price) || 0,      // Ensure it's a number
-    order: index + 1
-  })),
-  // ... rest of your booking data
+      // Prepare booking data
+      const bookingData = {
+        services: selectedServices.map((service, index) => ({
+          serviceId: service._id,
+          serviceTitle: service.title,
+          providerId: selectedProvider._id,
+          duration: parseInt(service.duration) || 90,
+          price: parseFloat(service.price) || 0,
+          order: index + 1
+        })),
 
-        
+
         // Appointment details
         date: selectedDate,
         time: selectedTime,
         totalDuration: getTotalDuration(),
-        
+
         // Payment information
         payment: {
           amount: getTotalPrice(),
-          currency: "CAD", 
+          currency: "CAD",
           paymentMethod: selectedPaymentMethod === "new" ? "new_card" : selectedPaymentMethod
         },
 
@@ -349,15 +390,15 @@ const bookingData = {
         userName: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
         userEmail: userData.email,
         userPhone: userData.phone,
-        
+
         // Notes and requests
         clientNotes,
         specialRequests,
-    
-        
+
+
         // Preferences
         reminderPreferences,
-        
+
         // Payment preferences
         paymentPreferences: {
           savePaymentMethod,
@@ -368,22 +409,22 @@ const bookingData = {
         agreementConfirmations: {
           cancellationPolicy: agreeToCancellationPolicy,
           termsAndConditions: agreeToTerms
-        }, 
+        },
 
         // Consent form
-        
-  consentForm: {
-    healthConditions: consentForm.healthConditions,
-    allergies: consentForm.allergies,
-    consentToTreatment: consentForm.consentToTreatment,
-    // medications: consentForm.medications,
-    // previousTreatments: consentForm.previousTreatments,
-    // skinSensitivities: consentForm.skinSensitivities,
-    // pregnancyStatus: consentForm.pregnancyStatus,
-    // consentToPhotography: consentForm.consentToPhotography,
-    // emergencyContact: consentForm.emergencyContact,
-    submittedAt: new Date().toISOString()
-  },
+
+        consentForm: {
+          healthConditions: consentForm.healthConditions,
+          allergies: consentForm.allergies,
+          consentToTreatment: consentForm.consentToTreatment,
+          // medications: consentForm.medications,
+          // previousTreatments: consentForm.previousTreatments,
+          // skinSensitivities: consentForm.skinSensitivities,
+          // pregnancyStatus: consentForm.pregnancyStatus,
+          // consentToPhotography: consentForm.consentToPhotography,
+          // emergencyContact: consentForm.emergencyContact,
+          submittedAt: new Date().toISOString()
+        },
       };
 
       const res = await fetch(`${backendUrl}/api/appointment/book-multiple-appointment`, {
@@ -441,19 +482,19 @@ const bookingData = {
     }
   };
 
-   // Format time range display
+  // Format time range display
   const formatTimeRange = (startTime, duration) => {
     const [startHour, startMinute] = startTime.split(':').map(Number);
     const startDate = new Date();
     startDate.setHours(startHour, startMinute, 0, 0);
-    
+
     const endDate = new Date(startDate.getTime() + duration * 60 * 1000);
     const endTime = endDate.toTimeString().slice(0, 5);
-    
+
     return `${startTime} - ${endTime}`;
   };
 
-// Toggle date expansion
+  // Toggle date expansion
   const toggleDateExpansion = (date) => {
     setExpandedDates(prev => ({
       ...prev,
@@ -482,7 +523,7 @@ const bookingData = {
     }
   }
 
-    const totalDuration = getTotalDuration();
+  const totalDuration = getTotalDuration();
   const durationCategory = getDurationCategory(totalDuration);
   const isLongService = totalDuration > 480; // More than 8 hours
 
@@ -498,6 +539,254 @@ const bookingData = {
       </div>
     );
   }
+
+
+  // Schedule modal component
+
+  const ProviderScheduleModal = () => {
+    const [isLoading, setIsLoading] = useState(!providerSchedule);
+
+    useEffect(() => {
+      if (!providerSchedule && selectedProvider) {
+        fetchProviderSchedule(selectedProvider._id);
+      }
+    }, [providerSchedule, selectedProvider]);
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {selectedProvider?.name}'s Schedule
+              </h3>
+              <button onClick={() => setShowProviderSchedule(false)} className="p-2 text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="p-6 overflow-y-auto max-h-[60vh]">
+            {isLoading ? (
+              <div className="text-center py-8">
+                <Loader2 className="animate-spin h-8 w-8 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Loading schedule...</p>
+              </div>
+            ) : providerSchedule ? (
+              <div className="space-y-6">
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-3">Working Hours</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {providerSchedule.workingHours?.map(wh => (
+                      <div key={wh.dayOfWeek} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium">
+                          {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][wh.dayOfWeek]}
+                        </span>
+                        <span className={wh.isWorking ? "text-green-600" : "text-red-600"}>
+                          {wh.isWorking ? `${wh.startTime} - ${wh.endTime}` : 'Not working'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {providerSchedule.breaks?.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-3">Scheduled Breaks</h4>
+                    <div className="space-y-2">
+                      {providerSchedule.breaks.map((breakItem, index) => (
+                        <div key={index} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium">{new Date(breakItem.date).toLocaleDateString()}</p>
+                              <p className="text-sm text-gray-600">{breakItem.startTime} - {breakItem.endTime}</p>
+                              {breakItem.reason && <p className="text-sm text-gray-600 mt-1">Reason: {breakItem.reason}</p>}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {providerSchedule.vacationDays?.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-3">Vacation Days</h4>
+                    <div className="space-y-2">
+                      {providerSchedule.vacationDays.map((vacation, index) => (
+                        <div key={index} className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium">
+                                {new Date(vacation.startDate).toLocaleDateString()} - {new Date(vacation.endDate).toLocaleDateString()}
+                              </p>
+                              {vacation.reason && <p className="text-sm text-gray-600 mt-1">Reason: {vacation.reason}</p>}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>No schedule information available</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // / Add provider selection component
+  const ProviderSelectionModal = () => {
+    const [isLoading, setIsLoading] = useState(true);
+    const [providersList, setProvidersList] = useState([]);
+
+    useEffect(() => {
+      const fetchProvidersForModal = async () => {
+        try {
+          setIsLoading(true);
+          const queryParams = new URLSearchParams({
+            serviceId: id,
+            date: selectedDate || new Date().toISOString().split('T')[0]
+          });
+
+          const res = await fetch(`${backendUrl}/api/provider?${queryParams.toString()}`);
+          const data = await res.json();
+
+          if (data.success) {
+            setProvidersList(data.providers || []);
+          } else {
+            toast.error("Failed to load stylists");
+            setProvidersList([]);
+          }
+        } catch (err) {
+          console.error("Error fetching providers:", err);
+          toast.error("Failed to load stylists");
+          setProvidersList([]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      if (showProviderSelection) {
+        fetchProvidersForModal();
+      }
+    }, [showProviderSelection, id, selectedDate, backendUrl]);
+
+    const fetchAllProviders = async () => {
+      try {
+        setIsLoading(true);
+        const res = await fetch(`${backendUrl}/api/provider`);
+        const data = await res.json();
+
+        if (data.success) {
+          setProvidersList(data.providers || []);
+        }
+      } catch (err) {
+        console.error("Error fetching all providers:", err);
+        toast.error("Failed to load stylists");
+      }
+      finally {
+        setIsLoading(false);
+      }
+    }
+
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Select Your Stylist
+              </h3>
+              <button onClick={() => setShowProviderSelection(false)} className="p-2 text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="p-6 overflow-y-auto max-h-[60vh]">
+            {isLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="animate-spin h-8 w-8 text-gray-400 mr-2" />
+                <span>Loading stylists...</span>
+              </div>
+            ) : providersList.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <User className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>No stylists available for this service</p>
+                <p className="text-sm mt-1">Please try another service or contact us</p>
+                <button className="text-blue-500" onClick={() => { fetchAllProviders() }}>Show all available stylists</button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {providersList.map(provider => (
+                  <div
+                    key={provider._id}
+                    className={`border rounded-lg p-4 cursor-pointer transition-all ${selectedProvider?._id === provider._id
+                      ? 'border-pink-500 bg-pink-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    onClick={() => {
+                      setSelectedProvider(provider);
+                      setShowProviderSelection(false);
+                    }}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
+                        {provider.profileImage ? (
+                          <img
+                            src={provider.profileImage}
+                            alt={provider.name}
+                            className="w-16 h-16 rounded-full object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center"
+                          style={{ display: provider.profileImage ? 'none' : 'flex' }}>
+                          <User className="h-8 w-8 text-gray-400" />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900">{provider.name}</h4>
+                        <div className="flex items-center mt-1">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-4 w-4 ${i < Math.floor(provider.rating?.average || 0)
+                                ? 'text-yellow-400 fill-current'
+                                : 'text-gray-300'
+                                }`}
+                            />
+                          ))}
+                          <span className="text-sm text-gray-600 ml-1">
+                            ({provider.rating?.count || 0})
+                          </span>
+                        </div>
+                        {provider.specialties && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            Specializes in: {provider.specialties.join(', ')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -566,11 +855,75 @@ const bookingData = {
                   </div>
                 </div>
               </div> */}
-            {/* </div> */}
+              {/* </div> */}
 
 
 
-          </div>
+            </div>
+
+
+
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Select Your Stylist</h3>
+              </div>
+
+              <div className="flex items-center space-x-4">
+                {selectedProvider ? (
+                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg flex-1">
+                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                      {selectedProvider.profileImage ? (
+                        <img src={selectedProvider.profileImage} alt={selectedProvider.name} className="w-12 h-12 rounded-full object-cover" />
+                      ) : (
+                        <User className="h-6 w-6 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">{selectedProvider.name}</h4>
+                      <div className="flex items-center mt-1">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-3 w-3 ${i < Math.floor(selectedProvider.rating?.average || 0)
+                              ? 'text-yellow-400 fill-current'
+                              : 'text-gray-300'
+                              }`}
+                          />
+                        ))}
+                        <span className="text-xs text-gray-600 ml-1">
+                          ({selectedProvider.rating?.count || 0})
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowProviderSelection(true)}
+                      className="text-pink-600 hover:text-pink-800 text-sm font-medium"
+                    >
+                      Change
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowProviderSelection(true)}
+                    className="flex items-center text-pink-600 hover:text-pink-800 p-3 border border-dashed border-gray-300 rounded-lg flex-1"
+                  >
+                    <User className="h-5 w-5 mr-2" />
+                    Select a stylist
+                  </button>
+                )}
+
+                {selectedProvider && (
+                  <button
+                    onClick={() => fetchProviderSchedule(selectedProvider._id)}
+                    className="p-3 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg"
+                    title="View schedule"
+                  >
+                    <Calendar className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Selected Services */}
             <div className="bg-white rounded-lg shadow-sm">
               <div className="p-6 border-b border-gray-200">
@@ -643,18 +996,6 @@ const bookingData = {
                     placeholder=""
                   />
                 </div>
-                {/* <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Special Requests
-                  </label>
-                  <textarea
-                    value={specialRequests}
-                    onChange={(e) => setSpecialRequests(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows="2"
-                    placeholder="Any special accommodations or requests..."
-                  />
-                </div> */}
               </div>
             </div>
 
@@ -673,7 +1014,18 @@ const bookingData = {
                     Select Date
                   </label>
 
-                  {isLoading ? (
+                  {!selectedProvider ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <User className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>Please select a stylist first</p>
+                      <button
+                        onClick={() => setShowProviderSelection(true)}
+                        className="text-pink-600 hover:text-pink-800 mt-2"
+                      >
+                        Choose Stylist
+                      </button>
+                    </div>
+                  ) : isLoading ? (
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="animate-spin h-6 w-6 text-pink-600 mr-2" />
                       <span className="text-gray-600">Loading available dates...</span>
@@ -688,12 +1040,12 @@ const bookingData = {
                             setSelectedTime("");
                           }}
                           className={`p-3 text-center rounded-lg border transition-all ${selectedDate === daySlot.date
-                              ? "border-pink-500 bg-pink-50 text-gray-700"
-                              : "border-gray-200 hover:border-gray-300 text-gray-700"
+                            ? "border-pink-500 bg-pink-50 text-gray-700"
+                            : "border-gray-200 hover:border-gray-300 text-gray-700"
                             }`}
                         >
                           <div className="text-xs font-medium">
-                            {daySlot.dayOfWeek.substring(0, 3)}
+                            {daySlot.dayOfWeek?.substring(0, 3)}
                           </div>
                           <div className="text-lg font-bold mt-1">
                             {new Date(daySlot.date).getDate()}
@@ -706,90 +1058,90 @@ const bookingData = {
                     </div>
                   ) : (
                     <div className="text-center py-12 text-gray-500">
-                      {/* <AlertCircle className="h-8 w-8 mx-auto mb-2" /> */}
-                      <p>No available slots found</p>
-                      <p className="text-sm">Please try different services or contact us</p>
+                      <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                      <p>No available slots found for {selectedProvider.name}</p>
+                      <p className="text-sm">Please try a different stylist or contact us</p>
+                      <button
+                        onClick={() => setShowProviderSelection(true)}
+                        className="text-pink-600 hover:text-pink-800 mt-2 text-sm"
+                      >
+                        Choose another stylist
+                      </button>
                     </div>
                   )}
                 </div>
 
                 {/* Time Selection */}
                 {selectedDate && (
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-3">
-      Select Time
-      {getTotalDuration() > 480 && (
-        <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
-          Extended Service ({formatDuration(getTotalDuration())})
-        </span>
-      )}
-    </label>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Select Time
+                      {getTotalDuration() > 480 && (
+                        <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
+                          Extended Service ({formatDuration(getTotalDuration())})
+                        </span>
+                      )}
+                    </label>
 
-    {(() => {
-      const selectedDay = availableSlots.find(slot => slot.date === selectedDate);
-      return selectedDay ? (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-          {selectedDay.slots.map((timeSlot, index) => (
-            <button
-              key={index}
-              onClick={() => setSelectedTime(timeSlot.time)}
-              className={`p-3 text-sm font-medium rounded-lg border transition-all ${
-                selectedTime === timeSlot.time
-                  ? "border-pink-500 bg-pink-50 text-gray-900"
-                  : "border-gray-200 hover:border-gray-300 text-gray-700"
-              }`}
-            >
-              <div>{timeSlot.time}</div>
-              {timeSlot.spansMultipleDays && (
-                <div className="text-xs text-orange-600 hidden mt-1">Multi-day</div>
-              )}
-              {timeSlot.estimatedEndTime && timeSlot.estimatedEndTime !== 'Next Day' && (
-                <div className="text-xs text-gray-500">
-                  End: {timeSlot.estimatedEndTime}
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-8 text-gray-500">
-          <p>No available time slots for this date</p>
-        </div>
-      );
-    })()}
-  </div>
-)}
+                    {(() => {
+                      const selectedDay = availableSlots.find(slot => slot.date === selectedDate);
+                      return selectedDay ? (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                          {selectedDay.slots.map((timeSlot, index) => (
+                            <button
+                              key={index}
+                              onClick={() => setSelectedTime(timeSlot.time)}
+                              className={`p-3 text-sm font-medium rounded-lg border transition-all ${selectedTime === timeSlot.time
+                                ? "border-pink-500 bg-pink-50 text-gray-900"
+                                : "border-gray-200 hover:border-gray-300 text-gray-700"
+                                }`}
+                            >
+                              <div>{timeSlot.time}</div>
+                              {timeSlot.spansMultipleDays && (
+                                <div className="text-xs text-orange-600 hidden mt-1">Multi-day</div>
+                              )}
+                              {timeSlot.estimatedEndTime && timeSlot.estimatedEndTime !== 'Next Day' && (
+                                <div className="text-xs text-gray-500">
+                                  End: {timeSlot.estimatedEndTime}
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <p>No available time slots for this date</p>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
             </div>
 
-  {/* <!-- Thank you message --> */}
-  
+            {/* <!-- Thank you message --> */}
 
-  
+
+
             <p class="text-gray-700">
-                <span class="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-800 to-gray-700 text-lg">
-                    Thank you for booking with us!
-                </span> All prices displayed on the website are tax inclusive. Add-ons such as braiding, extensions, wash, and detangling will be calculated during checkout.
+              <span class="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-800 to-gray-700 text-lg">
+                Thank you for booking with us!
+              </span> All prices displayed on the website are tax inclusive. Add-ons such as braiding, extensions, wash, and detangling will be calculated during checkout.
             </p>
 
             {/* <!-- Important note --> */}
             <div class="bg-gray-100 border-l-4 border-gray-500 p-4 rounded-r">
-                <p class="text-gray-800 font-medium">Please note:</p>
-                <p class="text-gray-700">The time indicated per appointment are estimations and can vary based on size of head, quantity of braids and length in comparison to your height.</p>
+              <p class="text-gray-800 font-medium">Please note:</p>
+              <p class="text-gray-700">The time indicated per appointment are estimations and can vary based on size of head, quantity of braids and length in comparison to your height.</p>
             </div>
-            
+
             {/* <!-- Additional information --> */}
 
-           
+
 
             {/* Terms and Policies */}
             <div className="bg-white rounded-lg shadow-sm">
-              {/* <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <Shield className="h-5 w-5 mr-2" />
-                  Terms & Policies
-                </h3>
-              </div> */}
+
               <div className="p-1 space-y-4">
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <div className="flex items-start">
@@ -798,7 +1150,7 @@ const bookingData = {
                       <h4 className="text-sm font-medium text-gray-800 mb-2">
                         Cancellation Policy
                       </h4>
-                   
+
                       <button
                         onClick={() => setShowCancellationPolicy(true)}
                         className="text-sm text-gray-800 underline hover:text-gray-900"
@@ -822,188 +1174,81 @@ const bookingData = {
                       I understand and agree to the cancellation policy *
                     </label>
                   </div>
-{/* 
-                   <div className="flex items-start space-x-3">
-                    <input
-                      type="checkbox"
-                      id="agree-terms"
-                      checked={agreeToTerms}
-                      onChange={(e) => setAgreeToTerms(e.target.checked)}
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded mt-1"
-                    />
-                    <label htmlFor="agree-terms" className="text-sm text-gray-700">
-                      I agree to the{" "}
-                      <button
-                        onClick={() => setShowTermsConditions(true)}
-                        className="text-blue-600 underline hover:text-blue-800"
-                      >
-                        terms and conditions
-                      </button>{" "}
-                      and{" "}
-                      <button
-                        onClick={() => window.open('/privacy-policy', '_blank')}
-                        className="text-blue-600 underline hover:text-blue-800"
-                      >
-                        privacy policy
-                      </button>
-                      *
-                    </label>
-                  </div>  */}
+
                 </div>
               </div>
             </div>
           </div>
 
-            {/* Consent Form */}
-<div className="bg-white rounded-lg shadow-sm">
-  <div className="p-1 border-b border-gray-200">
-    <div className="flex items-center justify-between">
-      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-        <FileText className="h-5 w-5 mr-2" />
-        Consent Form
-      </h3>
-      <button
-        // onClick={() => setShowConsentForm(!showConsentForm)}
-        className="text-sm text-blue-600 hover:text-blue-800"
-      >
-        {/* {showConsentForm ? 'Hide Form' : 'Show Form'} */}
-      </button>
-    </div>
-  </div>
-  
-  {showConsentForm && (
-    <div className="p-6 space-y-6">
-      {/* Health Information */}
-      <div className="space-y-4">
-        {/* <h4 className="font-medium text-gray-900">Health Information</h4> */}
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Do you have any health conditions we should be aware of?
-          </label>
-          <textarea
-            value={consentForm.healthConditions}
-            onChange={(e) => setConsentForm({...consentForm, healthConditions: e.target.value})}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            rows="2"
-            placeholder="Please list any relevant health conditions..."
-          />
-        </div>
+          {/* Consent Form */}
+          <div className="bg-white rounded-lg shadow-sm">
+            <div className="p-1 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <FileText className="h-5 w-5 mr-2" />
+                  Consent Form
+                </h3>
+                <button
+                  // onClick={() => setShowConsentForm(!showConsentForm)}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  {/* {showConsentForm ? 'Hide Form' : 'Show Form'} */}
+                </button>
+              </div>
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Allergies (especially to hair products, chemicals, or materials)
-          </label>
-          <textarea
-            value={consentForm.allergies}
-            onChange={(e) => setConsentForm({...consentForm, allergies: e.target.value})}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            rows="2"
-            placeholder="List any known allergies..."
-          />
-        </div>
-{/* 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Current medications
-          </label>
-          <input
-            type="text"
-            value={consentForm.medications}
-            onChange={(e) => setConsentForm({...consentForm, medications: e.target.value})}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="List current medications..."
-          />
-        </div> */}
-{/* 
-        <div className="flex items-start space-x-2">
-          <input
-            type="checkbox"
-            id="pregnancy-status"
-            checked={consentForm.pregnancyStatus}
-            onChange={(e) => setConsentForm({...consentForm, pregnancyStatus: e.target.checked})}
-            className="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded mt-1"
-          />
-          <label htmlFor="pregnancy-status" className="text-sm text-gray-700">
-            I am currently pregnant or nursing
-          </label>
-        </div> */}
-      </div>
+            {showConsentForm && (
+              <div className="p-6 space-y-6">
+                {/* Health Information */}
+                <div className="space-y-4">
+                  {/* <h4 className="font-medium text-gray-900">Health Information</h4> */}
 
-      {/* Emergency Contact */}
-      {/* <div className="space-y-4">
-        <h4 className="font-medium text-gray-900">Emergency Contact</h4>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Contact Name
-            </label>
-            <input
-              type="text"
-              value={consentForm.emergencyContact.name}
-              onChange={(e) => setConsentForm({
-                ...consentForm, 
-                emergencyContact: {...consentForm.emergencyContact, name: e.target.value}
-              })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Emergency contact name"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone Number
-            </label>
-            <input
-              type="tel"
-              value={consentForm.emergencyContact.phone}
-              onChange={(e) => setConsentForm({
-                ...consentForm, 
-                emergencyContact: {...consentForm.emergencyContact, phone: e.target.value}
-              })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Emergency contact phone"
-            />
-          </div>
-        </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Do you have any health conditions we should be aware of?
+                    </label>
+                    <textarea
+                      value={consentForm.healthConditions}
+                      onChange={(e) => setConsentForm({ ...consentForm, healthConditions: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      rows="2"
+                      placeholder="Please list any relevant health conditions..."
+                    />
+                  </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Relationship
-          </label>
-          <input
-            type="text"
-            value={consentForm.emergencyContact.relationship}
-            onChange={(e) => setConsentForm({
-              ...consentForm, 
-              emergencyContact: {...consentForm.emergencyContact, relationship: e.target.value}
-            })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Relationship to you"
-          />
-        </div>
-      </div> */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Allergies (especially to hair products, chemicals, or materials)
+                    </label>
+                    <textarea
+                      value={consentForm.allergies}
+                      onChange={(e) => setConsentForm({ ...consentForm, allergies: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      rows="2"
+                      placeholder="List any known allergies..."
+                    />
+                  </div>
+                </div>
 
-      {/* Consent Checkboxes */}
-      <div className="space-y-4">
-        {/* <h4 className="font-medium text-gray-900">Consent & Agreement</h4> */}
-        
-        <div className="space-y-3">
-          <div className="flex items-start space-x-3">
-            <input
-              type="checkbox"
-              id="consent-treatment"
-              checked={consentForm.consentToTreatment}
-              onChange={(e) => setConsentForm({...consentForm, consentToTreatment: e.target.checked})}
-              className="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded mt-1"
-            />
-            <label htmlFor="consent-treatment" className="text-sm text-gray-700">
-              I consent to receive the selected beauty/hair services and understand the procedures involved 
-            </label>
-          </div>
+                {/* Consent Checkboxes */}
+                <div className="space-y-4">
+                  {/* <h4 className="font-medium text-gray-900">Consent & Agreement</h4> */}
 
-          {/* <div className="flex items-start space-x-3">
+                  <div className="space-y-3">
+                    <div className="flex items-start space-x-3">
+                      <input
+                        type="checkbox"
+                        id="consent-treatment"
+                        checked={consentForm.consentToTreatment}
+                        onChange={(e) => setConsentForm({ ...consentForm, consentToTreatment: e.target.checked })}
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded mt-1"
+                      />
+                      <label htmlFor="consent-treatment" className="text-sm text-gray-700">
+                        I consent to receive the selected beauty/hair services and understand the procedures involved
+                      </label>
+                    </div>
+
+                    {/* <div className="flex items-start space-x-3">
             <input
               type="checkbox"
               id="consent-photography"
@@ -1015,11 +1260,11 @@ const bookingData = {
               I consent to before/after photos being taken for portfolio purposes (optional)
             </label>
           </div> */}
-        </div>
-      </div>
-    </div>
-  )}
-</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
 
           {/* Sidebar */}
@@ -1031,6 +1276,44 @@ const bookingData = {
                 </h3>
               </div>
 
+              {/* // In your sidebar booking summary, add this section: */}
+              {selectedProvider && (
+                <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                      {selectedProvider.profileImage ? (
+                        <img src={selectedProvider.profileImage} alt={selectedProvider.name} className="w-12 h-12 rounded-full object-cover" />
+                      ) : (
+                        <User className="h-6 w-6 text-gray-400" />
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-900">{selectedProvider.name}</h4>
+                      <div className="flex items-center mt-1">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-3 w-3 ${i < Math.floor(selectedProvider.rating?.average || 0)
+                              ? 'text-yellow-400 fill-current'
+                              : 'text-gray-300'
+                              }`}
+                          />
+                        ))}
+                        <span className="text-xs text-gray-600 ml-1">
+                          ({selectedProvider.rating?.count || 0})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowProviderSelection(true)}
+                    className="text-xs text-pink-600 hover:text-pink-800 mt-2"
+                  >
+                    Change stylist
+                  </button>
+                </div>
+              )}
+
               <div className="p-6 space-y-4">
                 {selectedDate && selectedTime ? (
                   <>
@@ -1041,6 +1324,46 @@ const bookingData = {
                           {formatDate(selectedDate)}
                         </span>
                       </div>
+                      {/* In your date selection section */}
+                      {!selectedProvider ? (
+                        <div className="text-center py-12 text-gray-500">
+                          <User className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                          <p>Please select a stylist first</p>
+                          <button
+                            onClick={() => setShowProviderSelection(true)}
+                            className="text-pink-600 hover:text-pink-800 mt-2"
+                          >
+                            Choose Stylist
+                          </button>
+                        </div>
+                      ) : isLoading ? (
+                        <div className="flex justify-center items-center py-12">
+                          <Loader2 className="h-8 w-8 animate-spin text-pink-600" />
+                          <span className="ml-2 text-gray-600">Loading available slots...</span>
+                        </div>
+                      ) : availableSlots.length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-6">
+                          {availableSlots.map((slot, index) => (
+                            <button
+                              key={index}
+                              onClick={() => setSelectedSlot(slot)}
+                              className={`px-4 py-2 rounded-lg border text-sm font-medium transition
+          ${selectedSlot === slot
+                                  ? "bg-pink-600 text-white border-pink-600"
+                                  : "bg-white text-gray-700 border-gray-300 hover:border-pink-400"
+                                }`}
+                            >
+                              {slot}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-12 text-gray-500">
+                          <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                          <p>No available slots for this stylist</p>
+                        </div>
+                      )}
+
                       <div className="flex items-center text-gray-700">
                         {/* <Clock className="h-4 w-4 mr-2" /> */}
                         <span className="font-medium">{selectedTime}</span>
@@ -1068,9 +1391,9 @@ const bookingData = {
                     </div>
 
                     {/* Client Summary */}
-                 
+
                   </>
-                ) :(
+                ) : (
                   <div className="text-center py-8 text-gray-500">
                     {/* <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" /> */}
                     <p>Select date and time to see summary</p>
@@ -1081,8 +1404,8 @@ const bookingData = {
               <div className="p-6 flex justify-center">
                 <button
                   onClick={handleBooking}
-                  disabled={isBooking || !selectedDate || !selectedTime || !agreeToCancellationPolicy || !consentForm.consentToTreatment }
-                  className= "bg-pink-900 text-white py-3 px-4 rounded-lg justify-center items-center font-medium hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed "
+                  disabled={isBooking || !selectedDate || !selectedTime || !agreeToCancellationPolicy || !consentForm.consentToTreatment}
+                  className="bg-pink-900 text-white py-3 px-4 rounded-lg justify-center items-center font-medium hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed "
                 >
                   {isBooking ? (
                     <>
@@ -1120,6 +1443,7 @@ const bookingData = {
 
             <div className="p-6 overflow-y-auto max-h-[60vh]">
               <div className="space-y-4">
+// In your Add Service modal, enhance the service cards:
                 {allServices
                   .filter(service => !selectedServices.some(s => s._id === service._id))
                   .map((service) => (
@@ -1135,6 +1459,11 @@ const bookingData = {
                             <span className="text-sm font-medium text-gray-900">
                               {formatNaira(service.price)}
                             </span>
+                          </div>
+
+                          {/* Add provider availability info */}
+                          <div className="mt-2 text-xs text-gray-500">
+                            Available with {service.providers?.length || 0} stylists
                           </div>
                         </div>
                         <button
@@ -1171,29 +1500,29 @@ const bookingData = {
             </div>
 
             <div class="bg-gray-50 p-6 rounded-2xl shadow-md text-gray-700 text-sm leading-relaxed space-y-4">
-  <p>
-    We ask that you please reschedule or cancel your appointment 48 before hand to enable us give a  client your spot  or you may be charged 50% of the price of your appointment .
-  </p>
+              <p>
+                We ask that you please reschedule or cancel your appointment 48 before hand to enable us give a  client your spot  or you may be charged 50% of the price of your appointment .
+              </p>
 
-  <p>
-    All prices displayed on the website are <span class="font-semibold">taxes included</span> and finalized. Add-ons (braiding extensions, wash, or detangling services) will be calculated during checkout.
-  </p>
+              <p>
+                All prices displayed on the website are <span class="font-semibold">taxes included</span> and finalized. Add-ons (braiding extensions, wash, or detangling services) will be calculated during checkout.
+              </p>
 
-  <div>
-    <h2 class="text-base font-bold text-gray-900 mb-2">Service Cancellation Policy</h2>
-    <ol class="list-decimal list-inside space-y-2">
-      <li>
-        <span class="font-semibold">Cancellation by the Customer:</span> Customers may reschedule their service once by providing written notice to 
-        <a href="mailto:Stylebyesther@palmsbeautystore.com" class="text-blue-600 underline">Stylebyesther@palmsbeautystore.com</a> 
-        <span class="font-semibold">48 hours</span> before their appointment. The notice must include the customer's name, contact information, and service details. 
-        <span class="font-semibold">Booking fees are not refundable.</span>
-      </li>
-      <li>
-        <span class="font-semibold">Cancellations by Palmsbeautystore:</span> Palmsbeautystore reserves the right to cancel a service in cases of non-payment, violation of terms, or breach of agreement. Notice will be provided, and refunds will apply only if the service provider is unavailable due to unforeseen circumstances.
-      </li>
-    </ol>
-  </div>
-</div>
+              <div>
+                <h2 class="text-base font-bold text-gray-900 mb-2">Service Cancellation Policy</h2>
+                <ol class="list-decimal list-inside space-y-2">
+                  <li>
+                    <span class="font-semibold">Cancellation by the Customer:</span> Customers may reschedule their service once by providing written notice to
+                    <a href="mailto:Stylebyesther@palmsbeautystore.com" class="text-blue-600 underline">Stylebyesther@palmsbeautystore.com</a>
+                    <span class="font-semibold">48 hours</span> before their appointment. The notice must include the customer's name, contact information, and service details.
+                    <span class="font-semibold">Booking fees are not refundable.</span>
+                  </li>
+                  <li>
+                    <span class="font-semibold">Cancellations by Palmsbeautystore:</span> Palmsbeautystore reserves the right to cancel a service in cases of non-payment, violation of terms, or breach of agreement. Notice will be provided, and refunds will apply only if the service provider is unavailable due to unforeseen circumstances.
+                  </li>
+                </ol>
+              </div>
+            </div>
 
             <div className="p-6 border-t border-gray-200">
               <button
@@ -1206,6 +1535,27 @@ const bookingData = {
           </div>
         </div>
       )}
+
+      {/* // Add to your UI somewhere appropriate */}
+      <div className="flex items-center space-x-4 mb-4">
+        <button
+          onClick={() => setShowProviderSelection(true)}
+          className="flex items-center text-pink-600 hover:text-pink-800"
+        >
+          <User className="h-4 w-4 mr-1" />
+          {selectedProvider ? `Stylist: ${selectedProvider.name}` : 'Select Stylist'}
+        </button>
+
+        {selectedProvider && (
+          <button
+            onClick={() => fetchProviderSchedule(selectedProvider._id)}
+            className="flex items-center text-gray-600 hover:text-gray-800 text-sm"
+          >
+            <Calendar className="h-4 w-4 mr-1" />
+            View Schedule
+          </button>
+        )}
+      </div>
 
       {/* Terms & Conditions Modal */}
       {showTermsConditions && (
@@ -1249,14 +1599,14 @@ const bookingData = {
 
                 <h4 className="text-base font-semibold mb-3">3. Privacy & Confidentiality</h4>
                 <p className="mb-4">
-                  All client information is kept strictly confidential in accordance with our privacy policy. 
+                  All client information is kept strictly confidential in accordance with our privacy policy.
                   We do not share personal information with third parties without explicit consent.
                 </p>
 
                 <h4 className="text-base font-semibold mb-3">4. Liability</h4>
                 <p className="mb-4">
-                  While we maintain the highest standards of safety and professionalism, clients participate 
-                  in services at their own risk. Please inform us of any medical conditions that may affect 
+                  While we maintain the highest standards of safety and professionalism, clients participate
+                  in services at their own risk. Please inform us of any medical conditions that may affect
                   your treatment.
                 </p>
 
@@ -1320,11 +1670,16 @@ const bookingData = {
                 Pay Now - {formatNaira(getTotalPrice())}
               </button>
 
-             
+
             </div>
           </div>
         </div>
       )}
+
+      {/* // Add these at the end of your return statement, before the closing </div> */}
+      {showProviderSelection && <ProviderSelectionModal />}
+      {showProviderSchedule && <ProviderScheduleModal />}
+
     </div>
   );
 };
