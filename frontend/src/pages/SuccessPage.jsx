@@ -1,59 +1,4 @@
-// // / FRONTEND: Updated Success Page Component
-// import { useEffect, useState } from "react";
-// import { useLocation, useParams, useNavigate } from "react-router-dom";
-// import { format } from "date-fns";
-// import axios from "axios";
 
-// export default function SuccessPage() {
-//   const location = useLocation();
-//   const navigate = useNavigate();
-//   const { appointmentId } = useParams();
-//   const [appointment, setAppointment] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-
-//   const token = localStorage.getItem("token");
-
-//   const fetchAppointment = async () => {
-//     try {
-//       setLoading(true);
-//       setError(null);
-
-//       // Method 1: Try to get appointment from location state first
-//       if (location.state?.appointment) {
-//         console.log("✅ Using appointment from navigation state");
-//         setAppointment(location.state.appointment);
-//         setLoading(false);
-//         return;
-//       }
-
-//       // Method 2: If no state, fetch the appointment by ID
-//       if (appointmentId) {
-//         console.log("🔍 Fetching appointment by ID:", appointmentId);
-//         const { data } = await axios.get(
-//           `/api/appointment/${appointmentId}`,
-//           {
-//             headers: {
-//               Authorization: `Bearer ${token}`,
-//             },
-//           }
-//         );
-        
-//         if (data.success) {
-//           setAppointment(data.appointment);
-//         } else {
-//           throw new Error(data.message || 'Failed to fetch appointment');
-//         }
-//       } else {
-//         throw new Error('No appointment ID provided');
-//       }
-//     } catch (error) {
-//       console.error("❌ Error fetching appointment:", error);
-//       setError(error.response?.data?.message || error.message || 'Unable to fetch appointment details');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
 
 import { useEffect, useState } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
@@ -227,7 +172,7 @@ export default function SuccessPage() {
         {/* Appointment Details Card */}
         <div className="bg-gray-50 rounded-lg p-6 text-left space-y-4 mb-8">
           <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
-            Appointment Details
+            Appointment Details with {appointment.providerName}
           </h3>
           
           <div className="space-y-3">
@@ -283,6 +228,7 @@ export default function SuccessPage() {
                 <p className="font-medium text-gray-800">Status</p>
                 <p className="text-green-600 capitalize font-medium">{appointment.status}</p>
               </div>
+              
             </div>
           </div>
         </div>

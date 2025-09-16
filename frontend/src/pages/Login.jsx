@@ -127,6 +127,8 @@ const Login = () => {
         });
         if (data.success && data.token) {
           localStorage.setItem("token", data.token);
+          console.log("Frontend token:", token);
+
           setToken(data.token);
           toast.success(data.message);
         } else {
@@ -174,6 +176,8 @@ const Login = () => {
       }, 100);
     }
   }, [token, redirectInfo, navigate]);
+
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-900 to-pink-900 flex items-center justify-center p-4">

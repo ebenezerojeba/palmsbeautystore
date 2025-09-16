@@ -2,60 +2,105 @@ import React, { useContext, useEffect, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft } from "lucide-react";
 import CartTotal from "../components/CartTotal";
-
+import { toast } from "react-toastify";
 const Cart = () => {
-  const { products, cartItems, updateQuantity, navigate, formatNaira } =
-    useContext(ShopContext);
+  const { 
+    products, 
+    cartItems, 
+    updateQuantity, 
+    removeFromCart,
+    getDetailedCartItems,
+    getCartCount,
+    getCartAmount,
+    formatNaira,
+    token
+  } = useContext(ShopContext);
+  
   const [cartData, setCartData] = useState([]);
   const [isUpdating, setIsUpdating] = useState({});
+  
 
+  const safeCartItems = Array.isArray(cartItems) ? cartItems : [];
+
+  // Get detailed cart items whenever cartItems or products change
   useEffect(() => {
-    if (products.length > 0) {
-      const tempData = [];
-      for (const items in cartItems) {
-        for (const item in cartItems[items]) {
-          if (cartItems[items][item] > 0) {
-            tempData.push({
-              _id: items,
-              size: item,
-              quantity: cartItems[items][item],
-            });
-          }
-        }
-      }
-      setCartData(tempData);
-    }
-  }, [cartItems, products]);
+    const detailedItems = getDetailedCartItems();
+    setCartData(detailedItems);
+  }, [cartItems, products, getDetailedCartItems]);
 
-  const handleQuantityUpdate = async (id, size, newQuantity) => {
-    const key = `${id}-${size}`;
-    setIsUpdating(prev => ({ ...prev, [key]: true }));
+  const handleQuantityUpdate = async (cartItemId, newQuantity) => {
+    setIsUpdating(prev => ({ ...prev, [cartItemId]: true }));
     
     try {
-      await updateQuantity(id, size, newQuantity);
+      updateQuantity(cartItemId, newQuantity);
     } finally {
       setTimeout(() => {
-        setIsUpdating(prev => ({ ...prev, [key]: false }));
+        setIsUpdating(prev => ({ ...prev, [cartItemId]: false }));
       }, 300);
     }
   };
 
-  const incrementQuantity = (id, size, currentQuantity) => {
-    handleQuantityUpdate(id, size, currentQuantity + 1);
+  const incrementQuantity = (cartItemId, currentQuantity) => {
+    handleQuantityUpdate(cartItemId, currentQuantity + 1);
   };
 
-  const decrementQuantity = (id, size, currentQuantity) => {
+  const decrementQuantity = (cartItemId, currentQuantity) => {
     if (currentQuantity > 1) {
-      handleQuantityUpdate(id, size, currentQuantity - 1);
+      handleQuantityUpdate(cartItemId, currentQuantity - 1);
     }
   };
 
-  const removeItem = (id, size) => {
-    handleQuantityUpdate(id, size, 0);
+  const handleRemoveItem = (cartItemId) => {
+    setIsUpdating(prev => ({ ...prev, [cartItemId]: true }));
+    removeFromCart(cartItemId);
   };
 
-  const getTotalItems = () => {
-    return cartData.reduce((total, item) => total + item.quantity, 0);
+  // Navigate function (you might need to import this from React Router)
+  const navigate = (path) => {
+    // Replace this with your navigation method
+    window.location.href = path;
+  };
+
+  // Helper function to get product image
+  const getProductImage = (product, variation) => {
+    // If variation has specific images, use those
+    if (variation && variation.images && variation.images.length > 0) {
+      return variation.images[0];
+    }
+    
+    // Otherwise use product images
+    if (product.images && product.images.length > 0) {
+      return product.images[0];
+    }
+    
+    // Fallback to old image structure
+    if (product.image && Array.isArray(product.image) && product.image.length > 0) {
+      return product.image[0];
+    }
+    
+    return "/path/to/default-image.jpg";
+  };
+
+  // Helper function to get color hex code
+  const getColorHex = (colorName) => {
+    if (!colorName) return '#ddd';
+    
+    const colorMap = {
+      'black': '#000000',
+      'brown': '#8b4513',
+      'blonde': '#f4e4bc',
+      'red': '#dc143c',
+      'auburn': '#a52a2a',
+      'gray': '#808080',
+      'grey': '#808080',
+      'silver': '#c0c0c0',
+      'natural': '#8b7355',
+      'dark brown': '#654321',
+      'light brown': '#996633'
+    };
+    
+    const lowerColor = colorName.toLowerCase();
+    return colorMap[lowerColor] || '#ddd';
   };
 
   if (cartData.length === 0) {
@@ -86,7 +131,7 @@ const Cart = () => {
       <div className="border-t pt-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-semibold text-gray-800">
-            Shopping Cart ({getTotalItems()} item{getTotalItems() !== 1 ? 's' : ''})
+            Shopping Cart ({getCartCount()} item{getCartCount() !== 1 ? 's' : ''})
           </h1>
           <button
             onClick={() => navigate("/collections")}
@@ -102,15 +147,11 @@ const Cart = () => {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-sm border">
               {cartData.map((item, index) => {
-                const productData = products.find(
-                  (product) => product._id === item._id
-                );
-                const updateKey = `${item._id}-${item.size}`;
-                const isItemUpdating = isUpdating[updateKey];
-
+                const isItemUpdating = isUpdating[item.cartItemId];
+                
                 return (
                   <div
-                    key={index}
+                    key={item.cartItemId}
                     className={`p-6 ${index !== cartData.length - 1 ? 'border-b' : ''} 
                       ${isItemUpdating ? 'opacity-70' : ''} transition-opacity duration-200`}
                   >
@@ -119,8 +160,11 @@ const Cart = () => {
                       <div className="flex-shrink-0">
                         <img
                           className="w-24 h-24 object-cover rounded-lg border"
-                          src={productData?.image?.[0]}
-                          alt={productData?.name}
+                          src={getProductImage(item.product, item.variation)}
+                          alt={item.product.name}
+                          onError={(e) => {
+                            e.target.src = "/path/to/default-image.jpg";
+                          }}
                         />
                       </div>
 
@@ -128,31 +172,73 @@ const Cart = () => {
                       <div className="flex-grow">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="text-lg font-medium text-gray-800 line-clamp-2">
-                            {productData?.name}
+                            {item.product.name}
                           </h3>
                           <button
-                            onClick={() => removeItem(item._id, item.size)}
+                            onClick={() => handleRemoveItem(item.cartItemId)}
                             className="text-red-500 hover:text-red-700 p-1 rounded transition-colors duration-200"
                             title="Remove item"
+                            disabled={isItemUpdating}
                           >
                             <Trash2 size={18} />
                           </button>
                         </div>
 
-                        <div className="flex items-center gap-4 mb-4">
+                        {/* Product Options */}
+                        <div className="flex flex-wrap items-center gap-2 mb-4">
                           <span className="text-lg font-semibold text-gray-900">
-                            {productData?.price}
+                            {formatNaira(item.price)}
                           </span>
-                          <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
-                            Size: {item.size}
-                          </span>
+                          
+                          {/* Display selected options */}
+                          {item.selectedOptions && Object.entries(item.selectedOptions).map(([key, value]) => {
+                            if (!value) return null;
+                            
+                            if (key === 'color') {
+                              return (
+                                <span key={key} className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full flex items-center gap-2">
+                                  <div 
+                                    className="w-3 h-3 rounded-full border border-gray-300"
+                                    style={{ backgroundColor: getColorHex(value) }}
+                                  />
+                                  {value}
+                                </span>
+                              );
+                            }
+                            
+                            return (
+                              <span key={key} className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
+                                {key.charAt(0).toUpperCase() + key.slice(1)}: {value}
+                              </span>
+                            );
+                          })}
+                          
+                          {/* Show variation info if no selected options */}
+                          {(!item.selectedOptions || Object.keys(item.selectedOptions).length === 0) && item.variation && (
+                            <>
+                              {item.variation.size && (
+                                <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
+                                  Size: {item.variation.size}
+                                </span>
+                              )}
+                              {item.variation.color && (
+                                <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full flex items-center gap-2">
+                                  <div 
+                                    className="w-3 h-3 rounded-full border border-gray-300"
+                                    style={{ backgroundColor: getColorHex(item.variation.color) }}
+                                  />
+                                  {item.variation.color}
+                                </span>
+                              )}
+                            </>
+                          )}
                         </div>
 
                         {/* Quantity Controls */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center border rounded-lg">
                             <button
-                              onClick={() => decrementQuantity(item._id, item.size, item.quantity)}
+                              onClick={() => decrementQuantity(item.cartItemId, item.quantity)}
                               disabled={item.quantity <= 1 || isItemUpdating}
                               className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                             >
@@ -162,7 +248,7 @@ const Cart = () => {
                               {item.quantity}
                             </span>
                             <button
-                              onClick={() => incrementQuantity(item._id, item.size, item.quantity)}
+                              onClick={() => incrementQuantity(item.cartItemId, item.quantity)}
                               disabled={isItemUpdating}
                               className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                             >
@@ -173,10 +259,25 @@ const Cart = () => {
                           <div className="text-right">
                             <p className="text-sm text-gray-500">Subtotal</p>
                             <p className="text-lg font-semibold text-gray-900">
-                              {formatNaira(productData?.price * item.quantity)}
+                              {formatNaira(item.total)}
                             </p>
                           </div>
                         </div>
+
+                        {/* Stock status for variation */}
+                        {item.variation && (
+                          <div className="mt-2">
+                            {item.variation.stock > 0 ? (
+                              <span className="text-xs text-green-600">
+                                ✓ In Stock ({item.variation.stock} available)
+                              </span>
+                            ) : (
+                              <span className="text-xs text-red-600">
+                                ⚠ Low Stock
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -192,15 +293,22 @@ const Cart = () => {
                 Order Summary
               </h2>
               
-              <CartTotal />
+              {/* Cart Summary Details */}
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Subtotal ({getCartCount()} items)</span>
+                  <span className="font-medium">{formatNaira(getCartAmount())}</span>
+                </div>
+              </div> 
               
-              <div className="mt-6 space-y-3">
+              <div className="space-y-3">
                 <button
-                  onClick={() => navigate("/place-order")}
+                  onClick={() =>navigate("/place-order")}
                   className="w-full bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium"
                 >
                   Proceed to Checkout
                 </button>
+  
                 
                 <button
                   onClick={() => navigate("/collections")}
@@ -208,14 +316,6 @@ const Cart = () => {
                 >
                   Continue Shopping
                 </button>
-              </div>
-
-              {/* Trust Indicators */}
-              <div className="mt-6 pt-6 border-t">
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                  <span>🔒</span>
-                  <span>Secure checkout</span>
-                </div>
               </div>
             </div>
           </div>

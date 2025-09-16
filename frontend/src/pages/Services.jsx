@@ -14,31 +14,23 @@ const Services = () => {
 
   const navigate = useNavigate();
   const { backendUrl } = useContext(AppContext);
-
-
   const location = useLocation();
-const { category, service, scrollY } = location.state || {};
-
+  const { category, scrollY } = location.state || {};
 
   useEffect(() => {
     fetchServices();
   }, []);
 
-useEffect(() => {
-  if (category) {
-    setExpanded(prev => ({ ...prev, [category]: true }));
-  }
-
-  if (scrollY !== undefined) {
-    window.scrollTo({ top: scrollY, behavior: "smooth" });
-  }
-}, [category, scrollY]);
+  useEffect(() => {
+    if (category) setExpanded(prev => ({ ...prev, [category]: true }));
+    if (scrollY !== undefined) window.scrollTo({ top: scrollY, behavior: "smooth" });
+  }, [category, scrollY]);
 
   const fetchServices = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${backendUrl}/api/services/publicservices`);
-      setServices(response.data || []);
+      const res = await axios.get(`${backendUrl}/api/services/publicservices`);
+      setServices(res.data || []);
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Something went wrong');
     } finally {
@@ -46,53 +38,12 @@ useEffect(() => {
     }
   };
 
-  // Example: Fetch services with providers
-const fetchServicesWithProviders = async () => {
-  try {
-    const response = await fetch('/api/services/services');
-    const data = await response.json();
-    setServices(data.services); // Now includes provider information
-  } catch (error) {
-    console.error('Error fetching services:', error);
-  }
-};
-
-// Example: Fetch providers for a specific service
-const fetchServiceProviders = async (serviceId) => {
-  try {
-    const response = await fetch(`/api/services/${serviceId}/providers`);
-    const data = await response.json();
-    if (data.success) {
-      setProviders(data.providers);
-    }
-  } catch (error) {
-    console.error('Error fetching service providers:', error);
-  }
-};
-
-// Example: Fetch all services offered by a specific provider
-const fetchProviderServices = async (providerId) => {
-  try {
-    const response = await fetch(`/api/services/provider/${providerId}/services`);
-    const data = await response.json();
-    if (data.success) {
-      setServices(data.services);
-      setSelectedProvider(data.provider);
-    }
-  } catch (error) {
-    console.error('Error fetching provider services:', error);
-  }
-};
-
   const toggleCategory = (categoryId) => {
-    setExpanded((prev) => ({
-      ...prev,
-      [categoryId]: !prev[categoryId],
-    }));
+    setExpanded(prev => ({ ...prev, [categoryId]: !prev[categoryId] }));
   };
 
   const handleBook = (service) => {
-    navigate(`/appointment/${service._id}`);
+    navigate(`/appointment/${service._id}`, { state: { service } });
   };
 
   if (loading) {
@@ -119,7 +70,7 @@ const fetchProviderServices = async (providerId) => {
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-10 flex justify-end ">
+      <div className="mb-10 flex justify-end">
         <input
           type="text"
           placeholder="Search services..."
@@ -136,9 +87,9 @@ const fetchProviderServices = async (providerId) => {
       ) : (
         <div className="space-y-10">
           {services.map((category) => {
-            const filteredSubServices = category.subServices.filter((service) =>
+            const filteredSubServices = category.subServices?.filter((service) =>
               service.title.toLowerCase().includes(searchQuery.toLowerCase())
-            );
+            ) || [];
 
             if (filteredSubServices.length === 0) return null;
 
@@ -153,11 +104,11 @@ const fetchProviderServices = async (providerId) => {
                   ) : (
                     <ChevronRight className="w-5 h-5" />
                   )}
-                  <span>{category.title}</span>
+                  <span>{category.title}</span> 
                 </button>
 
                 {expanded[category._id] && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-6 mt-6 sm:text-sm ">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-6 mt-6 sm:text-sm">
                     {filteredSubServices.map((service) => (
                       <ServiceCard
                         key={service._id}
@@ -168,7 +119,7 @@ const fetchProviderServices = async (providerId) => {
                         image={service.image}
                         isActive={service.isActive}
                         onBook={() => handleBook(service)}
-                        categoryId={category._id} 
+                        categoryId={category._id}
                         serviceId={service._id}
                       />
                     ))}

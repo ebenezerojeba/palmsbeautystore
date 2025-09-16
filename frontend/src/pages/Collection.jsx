@@ -48,12 +48,27 @@ const Collection = () => {
       filtered = filtered.filter((item) => subCategory.includes(item.subCategory));
     }
 
+    // / Filter out products with no available stock
+filtered = filtered.filter(item => {
+  if (!item.variations || item.variations.length === 0) return true;
+  return item.variations.some(v => v.isActive && v.stock > 0);
+});
+
+
     // Apply sorting
-    if (sortType === "low-high") {
-      filtered.sort((a, b) => a.price - b.price);
-    } else if (sortType === "high-low") {
-      filtered.sort((a, b) => b.price - a.price);
-    }
+  if (sortType === "low-high") {
+  filtered.sort((a, b) => {
+    const priceA = a.basePrice || a.price || 0;
+    const priceB = b.basePrice || b.price || 0;
+    return priceA - priceB;
+  });
+} else if (sortType === "high-low") {
+  filtered.sort((a, b) => {
+    const priceA = a.basePrice || a.price || 0;
+    const priceB = b.basePrice || b.price || 0;
+    return priceB - priceA;
+  });
+}
 
     setFilterProducts(filtered);
     setCurrentPage(1);
@@ -205,17 +220,57 @@ const Collection = () => {
                 </button>
               </div>
             ) : (
+
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                {currentProducts.map((item, index) => (
-                  <ProductItem
-                    key={index}
-                    name={item.name}
-                    id={item._id}
-                    price={item.price}
-                    image={item.image}
-                  />
-                ))}
-              </div>
+  {currentProducts.map((item, index) => {
+    // Calculate price range from variations
+    const calculatePriceRange = (variations) => {
+      if (!variations || variations.length === 0) return null;
+      
+      const prices = variations
+        .filter(v => v.isActive && v.stock > 0)
+        .map(v => v.salePrice || v.price);
+      
+      if (prices.length === 0) return null;
+      
+      return {
+        min: Math.min(...prices),
+        max: Math.max(...prices)
+      };
+    };
+
+    // Calculate total stock from variations
+    const calculateTotalStock = (variations) => {
+      if (!variations || variations.length === 0) return 0;
+      
+      return variations
+        .filter(v => v.isActive)
+        .reduce((total, v) => total + (v.stock || 0), 0);
+    };
+
+    const priceRange = calculatePriceRange(item.variations);
+    const totalStock = calculateTotalStock(item.variations);
+
+    return (
+      <ProductItem
+        key={item._id}
+        name={item.name}
+        id={item._id}
+        image={item.images || item.image} // Handle both old and new structure
+        variations={item.variations}
+        basePrice={item.basePrice || item.price} // Fallback to old price structure
+        priceRange={priceRange}
+        bestSeller={item.bestSeller}
+        isFeatured={item.isFeatured}
+        totalStock={totalStock}
+        averageRating={item.averageRating}
+        totalReviews={item.totalReviews}
+        category={item.category}
+        subCategory={item.subCategory}
+      />
+    );
+  })}
+</div>
             )}
           </div>
 
