@@ -45,13 +45,15 @@ const corsOptions = {
     'http://localhost:5173',
     'http://localhost:5174',
     'https://palmsbeautystore.vercel.app',
+    'https://palmsbeautystore-n6eq.vercel.app', // add this
     'https://palmsbeautystore.onrender.com',
     'https://palmsbeautyadmin.onrender.com'
   ],
-  credentials: true, // Allow cookies/auth headers
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
+
 
 // Middleware
 app.use(cors(corsOptions));
