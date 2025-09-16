@@ -165,6 +165,7 @@ connectCloudinary();
 const allowedOrigins = [
   'https://palmsbeautystore-n6eq.vercel.app',
   'https://palmsbeautyadmin.onrender.com',
+  'https://palmsbeautystore-backend.onrender.com', // Add your backend domain too
   'http://localhost:3000',
   'http://localhost:3001', // In case you use different ports
   'http://127.0.0.1:3000',
@@ -192,8 +193,14 @@ const corsOptions = {
     'Accept',
     'Authorization',
     'Cache-Control',
-    'X-Access-Token'
+    'X-Access-Token',
+    'token', // Add the token header that your frontend is using
+    'Token', // Also add capitalized version just in case
+    'x-auth-token',
+    'Access-Control-Allow-Headers',
+    'Access-Control-Allow-Origin'
   ],
+  exposedHeaders: ['token', 'Token'], // Also expose these headers in responses
   optionsSuccessStatus: 200
 };
 
