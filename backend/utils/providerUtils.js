@@ -15,13 +15,12 @@ export const isTimeSlotAvailable = (provider, date, startTime, duration) => {
     
     const [breakStartHour, breakStartMinute] = breakTime.startTime.split(':').map(Number);
     const [breakEndHour, breakEndMinute] = breakTime.endTime.split(':').map(Number);
-    
+ 
     const breakStart = new Date(breakDate);
     breakStart.setHours(breakStartHour, breakStartMinute, 0, 0);
-    
+
     const breakEnd = new Date(breakDate);
-    breakEnd.setHours(breakEndHour, breakEndMinute, 0, 0);
-    
+    breakEnd.setHours(breakEndHour, breakEndMinute, 0, 0);    
     // Check if appointment overlaps with break
     return (
       (startDateTime >= breakStart && startDateTime < breakEnd) ||
@@ -29,7 +28,7 @@ export const isTimeSlotAvailable = (provider, date, startTime, duration) => {
       (startDateTime <= breakStart && endDateTime >= breakEnd)
     );
   });
-  
+ 
   return !hasBreakConflict;
 };
 
