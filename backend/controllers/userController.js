@@ -69,6 +69,8 @@ const registerUser = async (req, res) => {
     const user = await newUser.save();
     const token = createToken(user._id);
 
+
+
     res.status(201).json({ 
       success: true, 
       token,
@@ -107,6 +109,8 @@ const loginUser = async (req, res) => {
     }
 
     const token = createToken(user._id);
+    
+
     res.status(200).json({ 
       success: true, 
       token,

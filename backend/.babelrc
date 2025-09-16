@@ -1,0 +1,9 @@
+{
+  "presets": ["@babel/preset-react"],
+  "plugins": [
+    ["transform-import-extension", {
+      "from": ".jsx",
+      "to": ".js"
+    }]
+  ]
+}

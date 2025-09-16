@@ -1,21 +1,20 @@
-// import { appointmentModel, businessHoursModel } from "../models/appointment.js";
-import createCalendarEvent from "../utils/calendarGenerator.js";
-import { initializePayment, verifyPayment } from "../utils/paymentService.js";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-
 import appointmentModel from "../models/appointment.js";
-import serviceModel from "../models/serviceModel.js";
 import userModel from "../models/userModel.js";
-import businessHoursModel from "../models/businessModel.js";
 import Stripe from 'stripe';
 import { getBusinessHours } from "./businessController.js";
+import providerModel from "../models/providerModel.js";
+
+import dotenv from "dotenv";
+import { sendAppointmentEmails } from "../utils/emailService.js";
+// import { sendAppointmentEmails } from "../utils/emai.js";
+dotenv.config();
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-
 
 // Get user appointments
 const getUserAppointments = async (req, res) => {
@@ -137,37 +136,29 @@ const cancelAppointment = async (req, res) => {
   }
 };
 
-// Add this before generateAvailableSlots function
-const prioritizeDaysForLongServices = (availableSlots, totalDuration) => {
-  if (totalDuration < 480) return availableSlots;
-  
-  // Sort days by number of available slots (more slots = less busy day)
-  return availableSlots.sort((a, b) => {
-    // Prioritize days with slots starting earlier
-    const aEarliestTime = a.slots[0]?.time || '23:59';
-    const bEarliestTime = b.slots[0]?.time || '23:59';
-    
-    if (aEarliestTime !== bEarliestTime) {
-      return aEarliestTime.localeCompare(bEarliestTime);
-    }
-    
-    // Then by number of slots
-    return b.slots.length - a.slots.length;
-  });
-};
-
-// Get available time slots
-
-const BUFFER_MINUTES = 15; // Buffer between appointments
-const MAX_SERVICE_DURATION_PER_DAY = 8 * 60; // 8 hours in minutes
-const SLOT_INTERVAL = 30; // 30 minutes slot interval
-
 
 const getAvailableSlots = async (req, res) => {
   try {
-    const { serviceId, startDate, endDate, selectedServices } = req.query;
-    
-    // Parse selectedServices if provided
+    const { serviceId, providerId, startDate, endDate, selectedServices } = req.query;
+
+    console.log("🔍 Request params:", { serviceId, providerId, startDate, endDate });
+
+    // Validate serviceId
+    if (!serviceId || serviceId === 'undefined' || serviceId === 'null') {
+      return res.status(400).json({ 
+        message: "Service ID is required",
+        received: serviceId
+      });
+    }
+
+    if (!serviceId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ 
+        message: "Invalid service ID format",
+        serviceId: serviceId
+      });
+    }
+
+    // Parse selected services and calculate total duration
     let servicesToBook = [];
     if (selectedServices) {
       try {
@@ -176,454 +167,450 @@ const getAvailableSlots = async (req, res) => {
         return res.status(400).json({ message: "Invalid selectedServices format" });
       }
     }
-    
-    // Calculate total duration needed
+
     const totalServiceDuration = servicesToBook.length > 0 
       ? servicesToBook.reduce((total, service) => total + (parseInt(service.duration) || 90), 0)
       : 90;
-    
-    // Get business hours
-    const businessHours = await getBusinessHours();
-    if (!businessHours.length) {
-      return res.status(404).json({ message: "Business hours not configured" });
-    }
-    
+
+    console.log("📊 Total service duration:", totalServiceDuration, "minutes");
+
     // Set date range
     const start = new Date(startDate || new Date());
-    const end = new Date(endDate || new Date(Date.now() + 60 * 24 * 60 * 60 * 1000));
-    
-    // Check for multi-day services
-    const isLongDuration = totalServiceDuration > 480;
-    const isMultiDay = totalServiceDuration > MAX_SERVICE_DURATION_PER_DAY;
-    
-    if (isMultiDay) {
-      return await handleMultiDayService(req, res, servicesToBook, totalServiceDuration, start, end, businessHours);
-    }
-    
-    // Generate available slots
-    const availableSlots = await generateAvailableSlots(
-      start, 
-      end, 
-      businessHours, 
-      totalServiceDuration, 
-      isLongDuration
-    );
-    
-    // Apply this before res.status(200).json
-const prioritizedSlots = prioritizeDaysForLongServices(availableSlots, totalServiceDuration);
+    const end = new Date(endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
 
-res.status(200).json({ 
-  availableSlots: prioritizedSlots,
-  timestamp: new Date().toISOString()
-});
+    // Find providers for this service
+    let availableProviders = [];
+    
+    if (providerId && providerId !== 'undefined') {
+      const provider = await providerModel.findById(providerId).populate('services');
+      if (provider && provider.isActive) {
+        availableProviders = [provider];
+      }
+    } else {
+      availableProviders = await providerModel.find({ 
+        services: { $in: [serviceId] }, 
+        isActive: true 
+      }).populate('services');
+    }
+
+    console.log("👥 Available providers:", availableProviders.length);
+
+    if (availableProviders.length === 0) {
+      return res.status(404).json({ message: "No providers available for this service" });
+    }
+
+    // Generate UNIQUE available slots (NO DUPLICATES)
+    const uniqueSlots = await generateUniqueAvailableSlots(
+      start,
+      end,
+      totalServiceDuration,
+      availableProviders
+    );
+
+    console.log("✅ Final unique slots:", uniqueSlots.length);
+
+    res.status(200).json({ 
+      availableSlots: uniqueSlots,
+      totalDuration: totalServiceDuration,
+      providers: availableProviders.map(p => ({
+        _id: p._id,
+        name: p.name,
+        profileImage: p.profileImage,
+        rating: p.rating
+      })),
+      timestamp: new Date().toISOString()
+    });
+    
   } catch (error) {
-    console.error("Error fetching available slots:", error);
-    res.status(500).json({ message: "Failed to fetch available slots" });
+    console.error("❌ Error fetching available slots:", error);
+    res.status(500).json({ 
+      message: "Failed to fetch available slots",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
-
-
-
-
-// Generate available slots for date range
-const generateAvailableSlots = async (start, end, businessHours, totalDuration, isLongDuration) => {
-  const availableSlots = [];
+// FIXED: Generate unique slots - eliminates duplicates completely
+const generateUniqueAvailableSlots = async (start, end, totalDuration, providers) => {
+  const uniqueSlotsMap = new Map(); // Key: "YYYY-MM-DD", Value: slot data
   const now = new Date();
-  
+
+  console.log("🔄 Generating unique slots...");
+
+  // Loop through each date
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    const dayOfWeek = d.getDay();
-    const businessDay = businessHours.find(bh => bh.dayOfWeek === dayOfWeek);
-    
-    if (!businessDay || !businessDay.isOpen) continue;
-     if (!validateServiceFitsBusinessHours(businessDay, totalDuration)) {
-    continue; // Skip this day if service doesn't fit
-  }
-    
     const dateStr = d.toISOString().split('T')[0];
-    const existingAppointments = await getExistingAppointments(d, isLongDuration);
-    
-    const slots = generateTimeSlotsForDay(
-      businessDay, 
-      existingAppointments, 
+    const dayOfWeek = d.getDay();
+    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek];
+
+    console.log(`📅 Processing date: ${dateStr} (${dayName})`);
+
+    // Find the BEST available slots for this specific date
+    const bestSlotsForDate = await findBestAvailableSlotsForDate(
       d, 
-      now, 
-      totalDuration,
-      isLongDuration
+      totalDuration, 
+      providers, 
+      now
     );
-    
-    if (slots.length > 0) {
-      availableSlots.push({
+
+    // Only add to map if we found valid slots (prevents duplicates)
+    if (bestSlotsForDate.length > 0) {
+      uniqueSlotsMap.set(dateStr, {
         date: dateStr,
-        dayOfWeek: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek],
-        slots,
+        dayOfWeek: dayName,
+        slots: bestSlotsForDate,
         totalDuration,
-        isLongDuration
+        isLongDuration: totalDuration > 480
       });
+
+      console.log(`✅ Added ${bestSlotsForDate.length} slots for ${dateStr}`);
+    } else {
+      console.log(`❌ No valid slots for ${dateStr}`);
     }
   }
+
+  // Convert map to array and sort by date
+  const uniqueSlots = Array.from(uniqueSlotsMap.values()).sort((a, b) => 
+    new Date(a.date) - new Date(b.date)
+  );
+
+  console.log("🎯 Total unique date slots:", uniqueSlots.length);
+  return uniqueSlots;
+};
+
+// FIXED: Find best slots for a specific date with proper provider scheduling
+const findBestAvailableSlotsForDate = async (date, totalDuration, providers, currentTime) => {
+  const availableSlots = [];
+  const isToday = date.toDateString() === currentTime.toDateString();
   
+  console.log(`🔍 Finding slots for ${date.toISOString().split('T')[0]}, Duration: ${totalDuration}min`);
+
+  // Handle very long services (10+ hours) - Multi-day scheduling
+  if (totalDuration >= 600) {
+    console.log("🕰️ Handling very long service (10+ hours)");
+    return await handleMultiDayService(date, totalDuration, providers);
+  }
+
+  // Generate time slots based on service duration and business logic
+  const potentialTimeSlots = generateSmartTimeSlots(date, totalDuration, isToday, currentTime);
+  console.log(`⏰ Generated ${potentialTimeSlots.length} potential time slots`);
+
+  // For each time slot, find the FIRST available provider (prevents duplicates)
+  for (const timeSlot of potentialTimeSlots) {
+    console.log(`🔍 Checking time slot: ${timeSlot.time}`);
+
+    // Find the first available provider for this time slot
+    const availableProvider = await findFirstAvailableProvider(
+      providers,
+      date,
+      timeSlot.time,
+      totalDuration
+    );
+
+    if (availableProvider) {
+      console.log(`✅ Found provider ${availableProvider.name} for ${timeSlot.time}`);
+      
+      availableSlots.push({
+        time: timeSlot.time,
+        available: true,
+        duration: totalDuration,
+        providerId: availableProvider._id,
+        providerName: availableProvider.name,
+        estimatedEndTime: timeSlot.endTime,
+        isLongDuration: totalDuration > 480,
+        providerInfo: {
+          _id: availableProvider._id,
+          name: availableProvider.name,
+          profileImage: availableProvider.profileImage,
+          rating: availableProvider.rating
+        }
+      });
+    } else {
+      console.log(`❌ No provider available for ${timeSlot.time}`);
+    }
+  }
+
+  console.log(`🎯 Final available slots for date: ${availableSlots.length}`);
   return availableSlots;
 };
 
-// Get existing appointments with enhanced query
-const getExistingAppointments = async (date, isLongDuration) => {
-  const dateStr = date.toISOString().split('T')[0];
-  const nextDay = new Date(date);
-  nextDay.setDate(nextDay.getDate() + 1);
-  const nextDayStr = nextDay.toISOString().split('T')[0];
-  
-  const query = {
-    $or: [
-      { date: dateStr, status: { $in: ['pending', 'confirmed'] } },
-    ]
-  };
-  
-  // For long duration, check previous day's appointments that might overlap
-  if (isLongDuration) {
-    const prevDay = new Date(date);
-    prevDay.setDate(prevDay.getDate() - 1);
-    const prevDayStr = prevDay.toISOString().split('T')[0];
-    
-    query.$or.push({
-      date: prevDayStr,
-      status: { $in: ['pending', 'confirmed'] },
-      totalDuration: { $gt: 240 } // Only check long appointments from previous day
-    });
-  }
-  
-  return await appointmentModel.find(query)
-    .select('time duration totalDuration services date');
-};
-
-
-
-// Find optimal start time for long duration services
-const getOptimalStartTime = (businessDay, requiredDuration, isLongDuration) => {
-  const [openHour, openMinute] = businessDay.openTime.split(':').map(Number);
-  const [closeHour, closeMinute] = businessDay.closeTime.split(':').map(Number);
-  
-  const dailyWorkMinutes = (closeHour - openHour) * 60 + (closeMinute - openMinute);
-  
-  // For services longer than 6 hours, start at opening time
-  if (requiredDuration >= 360) {
-    return { hour: openHour, minute: openMinute };
-  }
-  
-  // For services 4-6 hours, start within first 2 hours of opening
-  if (requiredDuration >= 240) {
-    return { hour: Math.min(openHour + 1, closeHour - Math.ceil(requiredDuration / 60)), minute: openMinute };
-  }
-  
-  // For regular services, use normal logic
-  return null;
-};
-
-// Check if a day is completely free (no appointments)
-const isDayCompletelyFree = (existingAppointments, requiredDuration) => {
-  if (existingAppointments.length === 0) return true;
-  
-  // For very long services (8+ hours), we need completely free days
-  if (requiredDuration >= 480) {
-    return existingAppointments.length === 0;
-  }
-  
-  return false;
-};
-
-// Validate if service duration fits within business hours
-const validateServiceFitsBusinessHours = (businessDay, requiredDuration) => {
-  const [openHour, openMinute] = businessDay.openTime.split(':').map(Number);
-  const [closeHour, closeMinute] = businessDay.closeTime.split(':').map(Number);
-  
-  const dailyWorkMinutes = (closeHour - openHour) * 60 + (closeMinute - openMinute);
-  
-  // For services 8+ hours, they must fit exactly within business hours
-  if (requiredDuration >= 480) {
-    return requiredDuration <= dailyWorkMinutes;
-  }
-  
-  return true; // Shorter services can use flexible scheduling
-};
-
-// Generate time slots for a specific day
-const generateTimeSlotsForDay = (businessDay, existingAppointments, date, currentTime, requiredDuration, isLongDuration) => {
+// FIXED: Generate smart time slots that respect business hours and service duration
+const generateSmartTimeSlots = (date, duration, isToday, currentTime) => {
   const slots = [];
-  const isToday = date.toDateString() === currentTime.toDateString();
   
-  // Parse business hours
-  const [openHour, openMinute] = businessDay.openTime.split(':').map(Number);
-  const [closeHour, closeMinute] = businessDay.closeTime.split(':').map(Number);
-  
-  // Set up time boundaries
-  const businessStart = new Date(date);
-  businessStart.setHours(openHour, openMinute, 0, 0);
-  
-  const businessEnd = new Date(date);
-  businessEnd.setHours(closeHour, closeMinute, 0, 0);
-  
-  // For multi-day services, calculate how many days needed
-  const dailyWorkHours = (closeHour - openHour) * 60; // minutes per day
-  const isMultiDay = requiredDuration > dailyWorkHours;
-  const daysNeeded = isMultiDay ? Math.ceil(requiredDuration / dailyWorkHours) : 1;
-  
-  // Create blocked periods
-  const blockedPeriods = createBlockedPeriods(existingAppointments, date, businessStart);
-  
-  // Determine earliest start time
-  // let currentSlotTime = determineEarliestStartTime(businessStart, currentTime, isToday);
-  
-  // Replace the existing currentSlotTime determination with:
-let currentSlotTime;
+  console.log(`⚙️ Generating smart time slots for duration: ${duration} minutes`);
 
-// Check if we need optimal start time for long services
-const optimalStart = getOptimalStartTime(businessDay, requiredDuration, isLongDuration);
+  // Determine business hours based on service duration
+  let businessStart, businessEnd, slotInterval;
 
-if (optimalStart && !isToday) {
-  // For long services on future days, start at optimal time
-  currentSlotTime = new Date(date);
-  currentSlotTime.setHours(optimalStart.hour, optimalStart.minute, 0, 0);
-} else {
-  // Use existing logic for today or shorter services
-  currentSlotTime = determineEarliestStartTime(businessStart, currentTime, isToday);
-}
-
- // ENFORCE EARLY START FOR LONG SERVICES
-  if (requiredDuration >= 480) {
-    // For 8+ hour services, only allow starting at opening time
-    const [openHour, openMinute] = businessDay.openTime.split(':').map(Number);
-    currentSlotTime = new Date(date);
-    currentSlotTime.setHours(openHour, openMinute, 0, 0);
-    
-    // Check if this start time would make the service end after closing
-    const serviceEnd = new Date(currentSlotTime.getTime() + requiredDuration * 60000);
-    const [closeHour, closeMinute] = businessDay.closeTime.split(':').map(Number);
-    const closingTime = new Date(date);
-    closingTime.setHours(closeHour, closeMinute, 0, 0);
-    
-    if (serviceEnd > closingTime) {
-      return []; // No available slots if service doesn't fit
-    }
+  if (duration >= 480) { // 8+ hours
+    businessStart = isToday ? Math.max(currentTime.getHours() + 1, 8) : 8;
+    businessEnd = 9; // Must start by 9 AM for 8+ hour services
+    slotInterval = 60; // 1-hour intervals
+    console.log("🕰️ Long service (8+ hours): Start 8-9 AM only");
+  } else if (duration >= 360) { // 6+ hours  
+    businessStart = isToday ? Math.max(currentTime.getHours() + 1, 9) : 9;
+    businessEnd = 12; // Must start by 12 PM for 6+ hour services
+    slotInterval = 30;
+    console.log("🕰️ Medium service (6+ hours): Start 9 AM - 12 PM");
+  } else if (duration >= 240) { // 4+ hours
+    businessStart = isToday ? Math.max(currentTime.getHours() + 1, 9) : 9;
+    businessEnd = 16; // Must start by 4 PM for 4+ hour services  
+    slotInterval = 30;
+    console.log("🕰️ Medium service (4+ hours): Start 9 AM - 4 PM");
+  } else { // Regular services
+    businessStart = isToday ? Math.max(currentTime.getHours() + 1, 9) : 9;
+    businessEnd = 18; // Can start as late as 6 PM
+    slotInterval = 30;
+    console.log("🕰️ Regular service: Start 9 AM - 6 PM");
   }
 
-  // Generate slots with more flexible end time logic
-  // while (currentSlotTime < businessEnd) {
-  //   const slotEnd = new Date(currentSlotTime.getTime() + Math.min(requiredDuration, dailyWorkHours) * 60000);
-    
-  //   // For long duration services, allow slots that extend beyond business hours
-  //   const canExtendBeyondHours = requiredDuration > 240; // Services longer than 4 hours
-    
-  //   // Check if slot fits or can extend
-  //   if (!canExtendBeyondHours && slotEnd > businessEnd) {
-  //     currentSlotTime = new Date(currentSlotTime.getTime() + SLOT_INTERVAL * 60000);
-  //     continue;
-  //   }
-
-  while (currentSlotTime < businessEnd) {
-  const slotEnd = new Date(currentSlotTime.getTime() + requiredDuration * 60000);
-  
-  // For services that must fit within business hours (8+ hour services)
-  if (requiredDuration >= 480) {
-    // For 8+ hour services, ensure they fit exactly within business hours
-    const maxStartTime = new Date(businessEnd.getTime() - requiredDuration * 60000);
-    if (currentSlotTime > maxStartTime) {
-      break; // Stop generating slots if we can't fit the service
-    }
-  } else {
-    // For shorter services, use existing logic
-    const canExtendBeyondHours = requiredDuration > 240 && requiredDuration < 480;
-    if (!canExtendBeyondHours && slotEnd > businessEnd) {
-      currentSlotTime = new Date(currentSlotTime.getTime() + SLOT_INTERVAL * 60000);
-      continue;
-    }
-  }
-      // For very long services, prefer completely free days
-  if (requiredDuration >= 480 && existingAppointments.length > 0) {
-    currentSlotTime = new Date(currentSlotTime.getTime() + SLOT_INTERVAL * 60000);
-    continue;
-  }
-    
-    // Check for conflicts
-    const bufferedStart = new Date(currentSlotTime.getTime() - BUFFER_MINUTES * 60000);
-    const bufferedEnd = new Date(currentSlotTime.getTime() + BUFFER_MINUTES * 60000 + requiredDuration * 60000);
-    
-    if (!hasTimeConflict(bufferedStart, bufferedEnd, blockedPeriods)) {
-      const timeStr = currentSlotTime.toTimeString().slice(0, 5);
+  // Generate time slots within business constraints
+  for (let hour = businessStart; hour <= businessEnd; hour++) {
+    for (let minute = 0; minute < 60; minute += slotInterval) {
+      const timeSlot = new Date(date);
+      timeSlot.setHours(hour, minute, 0, 0);
       
-      // Calculate actual end time
-      let actualEndTime;
-      let spansMultipleDays = false;
+      // Calculate end time
+      const endTime = new Date(timeSlot.getTime() + duration * 60000);
       
-      if (isMultiDay) {
-        spansMultipleDays = true;
-        actualEndTime = 'Next Day';
-      } else {
-        actualEndTime = slotEnd.toTimeString().slice(0, 5);
-      }
-      
-      slots.push({
-        time: timeStr,
-        available: true,
-        duration: requiredDuration,
-        isLongDuration: requiredDuration > 480,
-        isMultiDay,
-        daysNeeded,
-        estimatedEndTime: actualEndTime,
-        spansMultipleDays,
-        // canExtendBeyondHours
-      });
-    }
-    
-    // currentSlotTime = new Date(currentSlotTime.getTime() + SLOT_INTERVAL * 60000);
-    const slotIncrement = requiredDuration >= 480 ? 60 : SLOT_INTERVAL; // 1 hour intervals for 8+ hour services
-currentSlotTime = new Date(currentSlotTime.getTime() + slotIncrement * 60000)
-  }
-  
-  return slots;
-};
-
-// Create blocked periods from existing appointments and breaks
-const createBlockedPeriods = (appointments, date, businessStart, breakStart, breakEnd) => {
-  const blockedPeriods = [];
-  
-  // Add appointments as blocked periods
-  appointments.forEach(apt => {
-    const [aptHour, aptMinute] = apt.time.split(':').map(Number);
-    const aptStart = new Date(date);
-    aptStart.setHours(aptHour, aptMinute, 0, 0);
-    
-    const aptDuration = apt.totalDuration || 
-                       (apt.services?.reduce((sum, s) => sum + (s.duration || 0), 0)) || 
-                       apt.duration || 
-                       90;
-    
-    const aptEnd = new Date(aptStart.getTime() + aptDuration * 60000);
-    
-    // If appointment started previous day but extends into current day
-    if (aptStart < businessStart && aptEnd > businessStart) {
-      blockedPeriods.push({ start: businessStart, end: aptEnd });
-    } else {
-      blockedPeriods.push({ start: aptStart, end: aptEnd });
-    }
-  });
-  
-  // Add break time as blocked period
-  if (breakStart && breakEnd) {
-    blockedPeriods.push({ start: breakStart, end: breakEnd });
-  }
-  
-  // Sort by start time
-  blockedPeriods.sort((a, b) => a.start - b.start);
-  
-  return blockedPeriods;
-};
-
-// Determine earliest possible start time
-const determineEarliestStartTime = (businessStart, currentTime, isToday) => {
-  if (!isToday) return new Date(businessStart);
-  
-  // For today, don't allow slots that start within 30 minutes
-  const minStartTime = new Date(currentTime.getTime() + 30 * 60 * 1000);
-  return minStartTime > businessStart ? minStartTime : new Date(businessStart);
-};
-
-// Check for time conflicts
-const hasTimeConflict = (start, end, blockedPeriods) => {
-  return blockedPeriods.some(blocked => {
-    return (
-      (start >= blocked.start && start < blocked.end) ||
-      (end > blocked.start && end <= blocked.end) ||
-      (start <= blocked.start && end >= blocked.end)
-    );
-  });
-};
-
-// Handle multi-day services
-const handleMultiDayService = async (req, res, services, totalDuration, start, end, businessHours) => {
-  const availableSlots = [];
-  const daysNeeded = Math.ceil(totalDuration / MAX_SERVICE_DURATION_PER_DAY);
-  
-  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    const consecutiveDays = [];
-    let canSchedule = true;
-    
-    // Check consecutive days availability
-    for (let i = 0; i < daysNeeded; i++) {
-      const checkDate = new Date(d.getTime() + i * 24 * 60 * 60 * 1000);
-      const dayOfWeek = checkDate.getDay();
-      const businessDay = businessHours.find(bh => bh.dayOfWeek === dayOfWeek);
-      
-      if (!businessDay || !businessDay.isOpen) {
-        canSchedule = false;
-        break;
-      }
-      
-      consecutiveDays.push({ date: checkDate, businessDay });
-    }
-    
-    if (canSchedule) {
-      // Check for conflicts across all days
-      const hasConflicts = await checkMultiDayConflicts(consecutiveDays);
-      
-      if (!hasConflicts) {
-        const dateStr = d.toISOString().split('T')[0];
-        const dayOfWeek = d.getDay();
-        const [openHour, openMinute] = consecutiveDays[0].businessDay.openTime.split(':').map(Number);
-        const timeStr = `${openHour.toString().padStart(2, '0')}:${openMinute.toString().padStart(2, '0')}`;
+      // Ensure service ends by 10 PM (22:00)
+      if (endTime.getHours() <= 22) {
+        const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        const endTimeStr = `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
         
-        availableSlots.push({
-          date: dateStr,
-          dayOfWeek: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek],
-          slots: [{
-            time: timeStr,
-            available: true,
-            duration: totalDuration,
-            isMultiDay: true,
-            daysSpanned: daysNeeded,
-            endDate: consecutiveDays[daysNeeded - 1].date.toISOString().split('T')[0]
-          }],
-          totalDuration,
-          isLongDuration: true,
-          isMultiDay: true
+        slots.push({
+          time: timeStr,
+          endTime: endTimeStr
         });
       }
     }
   }
-  
-  res.status(200).json({ availableSlots });
+
+  console.log(`✅ Generated ${slots.length} time slots`);
+  return slots;
 };
 
-// Check for multi-day conflicts
-const checkMultiDayConflicts = async (consecutiveDays) => {
-  for (const dayInfo of consecutiveDays) {
-    const dateStr = dayInfo.date.toISOString().split('T')[0];
-    const existingAppointments = await appointmentModel.find({
-      date: new Date(dateStr),
-      status: { $in: ['pending', 'confirmed'] }
-    });
+// FIXED: Find first available provider (prevents multiple providers for same slot)
+const findFirstAvailableProvider = async (providers, date, time, duration) => {
+  console.log(`🔍 Checking ${providers.length} providers for ${time}`);
+
+  for (const provider of providers) {
+    console.log(`👤 Checking provider: ${provider.name}`);
     
-    if (existingAppointments.length > 0) {
-      return true;
+    const isAvailable = await checkProviderAvailabilityStrict(
+      provider._id,
+      date,
+      time,
+      duration,
+      provider.workingHours
+    );
+
+    if (isAvailable) {
+      console.log(`✅ Provider ${provider.name} is available`);
+      return provider;
+    } else {
+      console.log(`❌ Provider ${provider.name} is not available`);
     }
   }
-  return false;
+
+  return null; // No provider available
 };
 
-// Book appointment endpoint
+// FIXED: Strict provider availability check that respects working hours
+const checkProviderAvailabilityStrict = async (providerId, date, time, duration, workingHours) => {
+  try {
+    console.log(`🔍 Checking strict availability for provider ${providerId}`);
+
+    // Check provider's working hours first
+    const dayOfWeek = date.getDay();
+    const providerDay = workingHours.find(wh => wh.dayOfWeek === dayOfWeek && wh.isWorking);
+
+    if (!providerDay) {
+      console.log(`❌ Provider doesn't work on day ${dayOfWeek}`);
+      return false;
+    }
+
+    console.log(`📋 Provider hours: ${providerDay.startTime} - ${providerDay.endTime}`);
+
+    // Parse requested time
+    const [requestHour, requestMinute] = time.split(':').map(Number);
+    const requestDateTime = new Date(date);
+    requestDateTime.setHours(requestHour, requestMinute, 0, 0);
+
+    // Parse provider's working hours
+    const [startHour, startMinute] = providerDay.startTime.split(':').map(Number);
+    const [endHour, endMinute] = providerDay.endTime.split(':').map(Number);
+    
+    const workStart = new Date(date);
+    workStart.setHours(startHour, startMinute, 0, 0);
+    
+    const workEnd = new Date(date);
+    workEnd.setHours(endHour, endMinute, 0, 0);
+
+    // Check if requested time is within working hours
+    if (requestDateTime < workStart) {
+      console.log(`❌ Requested time ${time} is before work start ${providerDay.startTime}`);
+      return false;
+    }
+
+    // Calculate service end time
+    const serviceEnd = new Date(requestDateTime.getTime() + duration * 60000);
+
+    // Check if service ends after working hours
+    if (serviceEnd > workEnd) {
+      console.log(`❌ Service would end at ${serviceEnd.toTimeString().slice(0,5)} after work end ${providerDay.endTime}`);
+      return false;
+    }
+
+    // Check for existing appointments
+    const dateStr = date.toISOString().split('T')[0];
+    const existingAppointments = await appointmentModel.find({
+      providerId,
+      date: dateStr,
+      status: { $in: ['pending', 'confirmed'] }
+    }).select('time totalDuration duration');
+
+    console.log(`📅 Found ${existingAppointments.length} existing appointments`);
+
+    // Check for time conflicts with buffer
+    for (const apt of existingAppointments) {
+      const [aptHour, aptMinute] = apt.time.split(':').map(Number);
+      const aptStart = new Date(date);
+      aptStart.setHours(aptHour, aptMinute, 0, 0);
+      
+      const aptDuration = apt.totalDuration || apt.duration || 90;
+      const aptEnd = new Date(aptStart.getTime() + aptDuration * 60000);
+
+      // Add buffer time
+      const bufferedRequestStart = new Date(requestDateTime.getTime() - BUFFER_MINUTES * 60000);
+      const bufferedRequestEnd = new Date(serviceEnd.getTime() + BUFFER_MINUTES * 60000);
+      const bufferedAptStart = new Date(aptStart.getTime() - BUFFER_MINUTES * 60000);
+      const bufferedAptEnd = new Date(aptEnd.getTime() + BUFFER_MINUTES * 60000);
+
+      // Check for overlap
+      const hasOverlap = (
+        (bufferedRequestStart >= bufferedAptStart && bufferedRequestStart < bufferedAptEnd) ||
+        (bufferedRequestEnd > bufferedAptStart && bufferedRequestEnd <= bufferedAptEnd) ||
+        (bufferedRequestStart <= bufferedAptStart && bufferedRequestEnd >= bufferedAptEnd)
+      );
+
+      if (hasOverlap) {
+        console.log(`❌ Conflict with appointment ${apt.time} - ${aptEnd.toTimeString().slice(0,5)}`);
+        return false;
+      }
+    }
+
+    console.log(`✅ Provider is available for ${time}`);
+    return true;
+
+  } catch (error) {
+    console.error('❌ Error checking provider availability:', error);
+    return false;
+  }
+};
+
+// FIXED: Handle multi-day services (10+ hours)
+const handleMultiDayService = async (startDate, totalDuration, providers) => {
+  console.log(`🗓️ Handling multi-day service: ${totalDuration} minutes`);
+  
+  const slots = [];
+  const maxDailyHours = 8 * 60; // 8 hours per day
+  const daysNeeded = Math.ceil(totalDuration / maxDailyHours);
+
+  console.log(`📊 Days needed: ${daysNeeded}`);
+
+  // Check each provider for consecutive day availability
+  for (const provider of providers) {
+    const canSchedule = await checkConsecutiveDaysAvailability(
+      provider._id,
+      startDate,
+      daysNeeded,
+      provider.workingHours
+    );
+
+    if (canSchedule) {
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + daysNeeded - 1);
+
+      slots.push({
+        time: "08:00", // Start early for multi-day services
+        available: true,
+        duration: totalDuration,
+        providerId: provider._id,
+        providerName: provider.name,
+        isMultiDay: true,
+        daysNeeded: daysNeeded,
+        endDate: endDate.toISOString().split('T')[0],
+        estimatedEndTime: `Day ${daysNeeded} - 4:00 PM`,
+        isLongDuration: true,
+        providerInfo: {
+          _id: provider._id,
+          name: provider.name,
+          profileImage: provider.profileImage,
+          rating: provider.rating
+        }
+      });
+
+      console.log(`✅ Multi-day slot created for ${provider.name}`);
+      break; // Only need one provider for multi-day
+    }
+  }
+
+  return slots;
+};
+
+// Check consecutive days availability for multi-day services
+const checkConsecutiveDaysAvailability = async (providerId, startDate, daysNeeded, workingHours) => {
+  console.log(`🔍 Checking ${daysNeeded} consecutive days for provider ${providerId}`);
+
+  for (let i = 0; i < daysNeeded; i++) {
+    const checkDate = new Date(startDate);
+    checkDate.setDate(checkDate.getDate() + i);
+    
+    const dayOfWeek = checkDate.getDay();
+    const providerDay = workingHours.find(wh => wh.dayOfWeek === dayOfWeek && wh.isWorking);
+
+    if (!providerDay) {
+      console.log(`❌ Provider doesn't work on day ${i + 1}`);
+      return false;
+    }
+
+    // Check for existing appointments
+    const dateStr = checkDate.toISOString().split('T')[0];
+    const existingAppointments = await appointmentModel.find({
+      providerId,
+      date: dateStr,
+      status: { $in: ['pending', 'confirmed'] }
+    });
+
+    if (existingAppointments.length > 0) {
+      console.log(`❌ Provider has appointments on day ${i + 1}`);
+      return false;
+    }
+  }
+
+  console.log(`✅ Provider available for all ${daysNeeded} consecutive days`);
+  return true;
+};
+
+
+
 const bookMultipleAppointment = async (req, res) => {
   try {
     const { services, date, time, totalAmount, clientNotes, consentForm } = req.body;
+    let { providerId } = req.body;
     const userId = req.userId;
+
+    console.log("📝 Booking request:", { services, date, time, providerId, userId });
 
     // Validation
     if (!services || !Array.isArray(services) || services.length === 0) {
       return res.status(400).json({ message: "At least one service is required" });
     }
-      // Validate required consent
+
     if (!consentForm?.consentToTreatment) {
-      return res.status(400).json({
-        message: "Treatment consent is required"
-      });
+      return res.status(400).json({ message: "Treatment consent is required" });
     }
 
     // Get user data
@@ -632,87 +619,139 @@ const bookMultipleAppointment = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Calculate total duration and amount
+    // Calculate service totals
     const { calculatedDuration, calculatedAmount, processedServices } = calculateServiceTotals(services);
+
+    // Validate provider availability one final time
+    if (providerId) {
+      const provider = await providerModel.findById(providerId);
+      if (!provider || !provider.isActive) {
+        return res.status(404).json({ message: "Provider not available" });
+      }
+
+      const isStillAvailable = await checkProviderAvailabilityStrict(
+        providerId,
+        new Date(date),
+        time,
+        calculatedDuration,
+        provider.workingHours
+      );
+
+      if (!isStillAvailable) {
+        return res.status(409).json({ 
+          message: "This time slot is no longer available. Please select a different time." 
+        });
+      }
+    } else {
+      return res.status(400).json({ message: "Provider ID is required" });
+    }
+
+    // Get provider data
+    const providerData = await providerModel.findById(providerId);
 
     // Create appointment date object
     const appointmentDate = new Date(date);
     const [hour, minute] = time.split(':').map(Number);
     appointmentDate.setHours(hour, minute, 0, 0);
 
-    // Real-time availability check
-    const availabilityCheck = await checkRealTimeAvailability(
-      appointmentDate,
-      time,
-      calculatedDuration
-    );
-
-    if (!availabilityCheck.available) {
-      return res.status(409).json({
-        message: "This time slot is no longer available.",
-        suggestedSlots: availabilityCheck.suggestedSlots
-      });
-    }
-
-    // Enhanced validation for multi-day bookings
-if (calculatedDuration > 480) { // 8+ hours
-  const businessHours = await getBusinessHours();
-  const appointmentDay = appointmentDate.getDay();
-  const businessDay = businessHours.find(bh => bh.dayOfWeek === appointmentDay);
-  
-  if (!businessDay || !businessDay.isOpen) {
-    return res.status(400).json({ 
-      message: "Selected day is not available for business" 
-    });
-  }
-  
-  // Mark as multi-day service
-  const isMultiDay = calculatedDuration > ((parseFloat(businessDay.closeTime) - parseFloat(businessDay.openTime)) * 60);
-  
-  if (isMultiDay) {
-    console.log(`Multi-day booking: ${calculatedDuration} minutes across multiple days`);
-  }
-}
-
     // Create the appointment
-  const newAppointment = await createAppointment({
-  userId,
-  userData,
- services: processedServices,
- date: appointmentDate,
+    const newAppointment = await appointmentModel.create({
+      userId,
+      providerId,
+      providerName: providerData.name,
+      services: processedServices,
+      serviceId: services[0].serviceId,
+      serviceTitle: services.length > 1 
+        ? `${services[0].serviceTitle} + ${services.length - 1} more`
+        : services[0].serviceTitle,
+      userName: userData.name,
+      userEmail: userData.email,
+      userPhone: userData.phone,
+      date: appointmentDate,
+      time,
+      clientNotes: clientNotes,
+      totalDuration: calculatedDuration,
+      isLongDuration: calculatedDuration > 480,
+      isMultiDay: calculatedDuration >= 600,
+      status: 'pending',
+      payment: {
+        amount: calculatedAmount,
+        currency: 'CAD',
+        status: 'pending'
+      }
+    });
+
+    // / Add this after creating the appointment, before the Stripe session
+const emailData = {
+  appointmentId: newAppointment._id.toString(),
+  clientName: userData.name,
+  clientEmail: userData.email,
+  clientPhone: userData.phone,
+  providerName: providerData.name,
+  providerEmail: providerData.email, // Make sure your provider model has email
+  services: processedServices,
+  date: appointmentDate,
   time,
-  duration: calculatedDuration,
-  notes: clientNotes,
-  consentForm: {
-    healthConditions: consentForm.healthConditions || "",
-    allergies: consentForm.allergies || "",
-    consentToTreatment: consentForm.consentToTreatment,
-    // medications: consentForm.medications || "",
-    // pregnancyStatus: consentForm.pregnancyStatus || false,
-    // consentToPhotography: consentForm.consentToPhotography || false,
-    // emergencyContact: consentForm.emergencyContact || {},
-    submittedAt: consentForm.submittedAt || new Date()
-  },
-  amount: calculatedAmount
-});
+  totalAmount: calculatedAmount,
+  clientNotes,
+};
 
+// Send emails (don't await to avoid blocking the response)
+sendAppointmentEmails(emailData)
+  .then(result => {
+    console.log('📧 Email sending result:', result);
+  })
+  .catch(error => {
+    console.error('📧 Email sending error:', error);
+  });
 
-    // Create Stripe checkout session
-    const session = await createStripeSession(userData, processedServices, newAppointment);
+    console.log("✅ Appointment created successfully");
 
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'cad',
+          product_data: {
+            name: `${services.length > 1 ? 'Multiple Services' : services[0].serviceTitle}`,
+            description: `Appointment with ${providerData.name} on ${date} at ${time}`,
+          },
+          unit_amount: Math.round(calculatedAmount * 100), // Convert to cents
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+       success_url: `${process.env.FRONTEND_URL}/appointment/verify/${newAppointment._id}?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL}/appointment/cancelled`,      metadata: {
+        appointmentId: newAppointment._id.toString(),
+        userId: userId.toString(),
+        providerId: providerId.toString(),
+      },
+      customer_email: userData.email,
+    });
+
+    console.log("💳 Stripe session created:", session.id);
+    console.log("💳 Payment URL:", session.url);
+    
     res.status(201).json({
       message: "Appointment created successfully. Please complete payment.",
       appointment: newAppointment,
-      paymentUrl: session.url
+      paymentUrl: session.url,  // <-- THIS WAS MISSING!
+      assignedProvider: {
+        _id: providerData._id,
+        name: providerData.name,
+        profileImage: providerData.profileImage
+      }
     });
 
   } catch (error) {
-    console.error("Error booking appointment:", error);
+    console.error("❌ Error booking appointment:", error);
     res.status(500).json({ 
       message: error.message || "Failed to book appointment" 
     });
   }
 };
+
 
 // Helper function to calculate service totals
 const calculateServiceTotals = (services) => {
@@ -741,166 +780,6 @@ const calculateServiceTotals = (services) => {
     processedServices
   };
 };
-
-// Real-time availability check
-
-const checkRealTimeAvailability = async (date, time, duration) => {
-  const dateStr = date.toISOString().split('T')[0];
-  
-  // For multi-day services, check multiple days
-  const isMultiDay = duration > 480;
-  const daysToCheck = isMultiDay ? Math.ceil(duration / 480) : 1;
-  
-  for (let i = 0; i < daysToCheck; i++) {
-    const checkDate = new Date(date);
-    checkDate.setDate(checkDate.getDate() + i);
-    const checkDateStr = checkDate.toISOString().split('T')[0];
-    
-    // Check for any existing appointments on this date
-    const existingAppointments = await appointmentModel.find({
-      date: checkDateStr,
-      status: { $in: ['pending', 'confirmed'] }
-    });
-    
-    // For first day, check time conflicts more carefully
-    if (i === 0) {
-      const [hour, minute] = time.split(':').map(Number);
-      const start = new Date(checkDate);
-      start.setHours(hour, minute, 0, 0);
-      
-      // Check for overlapping times
-      const hasConflict = existingAppointments.some(apt => {
-        const [aptHour, aptMinute] = apt.time.split(':').map(Number);
-        const aptStart = new Date(checkDate);
-        aptStart.setHours(aptHour, aptMinute, 0, 0);
-        const aptEnd = new Date(aptStart.getTime() + (apt.totalDuration || 90) * 60000);
-        
-        const requestedEnd = new Date(start.getTime() + duration * 60000);
-        
-        return (
-          (start >= aptStart && start < aptEnd) ||
-          (requestedEnd > aptStart && requestedEnd <= aptEnd) ||
-          (start <= aptStart && requestedEnd >= aptEnd)
-        );
-      });
-      
-      if (hasConflict) {
-        const suggestedSlots = await findAlternativeSlots(date, time, duration);
-        return { available: false, suggestedSlots };
-      }
-    } else {
-      // For subsequent days, just check if any appointments exist
-      if (existingAppointments.length > 0) {
-        return { available: false, reason: `Day ${i + 1} of multi-day service is not available` };
-      }
-    }
-  }
-  
-  return { available: true };
-};
-
-// Find alternative slots when requested slot is unavailable
-const findAlternativeSlots = async (originalDate, originalTime, duration) => {
-  const businessHours = await getBusinessHours();
-  const startDate = new Date(originalDate);
-  const endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000); // Look 7 days ahead
-  
-  const [hour, minute] = originalTime.split(':').map(Number);
-  const originalDateTime = new Date(startDate);
-  originalDateTime.setHours(hour, minute, 0, 0);
-  
-  // Get all available slots in the next 7 days
-  const allSlots = await generateAvailableSlots(
-    startDate,
-    endDate,
-    businessHours,
-    duration,
-    duration > 480
-  );
-  
-  // Sort by closest to original time
-  const sortedSlots = allSlots
-    .flatMap(day => day.slots.map(slot => ({
-      date: day.date,
-      time: slot.time,
-      duration: slot.duration,
-      distance: Math.abs(
-        new Date(`${day.date}T${slot.time}`).getTime() - originalDateTime.getTime()
-      )
-    })))
-    .sort((a, b) => a.distance - b.distance)
-    .slice(0, 5); // Return top 5 closest alternatives
-  
-  return sortedSlots;
-};
-
-// Create appointment record
-const createAppointment = async ({
-  userId,
-  userData,
-  services,
-  date,
-  time,
-  duration,
-  notes,
-  amount
-}) => {
-  const isLongDuration = duration > 480;
-  
-  return await appointmentModel.create({
-    userId,
-    services,
-    serviceId: services[0].serviceId,
-    serviceTitle: services.length > 1 
-      ? `${services[0].serviceTitle} + ${services.length - 1} more`
-      : services[0].serviceTitle,
-    userName: userData.name,
-    userEmail: userData.email,
-    userPhone: userData.phone,
-    date,
-    time,
-    clientNotes: notes,
-    totalDuration: duration,
-    isLongDuration,
-    status: 'pending',
-    payment: {
-      amount,
-      currency: 'CAD',
-      status: 'pending'
-    }
-  });
-};
-
-
-
-// Create Stripe checkout session
-const createStripeSession = async (userData, services, appointment) => {
-  const lineItems = services.map(service => ({
-    price_data: {
-      currency: 'cad',
-      product_data: {
-        name: service.serviceTitle,
-        description: `Duration: ${service.duration} minutes`
-      },
-      unit_amount: Math.round(service.price * 100),
-    },
-    quantity: 1
-  }));
-
-  return await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    line_items: lineItems,
-    mode: 'payment',
-    customer_email: userData.email,
-    success_url: `${process.env.FRONTEND_URL}/appointment/verify/${appointment._id}?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.FRONTEND_URL}/appointment/cancelled`,
-    metadata: {
-      appointmentId: appointment._id.toString(),
-      serviceCount: services.length.toString()
-    }
-  });
-};
-
 
 
 // Adjust this import path based on your project
@@ -995,8 +874,6 @@ const bookAppointment = async (req, res) => {
   }
 }
 
-
-
 // NEW FUNCTION - Handle Stripe redirect (GET request)
 const handleStripeRedirect = async (req, res) => {
   try {
@@ -1018,10 +895,6 @@ const handleStripeRedirect = async (req, res) => {
 };
 
 
-
-
-// BACKEND - Enhanced error handling and logging
-// UPDATED VERIFY FUNCTION - Fixed the user field issue
 const verifyAppointmentPayment = async (req, res) => {
   try {
     console.log("🔍 Starting payment verification...");
@@ -1160,8 +1033,6 @@ const verifyAppointmentPayment = async (req, res) => {
   }
 };
 
-
-
 // Update appointment notes (for service provider)
 const updateAppointmentNotes = async (req, res) => {
   try {
@@ -1248,12 +1119,41 @@ const downloadCalendar = async (req, res) => {
   }
 };
 
-const getSingleAppointment = async (req, res) => {
-  try {
-    
-  } catch (error) {
-    
+// POST /api/appointments/:id/reschedule
+ const rescheduleAppointment = async (req, res) => {
+  const { id } = req.params;
+  const { newDate, newTime } = req.body;
+  const userId = req.userId;
+
+  const appointment = await appointmentModel.findById(id);
+  if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
+
+  // Check if slot is available (reuse your slot check function)
+  const isAvailable = await checkRealTimeAvailability(newDate, newTime, appointment.totalDuration, appointment.providerId);
+  if (!isAvailable.available) {
+    return res.status(409).json({ message: 'Time slot not available', suggestedSlots: isAvailable.suggestedSlots });
   }
+
+  // Save reschedule history
+  appointment.rescheduleHistory.push({
+    oldDate: appointment.date,
+    oldTime: appointment.time,
+    newDate,
+    newTime,
+    rescheduledBy: 'client' // or provider/admin
+  });
+
+  // Update appointment
+  appointment.date = new Date(newDate);
+  appointment.time = newTime;
+  appointment.status = 'confirmed'; // reset if needed
+  await appointment.save();
+
+  res.json({ message: 'Appointment rescheduled successfully', appointment });
+};
+
+const getSingleAppointment = async (req, res) => {
+
 }
 
 export {
@@ -1265,7 +1165,8 @@ export {
   getUserAppointments,
   completeAppointment,
   downloadCalendar,
-  getSingleAppointment,
+  rescheduleAppointment,
   handleStripeRedirect,
-  bookMultipleAppointment
+  bookMultipleAppointment,
+  getSingleAppointment
 };

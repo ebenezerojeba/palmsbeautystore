@@ -177,17 +177,19 @@ providerId: {
   providerName: {
     type: String,
     required: true
+  },
+  
+  rescheduleHistory: [
+  {
+    oldDate: Date,
+    oldTime: String,
+    newDate: Date,
+    newTime: String,
+    rescheduledAt: { type: Date, default: Date.now },
+    rescheduledBy: { type: String, enum: ['User', 'Provider', 'Admin'] }
   }
+]
 
-
-// Add these fields to your existing appointment schema
-// staffId: { 
-//   type: mongoose.Schema.Types.ObjectId, 
-//   ref: 'Staff',
-//   required: true 
-// },
-// staffName: { type: String, required: true },
-// staffEmail: { type: String },
 }, {
   timestamps: true
 });

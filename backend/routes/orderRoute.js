@@ -10,11 +10,11 @@ import authUser from '../middlewares/auth.js';
 const orderRouter = express.Router()
 
 // Admin Features
-orderRouter.post('/list',adminAuth,allOrders)
-orderRouter.post('/status',adminAuth,updateStatus)
+orderRouter.get('/list',allOrders)
+orderRouter.post('/status',updateStatus)
 
 // Paymetn Features
-orderRouter.post('/place', placeOrder)
+orderRouter.post('/place', authUser, placeOrder)
 // orderRouter.post('/stripe',authUser,placeOrder)
 
 // User Feature

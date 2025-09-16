@@ -7,6 +7,13 @@ dotenv.config()
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 const placeOrder = async (req, res) => {
+   // Check if userId is available (user is authenticated)
+    if (!req.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User authentication required. Please sign in to place an order."
+      });
+    }
   try {
     const { 
       items, 
@@ -28,26 +35,40 @@ const placeOrder = async (req, res) => {
     if (!address || !address.firstName || !address.email) {
       return res.status(400).json({ success: false, message: "Address information is required" });
     }
+    
+
+       // Validate amount
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid order amount" 
+      });
+    }
 
     // Prepare line items for Stripe Checkout
-    const lineItems = items.map(item => {
-      const unitPrice = parseFloat(item.price);
-      if (isNaN(unitPrice)) {
-        throw new Error(`Invalid price for item: ${item.name}`);
-      }
-      
-      return {
-        price_data: {
-          currency: 'cad',
-          product_data: {
-            name: item.name,
-            description: `${item.size} | ${item.description || ''}`.trim(),
-          },
-          unit_amount: Math.round(unitPrice * 100), // Convert to cents
-        },
-        quantity: item.quantity,
-      };
-    });
+   const lineItems = items.map(item => {
+  const unitPrice = parseFloat(item.price);
+  if (isNaN(unitPrice)) {
+    throw new Error(`Invalid price for item: ${item.name || item._id}`);
+  }
+
+  return {
+    price_data: {
+      currency: 'cad',
+      product_data: {
+        name: item.name || 'Unnamed Product',
+        description: [
+          item.size,
+          item.length,
+          item.color,
+          item.description
+        ].filter(Boolean).join(" | "),
+      },
+      unit_amount: Math.round(unitPrice * 100),
+    },
+    quantity: item.quantity,
+  };
+});
 
     // Add delivery fee as a line item if it exists
     const deliveryAmount = parseFloat(deliveryFee) || parseFloat(address.deliveryFee) || 0;
@@ -85,7 +106,7 @@ const placeOrder = async (req, res) => {
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
-      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${origin}/order-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/cart`,
       customer_email: address.email,
       metadata: {
@@ -93,27 +114,35 @@ const placeOrder = async (req, res) => {
         lastName: address.lastName,
         address: `${address.address}, ${address.city}, ${address.state} ${address.postalCode}`,
         phone: address.phone,
-        isGuestOrder: 'true' // Mark as guest order
+    
       }
     });
 
     // Save order to database for guest users
+    const orderItems = items.map(item => ({
+      product: item.productId || item._id, // handle both naming cases
+      name: item.name,
+      length: item.length,
+      color: item.color,
+      size: item.size,
+      texture: item.texture,
+      weight: item.weight,
+      sku: item.sku,
+      price: item.price,
+      quantity: item.quantity,
+      image: item.image
+    }));
+
     const orderData = {
-      userId: req.userId || null, // Guest order - no user ID required
-      items: items.map(item => ({
-        product: item._id,
-        quantity: item.quantity,
-        size: item.size,
-        price: item.price,
-        name: item.name // Store name for reference
-      })),
+      userId: req.userId , // Use req.userId if available
+      items: orderItems,
       amount: parseFloat(amount),
       address: {
         firstName: address.firstName,
         lastName: address.lastName,
         email: address.email,
         phone: address.phone,
-        addressLine: address.address, // Match schema field name
+        address: address.address, // Match schema field name
         city: address.city,
         state: address.state,
         lga: address.lga,
@@ -126,7 +155,7 @@ const placeOrder = async (req, res) => {
       payment: false,
       date: Date.now(),
       stripeSessionId: session.id,
-      isGuestOrder: true // Flag for guest orders
+      // isGuestOrder: true // Flag for guest orders
     };
 
     const newOrder = new orderModel(orderData);
@@ -161,15 +190,33 @@ const allOrders = async (req, res) => {
 // User Order Data for frontend
 const userOrders = async (req, res) => {
   try {
-    const { userId } = req.body;
-    const orders = await orderModel.find({ userId });
-    res.json({ success: true, orders });
+        
+    if (!req.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User authentication required"
+      });
+    }
+
+    // Find all orders for the authenticated user
+    const orders = await orderModel
+      .find({ userId: req.userId })
+      .populate('items.product', 'name image') // Populate product details if needed
+      .sort({ date: -1 }); // Sort by newest first
+
+    res.json({
+      success: true,
+      orders: orders
+    });
+
   } catch (error) {
-    console.log(error);
-    res.json2({ succcess: false, message: error.message });
+    console.error("Error fetching user orders:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching orders"
+    });
   }
 };
-
 // Update order status from Admin Panel
 const updateStatus = async (req, res) => {
   try {

@@ -3,6 +3,7 @@ import { cancelAppointment } from '../controllers/appointmentController.js'
 import { addCategory, addService, adminDashboard, allServices, completeAppointment, confirmAppointment, deleteCategory, deleteService, deleteServiceImage, getAllAppointment, getAllAppointments, getAppointmentsByStatus, getCompletedAppointments, markNoShow, toggleServiceStatus, updateCategory, updatePaymentStatus, updateService } from '../controllers/adminController.js'
 import upload from '../middlewares/multer.js'
 import { createStaff, deleteStaff, toggleStaffStatus, updateStaff } from '../controllers/staffController.js'
+import { addProviderToService, createProvider, removeProviderFromService, ServicesWithProvider, updateProvider } from '../controllers/providerController.js'
 // import { bookAppointment } from '../controllers/appointmentController.js'
 
 const adminRouter = express.Router()
@@ -39,6 +40,17 @@ adminRouter.post('/staff',  upload.single('image'), createStaff);
 adminRouter.put('/staff/:id', upload.single('image'), updateStaff);
 adminRouter.delete('/staff/:id', deleteStaff);
 adminRouter.patch('/staff/:id/toggle', toggleStaffStatus);
+
+
+// Providers
+adminRouter.get('/services-with-providers', ServicesWithProvider);
+adminRouter.post('/createprovider', upload.single('profileimage'), createProvider);
+adminRouter.put('/:providerId', upload.single('profileimage'), updateProvider);
+adminRouter.post('/service/:serviceId/provider/:providerId', addProviderToService);
+adminRouter.delete('/service/:serviceId/provider/:providerId', removeProviderFromService);
+
+
+
 
 
 

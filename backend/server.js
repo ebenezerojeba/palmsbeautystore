@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import "dotenv/config";
+import dotenv from "dotenv";
 import connectDB from "./config/mongodb.js";
 import appointmentRouter from "./routes/appointmentRoute.js";
 import adminRouter from "./routes/adminRoute.js";
@@ -14,9 +14,12 @@ import serviceRouter from "./routes/serviceRoute.js";
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import job from "./config/cron.js";
 import businessRouter from "./routes/businessRoute.js";
 import staffRouter from "./routes/staffRoute.js";
+import providerRouter from "./routes/providerRoute.js";
+import job from "./config/cronjob.js";
+
+dotenv.config();
 
 // Get __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
@@ -39,22 +42,20 @@ connectCloudinary();
 // CORS Configuration
 // const corsOptions = {
 //   origin: [
-//     // 'http://localhost:5173',  // Your local frontend URL
-//     // 'http://localhost:5174',  // Your local frontend URL
-//     // 'https://palmsbeautystore.vercel.app',
-//     // 'https://palmsbeautystore.onrender.com',
-//     // 'https://palmsbeautyadmin.onrender.com'
-//     //  // Your deployed frontend URL
-//     "*"
+//     'http://localhost:5173',
+//     'http://localhost:5174',
+//     'https://palmsbeautystore.vercel.app',
+//     'https://palmsbeautystore.onrender.com',
+//     'https://palmsbeautyadmin.onrender.com'
 //   ],
+//   credentials: true, // Allow cookies/auth headers
 //   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-//   allowedHeaders: ['Content-Type', 'Authorization'],
-//   // credentials: true // If you're using cookies or authentication headers
+//   allowedHeaders: ['Content-Type', 'Authorization']
 // };
-
 
 // Middleware
 app.use(cors());
+app.use(express.static(path.join(__dirname, 'frontend', 'build')));
 app.use(express.json());
 
 // API Endpoint
@@ -76,6 +77,7 @@ app.use('/api/subscribe', subscribeRouter)
 app.use('/api/services', serviceRouter)
 app.use('/api/business', businessRouter)
 app.use('/api/staff', staffRouter)
+app.use('/api/provider', providerRouter)
 
 
 // Serve .ics files for download
