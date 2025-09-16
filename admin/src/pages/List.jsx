@@ -883,7 +883,8 @@ import React, { useEffect, useState } from "react";
 import { Trash2, Package, AlertCircle, Loader2, X, Check, Search, Filter, Eye, Edit, Save, ChevronDown, ChevronUp } from "lucide-react";
 import axios from 'axios';
 
-const backendUrl = 'http://localhost:3000';
+// const backendUrl = import.
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const List = ({ token }) => {
   const [list, setList] = useState([]);

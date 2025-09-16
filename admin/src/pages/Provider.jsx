@@ -43,8 +43,8 @@ const Provider = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showAddProviderModal, setShowAddProviderModal] = useState(false)
-
-  const backendUrl = "http://localhost:3000";
+  
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     loadProviders();

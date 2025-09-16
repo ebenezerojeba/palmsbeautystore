@@ -7,7 +7,7 @@ const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 const AdminBusinessHours = ({ token }) => {
   const [businessHours, setBusinessHours] = useState([]);
   const [loading, setLoading] = useState(false);
-const backendUrl = 'https://palmsbeautystore-backend.onrender.com';
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
   // Load current hours
   useEffect(() => {
     fetchHours();
