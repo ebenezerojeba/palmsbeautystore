@@ -40,23 +40,24 @@ connectDB();
 connectCloudinary();
 
 // CORS Configuration
-const corsOptions = {
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'https://palmsbeautystore.vercel.app',
-    'https://palmsbeautystore-n6eq.vercel.app', // add this
-    'https://palmsbeautystore.onrender.com',
-    'https://palmsbeautyadmin.onrender.com'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-};
+// const corsOptions = {
+//   origin: [
+//     'http://localhost:5173',
+//     'http://localhost:5174',
+//     'https://palmsbeautystore.vercel.app',
+//     'https://palmsbeautystore-n6eq.vercel.app', // add this
+//     'https://palmsbeautystore.onrender.com',
+//     'https://palmsbeautyadmin.onrender.com'
+//   ],
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+//   allowedHeaders: ['Content-Type', 'Authorization']
+// };
+
 
 
 // Middleware
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.static(path.join(__dirname, 'frontend', 'build')));
 app.use(express.json());
 
