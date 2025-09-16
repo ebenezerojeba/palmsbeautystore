@@ -4,12 +4,9 @@ import { fileURLToPath } from "url";
 import appointmentModel from "../models/appointment.js";
 import userModel from "../models/userModel.js";
 import Stripe from 'stripe';
-import { getBusinessHours } from "./businessController.js";
 import providerModel from "../models/providerModel.js";
-
 import dotenv from "dotenv";
-import { sendAppointmentEmails } from "../utils/emailService.js";
-// import { sendAppointmentEmails } from "../utils/emai.js";
+
 dotenv.config();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -26,7 +23,7 @@ const getUserAppointments = async (req, res) => {
         message: "Unauthorized access to appointments" 
       });
     }
-
+    
     const appointments = await appointmentModel.find({ userId: req.params.userId })
       .sort({ date: 1, time: 1 })  // Sort by upcoming first
       .lean();
