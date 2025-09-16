@@ -54,10 +54,10 @@ const corsOptions = {
 // Middleware
 app.use(cors(corsOptions))
 
-// app.use(cors({
-//   origin: true,
-//   credentials: true
-// }));
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 
 
 // Handle preflight requests
