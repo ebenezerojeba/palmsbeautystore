@@ -43,8 +43,10 @@ const Provider = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showAddProviderModal, setShowAddProviderModal] = useState(false)
-  
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+// const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+const backendUrl = "https://palmsbeautystore-backend.onrender.com"
 
   useEffect(() => {
     loadProviders();

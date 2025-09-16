@@ -4,7 +4,7 @@ import { useState } from "react";
 import axios from "axios";
 
 const backendUrl = "https://palmsbeautystore-backend.onrender.com"
-// const backendUrl = "http://localhost:3000"
+
 
 const CONFIG = {
   backendUrl: backendUrl,

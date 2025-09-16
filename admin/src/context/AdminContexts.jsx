@@ -18,7 +18,9 @@ const AdminContextsProvider = (props) => {
   // const backendUrl = "https://palmsbeauty-backend.vercel.app";
   // const backendUrl = "https://palmsbeautystore-backend.onrender.com"
   // const backendUrl = "http://localhost:3000"
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  // const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  
+const backendUrl = "https://palmsbeautystore-backend.onrender.com"
   
   const months = [
     "",

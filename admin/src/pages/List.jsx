@@ -884,8 +884,9 @@ import { Trash2, Package, AlertCircle, Loader2, X, Check, Search, Filter, Eye, E
 import axios from 'axios';
 
 // const backendUrl = import.
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  // const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
+const backendUrl = "https://palmsbeautystore-backend.onrender.com"
 const List = ({ token }) => {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
