@@ -2,8 +2,7 @@ import { Resend } from 'resend';
 import dotenv from 'dotenv'
 dotenv.config()
 // Since we can't directly import JSX files in Node, we'll use a different approach
-const resend = new Resend(process.env.RESEND_API_KEY);
-
+const resend = new Resend(process.env.RESEND_API_KEY)
 // Simple HTML email templates as functions that return HTML strings
 const createClientEmail = (data) => `
 <!DOCTYPE html>
