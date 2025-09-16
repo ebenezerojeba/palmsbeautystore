@@ -47,7 +47,6 @@ export const useApi = () => {
   return { makeRequest, loading, error, clearError: () => setError(null) };
 };
 
-
 export const api = {
   // Fetch all services  // Fetch all services
   getServices: async () => {
@@ -71,7 +70,6 @@ createCategory: async (formData) => {
     message: res.data.message || 'Category created successfully',
   };
 },
-
 
 // Update a category
 updateCategory: async (id, formData) => {
@@ -111,7 +109,7 @@ toggleCategoryStatus: async (id, status) => {
   // Create a new service
   createService: async (formData) => {
     for (let [key, value] of formData.entries()) {
-  console.log(key, value);
+  console.log(key, value)
 }
     console.log("Form data in createService:", formData);
     const res = await axios.post(`${backendUrl}/api/admin/addservices`, formData, {

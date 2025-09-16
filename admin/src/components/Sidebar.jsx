@@ -3,7 +3,8 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Calendar, Users, BarChart2, Menu, X, PlusCircle, List, Box,
   ChevronLeft, ChevronRight, Settings, LogOut, Bell, HelpCircle,
-  Clock
+  Clock,
+  Clock3
 } from 'lucide-react';
 
 // Replace this with your actual token setter
@@ -81,6 +82,7 @@ const Sidebar = ({ onLogout, notifications = 0, className = '' }) => {
     { path: '/orders', icon: <Box className="w-5 h-5" />, label: 'Orders' },
     { path: '/services', icon: <Users className="w-5 h-5" />, label: 'Services' },
     { path: '/hours', icon: <Clock className="w-5 h-5" />, label: 'Hours' },
+    { path: '/provider', icon: <Clock3 className="w-5 h-5" />, label: 'Stylist' },
   ], []);
 
   const bottomMenuItems = useMemo(() => [

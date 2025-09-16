@@ -15,6 +15,10 @@ import { useState } from 'react'
 import { useEffect } from 'react'
 import Login from './pages/Login'
 import AdminBusinessHours from './pages/BusinessHours'
+import StaffList from './pages/StaffList'
+import StaffForm from './pages/StaffForm'
+import StaffAppointments from './pages/StaffAppointment'
+import Provider from './pages/Provider'
 
 export const backendUrl = 'https://palmsbeautystore-backend.onrender.com';
 
@@ -42,6 +46,17 @@ const App = () => {
   <Route path="/list" element={<List token={token} />} />
   <Route path="/orders" element={<Orders token={token} />} />
   <Route path="/hours" element={<AdminBusinessHours token={token} />} />
+  <Route path="/provider" element={<Provider token={token} />} />
+
+
+
+<Route path="/staff" element={<StaffList token={token} />} />
+<Route path="/staff/new" element={<StaffForm token={token} />} />
+<Route path="/staff/:id/edit" element={<StaffForm token={token} />} />
+<Route path="/staff/:staffId/appointments" element={<StaffAppointments token={token} />} />
+
+
+
 </Routes>
 
       </>}
