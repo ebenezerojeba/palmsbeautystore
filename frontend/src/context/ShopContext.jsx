@@ -13,8 +13,7 @@ const ShopContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
   const [loading, setLoading] = useState(false);
   const [token, setToken] = useState(localStorage.getItem("token"));
-  // const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
+ 
   // Format currency for Nigerian Naira
   const formatNaira = (amount) => {
     return new Intl.NumberFormat("USD", {
@@ -128,10 +127,6 @@ const ShopContextProvider = (props) => {
     setCartItems({});
     localStorage.removeItem('cartItems');
   };
-// const token = localStorage.getItem("token");
-
-
-
   // Get detailed cart items with product information
   const getDetailedCartItems = () => {
     return Object.entries(cartItems).map(([cartItemId, cartItem]) => {
