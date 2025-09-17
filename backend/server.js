@@ -236,11 +236,19 @@ app.use((req, res, next) => {
 app.use("/api/appointment", appointmentRouter);
 app.use("/api/admin", adminRouter);
 app.use('/api/user', userRouter);
-app.use('/api/product', productRouter);
+// app.use('/api/product', productRouter)
+// Make sure all your route handlers have proper error handling
+   app.use('/api/product', (req, res, next) => {
+     productRouter(req, res, next).catch(next);
+   });
 app.use('/api/cart', cartRouter);
 app.use('/api/order', orderRouter);
 app.use('/api/subscribe', subscribeRouter);
-app.use('/api/services', serviceRouter);
+// app.use('/api/services', serviceRouter);
+// Make sure all your route handlers have proper error handling
+   app.use('/api/services', (req, res, next) => {
+     serviceRouter(req, res, next).catch(next);
+   });
 app.use('/api/business', businessRouter);
 app.use('/api/staff', staffRouter);
 app.use('/api/provider', providerRouter);
