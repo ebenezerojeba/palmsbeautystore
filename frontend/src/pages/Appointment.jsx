@@ -31,7 +31,7 @@ import {
 const Appointment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const {  userData, bakcendUrl } = useContext(AppContext);
+  const {  userData, backendUrl } = useContext(AppContext);
   const { formatNaira } = useContext(ShopContext);
 
   // State management
