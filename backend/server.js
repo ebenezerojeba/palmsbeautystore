@@ -44,13 +44,29 @@ app.use(express.static(path.join(__dirname, 'frontend', 'build')));
 app.use(express.json());
 
 // CORS Configuration for testing (allow all origins)
-app.use(
-  cors({
-    origin: "*", // allow all origins
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+// app.use(
+//   cors({
+//     origin: "https://palmsbeautystore-red.vercel.app","https://palmsbeautystore-c6wn.vercel.app", // allow all origins
+//     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+//     allowedHeaders: ["Content-Type", "Authorization"],
+//   })
+// );
+app.use(cors({
+  origin: [
+    'https://palmsbeautystore-c6wn.vercel.app',
+    'http://localhost:3000', // for local development
+    'http://localhost:5173',
+    'https://palmsbeautystore-red.vercel.app'  // if using Vite
+  ],
+  credentials: true,
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'x-requested-with', // ← ADD THIS LINE
+    'Accept'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+}));
 
 // Handle preflight requests
 app.options("*", cors());

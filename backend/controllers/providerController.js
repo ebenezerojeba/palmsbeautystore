@@ -620,3 +620,237 @@ export const getAllProviders = async (req, res) => {
     });
   }
 };
+
+
+// Get appointments for a specific provider
+export const getProviderAppointments = async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const { status, startDate, endDate, page = 1, limit = 20 } = req.query;
+
+    // Validate providerId
+    if (!providerId || !providerId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid provider ID is required"
+      });
+    }
+
+    // Build query object
+    const query = { providerId };
+    
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    // Add date range if provided
+    if (startDate || endDate) {
+      query.date = {};
+      if (startDate) query.date.$gte = new Date(startDate);
+      if (endDate) query.date.$lte = new Date(endDate);
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [appointments, total] = await Promise.all([
+      appointmentModel
+        .find(query)
+        .sort({ date: -1, time: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .select("-__v")
+        .populate('userId', 'name email phone') // Populate user details
+        .lean(),
+      appointmentModel.countDocuments(query)
+    ]);
+
+    res.status(200).json({
+      success: true,
+      appointments,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / limit),
+        total,
+        hasMore: skip + appointments.length < total
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching provider appointments:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch provider appointments"
+    });
+  }
+};
+
+// Get today's appointments for a provider
+export const getProviderTodaysAppointments = async (req, res) => {
+  try {
+    const { providerId } = req.params;
+
+    // Validate providerId
+    if (!providerId || !providerId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid provider ID is required"
+      });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const appointments = await appointmentModel
+      .find({
+        providerId,
+        date: {
+          $gte: today,
+          $lt: tomorrow
+        },
+        status: { $in: ['pending', 'confirmed'] }
+      })
+      .sort({ time: 1 })
+      .populate('userId', 'name email phone')
+      .select("-__v")
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      appointments,
+      date: today.toISOString().split('T')[0]
+    });
+  } catch (error) {
+    console.error("Error fetching today's appointments:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch today's appointments"
+    });
+  }
+};
+
+// Get upcoming appointments for a provider (next 7 days)
+export const getProviderUpcomingAppointments = async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const { days = 7 } = req.query;
+
+    // Validate providerId
+    if (!providerId || !providerId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid provider ID is required"
+      });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const futureDate = new Date(today);
+    futureDate.setDate(futureDate.getDate() + parseInt(days));
+
+    const appointments = await appointmentModel
+      .find({
+        providerId,
+        date: {
+          $gte: today,
+          $lt: futureDate
+        },
+        status: { $in: ['pending', 'confirmed'] }
+      })
+      .sort({ date: 1, time: 1 })
+      .populate('userId', 'name email phone')
+      .select("-__v")
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      appointments,
+      dateRange: {
+        start: today.toISOString().split('T')[0],
+        end: futureDate.toISOString().split('T')[0]
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching upcoming appointments:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch upcoming appointments"
+    });
+  }
+};
+
+// Get appointment statistics for a provider
+export const getProviderAppointmentStats = async (req, res) => {
+  try {
+    const { providerId } = req.params;
+
+    // Validate providerId
+    if (!providerId || !providerId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid provider ID is required"
+      });
+    }
+
+    const stats = await appointmentModel.aggregate([
+      {  $match: {
+          providerId: new mongoose.Types.ObjectId(providerId), // ✅ use 'new'
+        }, },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 },
+          totalRevenue: {
+            $sum: {
+              $cond: [
+                { $and: [{ $eq: ['$payment.status', 'paid'] }, { $ifNull: ['$payment.amount', false] }] },
+                '$payment.amount',
+                0
+              ]
+            }
+          }
+        }
+      }
+    ]);
+
+    // Convert to more readable format
+    const formattedStats = {
+      total: 0,
+      byStatus: {},
+      totalRevenue: 0
+    };
+
+    stats.forEach(stat => {
+      formattedStats.total += stat.count;
+      formattedStats.byStatus[stat._id] = stat.count;
+      formattedStats.totalRevenue += stat.totalRevenue;
+    });
+
+    // Get today's appointment count
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todaysCount = await appointmentModel.countDocuments({
+      providerId,
+      date: {
+        $gte: today,
+        $lt: tomorrow
+      }
+    });
+
+    formattedStats.todaysAppointments = todaysCount;
+
+    res.status(200).json({
+      success: true,
+      stats: formattedStats
+    });
+  } catch (error) {
+    console.error("Error fetching provider stats:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch provider statistics"
+    });
+  }
+};

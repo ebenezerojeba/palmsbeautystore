@@ -158,42 +158,6 @@ const confirmAppointment = async (req, res) => {
   }
 };
 
-// Cancel appointment
-// const cancelAppointment = async (req, res) => {
-//   try {
-//     const { appointmentId } = req.body;
-//     const { cancelledBy = 'provider', reason, refundEligible = false } = req.body;
-
-//     const appointment = await appointmentModel.findByIdAndUpdate(
-//       appointmentId,
-//       {
-//         status: 'cancelled',
-//         cancelledAt: new Date(),
-//         cancellation: {
-//           cancelledBy,
-//           reason,
-//           refundEligible,
-//           cancellationFee: 0
-//         }
-//       },
-//       { new: true }
-//     );
-
-//     if (!appointment) {
-//       return res.status(404).json({ success: false, message: "Appointment not found" });
-//     }
-
-//     res.status(200).json({
-//       success: true,
-//       message: "Appointment cancelled",
-//       appointment,
-//     });
-//   } catch (error) {
-//     console.error("Error cancelling appointment:", error);
-//     res.status(500).json({ success: false, message: "Failed to cancel appointment" });
-//   }
-// };
-
 
 // Example route setup for admin
 // Admin route (for adm// Updated Admin Cancel Appointment Backend Function
