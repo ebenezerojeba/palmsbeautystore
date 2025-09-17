@@ -977,6 +977,10 @@ const handleBooking = async () => {
                       
 
                       <div className="border-t border-gray-200 pt-3 space-y-2">
+                            <div className="flex justify-between text-sm text-gray-600">
+                          <span>Stylist:</span>
+                          <span>{chosenProvider?.name}</span>
+                        </div>
                         <div className="flex justify-between text-sm text-gray-600">
                           <span>Duration:</span>
                           <span>{formatDuration(getTotalDuration())}</span>
@@ -985,11 +989,9 @@ const handleBooking = async () => {
                           <span>Price:</span>
                           <span>{formatNaira(getTotalPrice())}</span>
                         </div>
+                    
 
-                        <div>
-                          <span>Appointment with {chosenProvider?.name}</span>
-
-                        </div>
+                      
                       </div>
                     </div>
 

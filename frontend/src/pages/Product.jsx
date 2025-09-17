@@ -237,7 +237,7 @@ const getColorHex = (colorCode) => {
   };
 
   return productData ? (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 mb-4">
       {/* Breadcrumb */}
       <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-8">
         <a href="/" className="hover:text-gray-700">Home</a>
@@ -472,7 +472,7 @@ const getColorHex = (colorCode) => {
       </div>
 
       {/* Description & Reviews Section */}
-      <div className="mt-16">
+      <div className="mt-8 md:mt-16">
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8">
             <button
@@ -528,7 +528,7 @@ const getColorHex = (colorCode) => {
           </nav>
         </div>
 
-        <div className="py-8">
+        <div className="py-4 md:py-8">
           {activeTab === 'description' && (
             <div className="prose max-w-none">
               <p className="text-gray-700 leading-relaxed mb-4">
@@ -679,7 +679,7 @@ const getColorHex = (colorCode) => {
       </div>
     </div>
   ) : (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
       <div className="animate-pulse">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           <div className="space-y-4">

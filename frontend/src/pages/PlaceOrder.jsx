@@ -16,6 +16,7 @@ import {
 import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 // Canadian provinces and territories
 const canadianProvinces = [
@@ -36,13 +37,13 @@ const canadianProvinces = [
 
 const PlaceOrder = () => {
 const {
-  navigate,
   getCartAmount,
   getDetailedCartItems,
   backendUrl,
   token
 } = useContext(ShopContext);
 
+const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -175,100 +176,6 @@ const {
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
-
-//  const processStripePayment = async (orderData) => {
-//     try {
-//       console.log("Sending order data:", orderData);
-//      await axios.post(
-//   `${backendUrl}/api/order/place`,
-//   orderData,
-//   {
-//     headers: {
-//       Authorization: `Bearer ${token}`
-//     }
-//   }
-// );
-
-
-//       if (response.data.url) {
-//         window.location.href = response.data.url;
-//       } else {
-//         toast.error(response.data.message || "Payment processing failed");
-//       }
-//     } catch (error) {
-//       console.error("Stripe payment error:", error);
-//       console.error("Error response:", error.response?.data);
-//       toast.error(error.response?.data?.message || "An error occurred while processing your payment.");
-//     }
-//   };
-
-//   const onSubmitHandler = async (event) => {
-//     event.preventDefault();
-    
-//       // Check if user is authenticated
-//     if (!token) {
-//       toast.error("Please sign in to complete your order");
-//       navigate('/login'); // Redirect to login
-//       return;
-//     }
-
-//     if (!validateForm()) {
-//       toast.error("Please fill in all required fields correctly");
-//       return;
-//     }
-
-//     setIsLoading(true);
-
-//     try {
-//       if (cartItemsDisplay.length === 0) {
-//         toast.warn("Your cart is empty");
-//         setIsLoading(false);
-//         return;
-//       }
-
-//       const subtotal = getCartAmount();
-//       const taxes = calculateTaxes(subtotal, formData.province);
-//       const deliveryFee = formData.deliveryFee || 0;
-//       const total = subtotal + deliveryFee + taxes;
-
-//       const orderData = {
-//         address: {
-//           firstName: formData.firstName,
-//           lastName: formData.lastName,
-//           email: formData.email,
-//           address: formData.street,
-//           city: formData.city,
-//           lga: formData.city,
-//           state: formData.province,
-//           postalCode: formData.postalCode.toUpperCase(),
-//           phone: formData.phone,
-//           country: "Canada",
-//         },
-//   items: cartItemsDisplay.map(item => ({
-//   _id: item._id || item.product?._id,
-//   quantity: item.quantity,
-//   price: item.price,
-//   size: item.selectedOptions?.size,
-//   color: item.selectedOptions?.color,
-//   length: item.selectedOptions?.length,
-//   name: item.product?.name,
-//   description: item.product?.description
-// })),
-// amount: total, // subtotal + delivery + taxes
-// paymentMethod: "stripe",
-// }
-      
-
-//       await processStripePayment(orderData);
-
-//     } catch (error) {
-//       console.error("Order submission error:", error);
-//       toast.error(error.message || "An error occurred while processing your order.");
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
 
 // / Fixed Frontend Code
 const processStripePayment = async (orderData) => {
@@ -412,7 +319,7 @@ const onSubmitHandler = async (event) => {
             {/* Contact Information */}
             <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
               <div className="flex items-center gap-2 mb-4">
-                <User className="w-5 h-5 text-blue-600" />
+                <User className="w-5 h-5 text-pink-600" />
                 <h2 className="text-xl font-semibold">Contact Information</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -421,7 +328,7 @@ const onSubmitHandler = async (event) => {
                     First Name *
                   </label>
                   <input
-                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-pink-500 transition-colors ${
                       formErrors.firstName ? 'border-red-500' : 'border-gray-300'
                     }`}
                     type="text"
@@ -440,7 +347,7 @@ const onSubmitHandler = async (event) => {
                     Last Name *
                   </label>
                   <input
-                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-pink-500 transition-colors ${
                       formErrors.lastName ? 'border-red-500' : 'border-gray-300'
                     }`}
                     type="text"
@@ -459,7 +366,7 @@ const onSubmitHandler = async (event) => {
                     Email Address *
                   </label>
                   <input
-                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-pink-500 transition-colors ${
                       formErrors.email ? 'border-red-500' : 'border-gray-300'
                     }`}
                     type="email"
@@ -478,7 +385,7 @@ const onSubmitHandler = async (event) => {
                     Phone Number *
                   </label>
                   <input
-                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-pink-500 transition-colors ${
                       formErrors.phone ? 'border-red-500' : 'border-gray-300'
                     }`}
                     type="tel"
@@ -498,7 +405,7 @@ const onSubmitHandler = async (event) => {
             {/* Shipping Address */}
             <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
               <div className="flex items-center gap-2 mb-4">
-                <MapPin className="w-5 h-5 text-blue-600" />
+                <MapPin className="w-5 h-5 text-pink-600" />
                 <h2 className="text-xl font-semibold">Shipping Address</h2>
               </div>
               <div className="space-y-4">
@@ -507,7 +414,7 @@ const onSubmitHandler = async (event) => {
                     Street Address *
                   </label>
                   <input
-                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-pink-500 transition-colors ${
                       formErrors.address ? 'border-red-500' : 'border-gray-300'
                     }`}
                     type="text"
@@ -527,7 +434,7 @@ const onSubmitHandler = async (event) => {
                       City *
                     </label>
                     <input
-                      className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                      className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-pink-500 transition-colors ${
                         formErrors.city ? 'border-red-500' : 'border-gray-300'
                       }`}
                       type="text"
@@ -546,7 +453,7 @@ const onSubmitHandler = async (event) => {
                       Province/Territory *
                     </label>
                     <select
-                      className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors bg-white ${
+                      className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-pink-500 transition-colors bg-white ${
                         formErrors.province ? 'border-red-500' : 'border-gray-300'
                       }`}
                       name="province"
@@ -571,7 +478,7 @@ const onSubmitHandler = async (event) => {
                     Postal Code *
                   </label>
                   <input
-                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                    className={`border rounded-lg py-3 px-4 w-full focus:outline-none focus:ring-2 focus:ring-pink-500 transition-colors ${
                       formErrors.postalCode ? 'border-red-500' : 'border-gray-300'
                     }`}
                     type="text"
@@ -589,17 +496,17 @@ const onSubmitHandler = async (event) => {
             </div>
 
             {/* Payment Method */}
-            <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+            <div className="bg-white rounded-lg shadow-sm p-8 border border-gray-200">
               <div className="flex items-center gap-2 mb-4">
-                <CreditCard className="w-5 h-5 text-blue-600" />
+                <CreditCard className="w-5 h-5 text-pink-600" />
                 <h2 className="text-xl font-semibold">Payment Method</h2>
               </div>
-              <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
+              <div className="border rounded-lg p-4 bg-pink-50 border-pink-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Shield className="w-6 h-6 text-blue-600" />
+                    <Shield className="w-6 h-6 text-pink-600" />
                     <div>
-                      <p className="font-medium text-gray-900">Secure Payment with Stripe</p>
+                      <p className="font-small text-gray-900">Secure Payment with Stripe</p>
                       <p className="text-sm text-gray-600">Your payment information is encrypted and secure</p>
                     </div>
                   </div>
@@ -615,7 +522,7 @@ const onSubmitHandler = async (event) => {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 sticky top-6">
               <div className="flex items-center gap-2 mb-4">
-                <ShoppingCart className="w-5 h-5 text-blue-600" />
+                <ShoppingCart className="w-5 h-5 text-pink-600" />
                 <h2 className="text-xl font-semibold">Order Summary</h2>
               </div>
 
@@ -623,20 +530,20 @@ const onSubmitHandler = async (event) => {
               <div className="space-y-4 mb-6 max-h-60 overflow-y-auto">
               {cartItemsDisplay.map((item) => (
   <div key={item.cartItemId} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-    <img
+    {/* <img
       src={item.product.image?.[1] || 'https://via.placeholder.com/48'}
       alt={item.product.name}
       className="w-12 h-12 object-cover rounded"
-    />
+    /> */}
     <div className="flex-1 min-w-0">
       <p className="font-medium text-sm truncate">{item.product.name}</p>
 
       {/* Show selected options like size, color, length */}
-      {item.selectedOptions && Object.entries(item.selectedOptions).map(([key, value]) => (
+      {/* {item.selectedOptions && Object.entries(item.selectedOptions).map(([key, value]) => (
         <p key={key} className="text-xs text-gray-600">
           {key}: {value}
         </p>
-      ))}
+      ))} */}
 
       <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
     </div>
@@ -675,7 +582,7 @@ const onSubmitHandler = async (event) => {
               {/* Checkout Button */}
               <button
                 onClick={onSubmitHandler}
-                className="w-full bg-blue-600 text-white py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors mt-6 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-pink-700 text-white py-4 rounded-lg font-semibold hover:bg-pink-700 transition-colors mt-6 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isLoading || cartItemsDisplay.length === 0}
               >
                 {isLoading ? (
@@ -685,27 +592,27 @@ const onSubmitHandler = async (event) => {
                   </>
                 ) : (
                   <>
-                    <Shield className="w-5 h-5 mr-2" />
-                    Complete Secure Payment
+                    {/* <Shield className="w-5 h-5 mr-2" /> */}
+                    Complete Payment
                   </>
                 )}
               </button>
 
               {/* Security badges */}
               <div className="mt-4 text-center">
-                <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                {/* <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
                   <Shield className="w-3 h-3" />
                   <span>256-bit SSL encrypted</span>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center text-sm text-gray-500">
+        {/* <div className="mt-8 text-center text-sm text-gray-500">
           <p>Need help? Contact our customer support at support@palmsbeauty.com</p>
-        </div>
+        </div> */}
       </div>
     </div>
   );
