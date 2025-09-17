@@ -25,7 +25,7 @@ const ShopContextProvider = (props) => {
   const getProducts = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/product/list`);
+      const response = await fetch(`${backendUrl}/api/product/list`);
       const data = await response.json();
       
       if (data.success) {

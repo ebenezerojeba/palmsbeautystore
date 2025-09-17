@@ -14,7 +14,7 @@ const VerifyPayment = () => {
 
   const appointmentId = searchParams.get('appointmentId');
   const sessionId = searchParams.get('sessionId');
-  const backendUrl =  'https://palmsbeautystore-backend.onrender.com';
+ const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     if (!appointmentId || !sessionId) {

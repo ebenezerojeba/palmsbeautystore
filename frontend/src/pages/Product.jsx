@@ -177,7 +177,6 @@ const COLOR_MAP = {
   "t/30/613": "#d8b98f" // Auburn and blonde blend
 };
 
-
 // Frontend function
 const getColorHex = (colorCode) => {
   const lower = colorCode.toLowerCase();
