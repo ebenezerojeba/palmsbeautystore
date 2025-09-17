@@ -694,13 +694,13 @@ const emailData = {
 };
 
 // Send emails (don't await to avoid blocking the response)
-sendAppointmentEmails(emailData)
-  .then(result => {
-    console.log('📧 Email sending result:', result);
-  })
-  .catch(error => {
-    console.error('📧 Email sending error:', error);
-  });
+// sendAppointmentEmails(emailData)
+//   .then(result => {
+//     console.log('📧 Email sending result:', result);
+//   })
+//   .catch(error => {
+//     console.error('📧 Email sending error:', error);
+//   });
 
     console.log("✅ Appointment created successfully");
 
