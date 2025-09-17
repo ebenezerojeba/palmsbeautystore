@@ -5,7 +5,7 @@ import {toast} from "react-toastify"
 export const AppContext = createContext()
 
 const AppContextProvider = (props) => {
-on
+
 const backendUrl = "https://palmsbeautystore-backend.onrender.com"
 
       const [userData, setUserData] = useState(false)
