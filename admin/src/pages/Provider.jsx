@@ -551,8 +551,9 @@ const ProviderDetail = ({ provider }) => {
         </div>
       </div>
 
-      <div className="p-6">
-        <div className="flex items-start space-x-6">
+      <div className="sm:p-6 p-4">
+       <div className="flex flex-col sm:flex-row items-start sm:space-x-6 space-y-4 sm:space-y-0">
+
           <div className="flex-shrink-0">
             <img
               src={
@@ -562,7 +563,8 @@ const ProviderDetail = ({ provider }) => {
                 )}&size=128&background=3b82f6&color=ffffff`
               }
               alt={provider.name || 'Unknown Provider'}
-              className="w-32 h-32 rounded-full object-cover"
+              className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover"
+
               onError={(e) => {
                 e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                   provider.name || 'Unknown'
@@ -618,8 +620,8 @@ const ProviderDetail = ({ provider }) => {
             </div>
           </div>
         </div>
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Assigned Services</h3>
