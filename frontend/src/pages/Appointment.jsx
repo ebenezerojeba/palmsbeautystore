@@ -31,7 +31,7 @@ import {
 const Appointment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const {  userData, backendUrl } = useContext(AppContext);
+  const {  userData, bakcendUrl } = useContext(AppContext);
   const { formatNaira } = useContext(ShopContext);
 
   // State management
@@ -88,7 +88,6 @@ const [showConsentForm, setShowConsentForm] = useState(true);
 const scrollToTop = () => {
 
 }
-
   // Fetch service information and all services
   useEffect(() => {
     const fetchService = async () => {
@@ -161,11 +160,6 @@ const scrollToTop = () => {
     return selectedServices.reduce((total, service) => total + Number(service.price || 0), 0);
   };
 
-// const getTotalDuration = () => {
-//   const total = selectedServices.reduce((total, service) => total + Number(service.duration || 90), 0);
-//   console.log('Total duration calculated:', total, 'from services:', selectedServices);
-//   return total;
-// }
 const getTotalDuration = () => {
   const total = selectedServices.reduce((total, service) => {
     const duration = parseInt(service.duration) || 90; // Ensure consistent parsing
@@ -236,19 +230,84 @@ useEffect(() => {
   fetchAvailableSlots();
 }, [selectedServices, id, backendUrl]);
 
-  // Add service to selection
-  // const addService = (service) => {
-  //   const isAlreadySelected = selectedServices.some(s => s._id === service._id);
-  //   if (!isAlreadySelected) {
-  //     setSelectedServices([...selectedServices, service]);
-  //     setShowAddService(false);
-  //     setSelectedDate("");
-  //     setSelectedTime("");
-  //     toast.success(`${service.title} added to your appointment`);
-  //   } else {
-  //     toast.info("This service is already selected");
-  //   }
-  // };
+
+// Add this to your frontend useEffect for better performance
+// useEffect(() => {
+//   let isCancelled = false;
+  
+//   const fetchAvailableSlots = async () => {
+//     if (selectedServices.length === 0) return;
+
+//     setIsLoading(true);
+//     setAvailableSlots([]); // Clear previous slots immediately
+    
+//     try {
+//       const startDate = new Date().toISOString().split('T')[0];
+//       const endDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // Reduced to 14 days
+
+//       const servicesForSlots = selectedServices.map(service => ({
+//         _id: service._id,
+//         title: service.title,
+//         duration: service.duration || 90,
+//         price: service.price
+//       }));
+
+//       const queryParams = new URLSearchParams({
+//         serviceId: id,
+//         startDate,
+//         endDate,
+//         selectedServices: JSON.stringify(servicesForSlots)
+//       });
+
+//       // Add timeout for better UX
+//       const controller = new AbortController();
+//       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+//       const res = await fetch(
+//         `${backendUrl}/api/appointment/available-slots?${queryParams.toString()}`,
+//         { signal: controller.signal }
+//       );
+      
+//       clearTimeout(timeoutId);
+
+//       if (!res.ok) {
+//         throw new Error(`HTTP error! status: ${res.status}`);
+//       }
+      
+//       const data = await res.json();
+
+//       // Only update if component is still mounted
+//       if (!isCancelled) {
+//         if (data.availableSlots && data.availableSlots.length > 0) {
+//           setAvailableSlots(data.availableSlots);
+//         } else {
+//           setAvailableSlots([]);
+//           toast.info("No available slots found for selected services");
+//         }
+//       }
+//     } catch (err) {
+//       if (!isCancelled && err.name !== 'AbortError') {
+//         console.error('Error fetching slots:', err);
+//         toast.error("Failed to fetch available slots");
+//         setAvailableSlots([]);
+//       }
+//     } finally {
+//       if (!isCancelled) {
+//         setIsLoading(false);
+//       }
+//     }
+//   };
+
+//   // Debounce the API call to prevent too many requests
+//   const timeoutId = setTimeout(fetchAvailableSlots, 300);
+
+//   return () => {
+//     isCancelled = true;
+//     clearTimeout(timeoutId);
+//   };
+// }, [selectedServices, id, backendUrl]);
+
+
 
   const addService = (service) => {
   const isAlreadySelected = selectedServices.some(s => s._id === service._id);
@@ -260,14 +319,14 @@ useEffect(() => {
       duration: parseInt(service.duration) || 90, // Consistent parsing
       price: parseFloat(service.price) || 0
     };
-    
+
     setSelectedServices(prev => [...prev, serviceToAdd]);
     setShowAddService(false);
-    
+
     // Reset date/time when services change
     setSelectedDate("");
     setSelectedTime("");
-    
+
     toast.success(`${service.title} added to your appointment`);
   } else {
     toast.info("This service is already selected");
@@ -280,7 +339,6 @@ useEffect(() => {
       toast.warn("You must have at least one service selected");
       return;
     }
-
     setSelectedServices(selectedServices.filter(s => s._id !== serviceId));
     setSelectedDate("");
     setSelectedTime("");
@@ -316,7 +374,7 @@ useEffect(() => {
 const chosenProvider = serviceInfo?.providers[randomIndex];
 
 
-  
+
 const handlePayment = () => {
   console.log('Payment URL:', paymentUrl); // Add this for debugging
   
@@ -686,11 +744,12 @@ const handleBooking = async () => {
                     Select Date
                   </label>
 
-                  {isLoading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="animate-spin h-6 w-6 text-pink-600 mr-2" />
-                      <span className="text-gray-600">Loading available dates...</span>
-                    </div>
+ {isLoading ? (
+  <div className="flex flex-col items-center justify-center py-8">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600 mb-3"></div>
+    <p className="text-gray-600 text-sm">Finding available times...</p>
+    <p className="text-gray-500 text-xs"></p>
+  </div>
                   ) : availableSlots.length > 0 ? (
                     <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
                       {availableSlots.map((daySlot, index) => (
