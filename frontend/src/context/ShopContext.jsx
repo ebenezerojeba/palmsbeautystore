@@ -5,12 +5,15 @@ import React, { createContext, useEffect, useState } from "react";
 
 export const ShopContext = createContext();
 
+const backendUrl = "https://palmsbeautystore-backend.onrender.com"
+
+
 const ShopContextProvider = (props) => {
   const [products, setProducts] = useState([]);
   const [cartItems, setCartItems] = useState({});
   const [loading, setLoading] = useState(false);
   const [token, setToken] = useState(localStorage.getItem("token"));
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  // const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   // Format currency for Nigerian Naira
   const formatNaira = (amount) => {

@@ -1,6 +1,6 @@
-// api/serviceApi.js (or add to your existing API file)
+// api/serviceApi.js (or add to your existing API file
 
-const API_BASE_URL = 'http//:localhost:3000'; // Adjust based on your setup
+const API_BASE_URL = 'https://palmsbeautystore-backend.onrender.com' // Adjust based on your setup
 
 // Existing service functions (keep your current ones)
 // ... your existing API functions ...
