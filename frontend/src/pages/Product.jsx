@@ -238,8 +238,11 @@ const getColorHex = (colorCode) => {
 
   return productData ? (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 mb-4">
+
       {/* Breadcrumb */}
-      <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-8">
+    <nav className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mb-8">
+
+
         <a href="/" className="hover:text-gray-700">Home</a>
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -275,7 +278,8 @@ const getColorHex = (colorCode) => {
           </div>
 
           {/* Thumbnail Images */}
-          <div className="flex space-x-2 overflow-x-auto pb-2">
+          <div className="flex space-x-2 overflow-x-auto pb-2 max-w-full">
+
             {productData.images.map((item, index) => (
               <button
                 key={index}
@@ -679,7 +683,8 @@ const getColorHex = (colorCode) => {
       </div>
     </div>
   ) : (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 mb-4">
+
       <div className="animate-pulse">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           <div className="space-y-4">

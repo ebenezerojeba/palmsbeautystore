@@ -12,6 +12,10 @@
 ::-webkit-scrollbar{
     @apply hidden
 }
+html, body {
+  overflow-x: hidden;
+}
+
 
 @media (max-width:740px) {
     .active p{
