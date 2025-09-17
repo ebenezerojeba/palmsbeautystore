@@ -39,55 +39,21 @@ job.start();
 connectDB();
 connectCloudinary();
 
-// CORS Configuration
-// CORS Configuration
-const corsOptions = {
-  origin: true, // This allows ALL origins
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: [
-    'Origin',
-    'X-Requested-With',
-    'Content-Type',
-    'Accept',
-    'Authorization',
-    'Cache-Control',
-    'X-Access-Token',
-    'token',
-    'Token',
-    'x-auth-token',
-    'Access-Control-Allow-Headers',
-    'Access-Control-Allow-Origin',
-    'X-Forwarded-For',
-    'X-Real-IP'
-  ],
-  exposedHeaders: ['token', 'Token'],
-  optionsSuccessStatus: 200,
-  maxAge: 86400
-};
 
-// Apply CORS middleware
-app.use(cors(corsOptions));
-
-// Handle preflight requests
-app.options('*', cors(corsOptions));
-
-// Add this simple middleware to log all requests for testing
-app.use((req, res, next) => {
-  console.log(`🔥 ${req.method} ${req.path} - Origin: ${req.get('origin') || 'No origin'}`);
-  res.header('Access-Control-Allow-Origin', '*'); // Extra permissive for testing
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, token');
-  next();
-});
-
-
-// Handle preflight requests
-app.options('*', cors(corsOptions));
-// Middleware
-app.use(cors());
 app.use(express.static(path.join(__dirname, 'frontend', 'build')));
 app.use(express.json());
+
+// CORS Configuration for testing (allow all origins)
+app.use(
+  cors({
+    origin: "*", // allow all origins
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// Handle preflight requests
+app.options("*", cors());
 
 // API Endpoint
 // Make sure this is BEFORE routes
