@@ -1677,39 +1677,40 @@ const handleWorkingHoursChange = (dayIndex, field, value) => {
 };
 
 
-  // Main render logic
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <MessageAlert />
+// Replace the main container at the end of your component
+// Main render logic
+return (
+  <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+    <MessageAlert />
+    
+    <div className="max-w-7xl mx-auto w-full overflow-hidden">
+      {view === 'grid' && <GridView />}
       
-      <div className="max-w-7xl mx-auto">
-        {view === 'grid' && <GridView />}
-        
-        {view === 'detail' && selectedProvider && (
-          <ProviderDetail provider={selectedProvider} />
-        )}
-        
-        {view === 'schedule' && selectedProvider && (
-          <ScheduleManagement provider={selectedProvider} />
-        )}
-        
-        {view === 'edit-provider' && editingProvider && (
-          <EditProvider 
-            provider={editingProvider}
-            onSave={updateProvider}
-            onCancel={() => setView('grid')}
-          />
-        )}
+      {view === 'detail' && selectedProvider && (
+        <ProviderDetail provider={selectedProvider} />
+      )}
+      
+      {view === 'schedule' && selectedProvider && (
+        <ScheduleManagement provider={selectedProvider} />
+      )}
+      
+      {view === 'edit-provider' && editingProvider && (
+        <EditProvider 
+          provider={editingProvider}
+          onSave={updateProvider}
+          onCancel={() => setView('grid')}
+        />
+      )}
 
-          {showAddProviderModal && (
-          <AddProviderModal 
-            onClose={() => setShowAddProviderModal(false)} 
-            onAdd={addProvider}
-          />
-        )}
-      </div>
+      {showAddProviderModal && (
+        <AddProviderModal 
+          onClose={() => setShowAddProviderModal(false)} 
+          onAdd={addProvider}
+        />
+      )}
     </div>
-  );
+  </div>
+);
 };
 
 export default Provider;
