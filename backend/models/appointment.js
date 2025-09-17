@@ -1,11 +1,9 @@
-// Updated Appointment Schema (appointmentModel.js)
 import mongoose from "mongoose";
 
 // Service within appointment schema
 const appointmentServiceSchema = new mongoose.Schema({
   serviceId: { type: String, required: true },
   serviceTitle: { type: String, required: true },
-  // duration: { type: mongoose.Schema.Types.Mixed, required: true },
 
   duration: { type: Number }, // in minutes
   price: { type: Number, required: true },
@@ -16,14 +14,14 @@ const appointmentServiceSchema = new mongoose.Schema({
 const appointmentSchema = new mongoose.Schema({
   // Basic Info
   userId: { type: String, required: true },
-  
+
   // Services - Updated to support multiple services
   services: [appointmentServiceSchema], // Array of services
-  
+
   // For backward compatibility with single service appointments
   serviceId: { type: String }, // Keep for existing single service appointments
   serviceTitle: { type: String }, // Keep for existing single service appointments
-  
+
   // Appointment Details
  // IMPORTANT: Store date and time separately
   date: {
@@ -201,7 +199,9 @@ appointmentSchema.index({ status: 1, date: 1 });
 appointmentSchema.index({ userId: 1, status: 1 });
 appointmentSchema.index({ 'payment.status': 1 });
 appointmentSchema.index({ date: 1, status: 1 });
-
+// In your appointment model
+appointmentSchema.index({ providerId: 1, date: 1, status: 1 });
+appointmentSchema.index({ date: 1, time: 1, status: 1 });
 
 // Virtual for appointment end time
 appointmentSchema.virtual('endTime').get(function() {

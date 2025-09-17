@@ -7,6 +7,8 @@ import Stripe from 'stripe';
 import providerModel from "../models/providerModel.js";
 import dotenv from "dotenv";
 
+const BUFFER_MINUTES = 15; // Buffer time between appointments
+
 dotenv.config();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -276,11 +278,13 @@ const generateUniqueAvailableSlots = async (start, end, totalDuration, providers
 };
 
 // FIXED: Find best slots for a specific date with proper provider scheduling
+// FIXED: Find best slots for a specific date with proper provider scheduling
 const findBestAvailableSlotsForDate = async (date, totalDuration, providers, currentTime) => {
   const availableSlots = [];
   const isToday = date.toDateString() === currentTime.toDateString();
+  const dateStr = date.toISOString().split('T')[0];
   
-  console.log(`🔍 Finding slots for ${date.toISOString().split('T')[0]}, Duration: ${totalDuration}min`);
+  console.log(`🔍 Finding slots for ${dateStr}, Duration: ${totalDuration}min`);
 
   // Handle very long services (10+ hours) - Multi-day scheduling
   if (totalDuration >= 600) {
@@ -292,16 +296,36 @@ const findBestAvailableSlotsForDate = async (date, totalDuration, providers, cur
   const potentialTimeSlots = generateSmartTimeSlots(date, totalDuration, isToday, currentTime);
   console.log(`⏰ Generated ${potentialTimeSlots.length} potential time slots`);
 
+  // PRE-FETCH ALL appointments for this date for ALL providers
+  const providerIds = providers.map(p => p._id);
+  const existingAppointments = await appointmentModel.find({
+    providerId: { $in: providerIds },
+    date: dateStr,
+    status: { $in: ['pending', 'confirmed'] }
+  }).select('providerId time totalDuration duration');
+
+  console.log(`📅 Found ${existingAppointments.length} existing appointments for ${dateStr}`);
+
+  // Group appointments by provider for fast lookup
+  const appointmentsByProvider = {};
+  existingAppointments.forEach(apt => {
+    if (!appointmentsByProvider[apt.providerId]) {
+      appointmentsByProvider[apt.providerId] = {};
+    }
+    appointmentsByProvider[apt.providerId][apt.time] = apt;
+  });
+
   // For each time slot, find the FIRST available provider (prevents duplicates)
   for (const timeSlot of potentialTimeSlots) {
     console.log(`🔍 Checking time slot: ${timeSlot.time}`);
 
-    // Find the first available provider for this time slot
-    const availableProvider = await findFirstAvailableProvider(
+    // Find the first available provider for this time slot using pre-fetched data
+    const availableProvider = await findFirstAvailableProviderOptimized(
       providers,
       date,
       timeSlot.time,
-      totalDuration
+      totalDuration,
+      appointmentsByProvider
     );
 
     if (availableProvider) {
@@ -331,12 +355,123 @@ const findBestAvailableSlotsForDate = async (date, totalDuration, providers, cur
   return availableSlots;
 };
 
+// OPTIMIZED: Find first available provider using pre-fetched appointment data
+const findFirstAvailableProviderOptimized = async (providers, date, time, duration, appointmentsByProvider) => {
+  console.log(`🔍 Checking ${providers.length} providers for ${time}`);
+
+  for (const provider of providers) {
+    console.log(`👤 Checking provider: ${provider.name}`);
+    
+    const isAvailable = await checkProviderAvailabilityStrictOptimized(
+      provider._id,
+      date,
+      time,
+      duration,
+      provider.workingHours,
+      appointmentsByProvider[provider._id] || {}
+    );
+
+    if (isAvailable) {
+      console.log(`✅ Provider ${provider.name} is available`);
+      return provider;
+    } else {
+      console.log(`❌ Provider ${provider.name} is not available`);
+    }
+  }
+
+  return null; // No provider available
+};
+
+// OPTIMIZED: Strict provider availability check using pre-fetched data
+const checkProviderAvailabilityStrictOptimized = async (providerId, date, time, duration, workingHours, providerAppointments) => {
+  try {
+    console.log(`🔍 Checking strict availability for provider ${providerId}`);
+
+    // Check provider's working hours first
+    const dayOfWeek = date.getDay();
+    const providerDay = workingHours.find(wh => wh.dayOfWeek === dayOfWeek && wh.isWorking);
+
+    if (!providerDay) {
+      console.log(`❌ Provider doesn't work on day ${dayOfWeek}`);
+      return false;
+    }
+
+    console.log(`📋 Provider hours: ${providerDay.startTime} - ${providerDay.endTime}`);
+
+    // Parse requested time
+    const [requestHour, requestMinute] = time.split(':').map(Number);
+    const requestDateTime = new Date(date);
+    requestDateTime.setHours(requestHour, requestMinute, 0, 0);
+
+    // Parse provider's working hours
+    const [startHour, startMinute] = providerDay.startTime.split(':').map(Number);
+    const [endHour, endMinute] = providerDay.endTime.split(':').map(Number);
+    
+    const workStart = new Date(date);
+    workStart.setHours(startHour, startMinute, 0, 0);
+    
+    const workEnd = new Date(date);
+    workEnd.setHours(endHour, endMinute, 0, 0);
+
+    // Check if requested time is within working hours
+    if (requestDateTime < workStart) {
+      console.log(`❌ Requested time ${time} is before work start ${providerDay.startTime}`);
+      return false;
+    }
+
+    // Calculate service end time
+    const serviceEnd = new Date(requestDateTime.getTime() + duration * 60000);
+
+    // Check if service ends after working hours
+    if (serviceEnd > workEnd) {
+      console.log(`❌ Service would end at ${serviceEnd.toTimeString().slice(0,5)} after work end ${providerDay.endTime}`);
+      return false;
+    }
+
+    // Use pre-fetched appointments instead of database query
+    const existingAppointments = Object.values(providerAppointments);
+    console.log(`📅 Found ${existingAppointments.length} existing appointments from pre-fetched data`);
+
+    // Check for time conflicts with buffer
+    for (const apt of existingAppointments) {
+      const [aptHour, aptMinute] = apt.time.split(':').map(Number);
+      const aptStart = new Date(date);
+      aptStart.setHours(aptHour, aptMinute, 0, 0);
+      
+      const aptDuration = apt.totalDuration || apt.duration || 90;
+      const aptEnd = new Date(aptStart.getTime() + aptDuration * 60000);
+
+      // Add buffer time
+      const bufferedRequestStart = new Date(requestDateTime.getTime() - BUFFER_MINUTES * 60000);
+      const bufferedRequestEnd = new Date(serviceEnd.getTime() + BUFFER_MINUTES * 60000);
+      const bufferedAptStart = new Date(aptStart.getTime() - BUFFER_MINUTES * 60000);
+      const bufferedAptEnd = new Date(aptEnd.getTime() + BUFFER_MINUTES * 60000);
+
+      // Check for overlap
+      const hasOverlap = (
+        (bufferedRequestStart >= bufferedAptStart && bufferedRequestStart < bufferedAptEnd) ||
+        (bufferedRequestEnd > bufferedAptStart && bufferedRequestEnd <= bufferedAptEnd) ||
+        (bufferedRequestStart <= bufferedAptStart && bufferedRequestEnd >= bufferedAptEnd)
+      );
+
+      if (hasOverlap) {
+        console.log(`❌ Conflict with appointment ${apt.time} - ${aptEnd.toTimeString().slice(0,5)}`);
+        return false;
+      }
+    }
+
+    console.log(`✅ Provider is available for ${time}`);
+    return true;
+
+  } catch (error) {
+    console.error('❌ Error checking provider availability:', error);
+    return false;
+  }
+};
 // FIXED: Generate smart time slots that respect business hours and service duration
 const generateSmartTimeSlots = (date, duration, isToday, currentTime) => {
   const slots = [];
   
-  console.log(`⚙️ Generating smart time slots for duration: ${duration} minutes`);
-
   // Determine business hours based on service duration
   let businessStart, businessEnd, slotInterval;
 
@@ -417,7 +552,6 @@ const findFirstAvailableProvider = async (providers, date, time, duration) => {
 // FIXED: Strict provider availability check that respects working hours
 const checkProviderAvailabilityStrict = async (providerId, date, time, duration, workingHours) => {
   try {
-    console.log(`🔍 Checking strict availability for provider ${providerId}`);
 
     // Check provider's working hours first
     const dayOfWeek = date.getDay();
