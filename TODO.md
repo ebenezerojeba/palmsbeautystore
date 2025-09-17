@@ -1,0 +1,6 @@
+- [ ] Install dependencies for backend
+- [ ] Start backend server
+- [ ] Install dependencies for frontend
+- [ ] Start frontend dev server
+- [ ] Install dependencies for admin
+- [ ] Start admin dev server

@@ -45,9 +45,7 @@ const serviceSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-    image: {
-    type: String // URL to service image
-  },
+
   requirements: [{
     type: String,
     maxlength: 200
