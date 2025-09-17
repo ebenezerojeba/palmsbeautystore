@@ -15,13 +15,14 @@ const ShopContextProvider = (props) => {
   const [token, setToken] = useState(localStorage.getItem("token"));
  
   // Format currency for Nigerian Naira
-  const formatNaira = (amount) => {
-    return new Intl.NumberFormat("USD", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+const formatNaira = (amount) => {
+  return new Intl.NumberFormat("en-CA", {
+    style: "currency",
+    currency: "CAD",
+    minimumFractionDigits: 0,
+  }).format(amount);
+};
+
 
   // Fetch products from backend
   const getProducts = async () => {
