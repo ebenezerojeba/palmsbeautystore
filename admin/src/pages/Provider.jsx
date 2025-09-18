@@ -341,7 +341,7 @@ const updateProvider = async (providerId, data) => {
     if (result.success) {
       toast.success(result.message || "Provider updated successfully");
       // Optionally refresh UI or trigger reload
-      return result;
+      // return result;
     } else {
       toast.error(result.message || "Failed to update provider");
       return null;
