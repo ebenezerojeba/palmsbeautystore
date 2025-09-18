@@ -3,7 +3,8 @@ import { Package, User, Phone, MapPin, Calendar, CreditCard, Filter, Search, Eye
 import { toast } from "react-toastify";
 import axios from "axios";
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
+// const backendUrl = import.meta.env.VITE_BACKEND_URL;
+const backendUrl = 'https://palmsbeautystore-backend.onrender.com';
 
 const Orders = ({ token }) => {
   const [orders, setOrders] = useState([]);
