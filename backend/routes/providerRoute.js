@@ -1,6 +1,6 @@
 // routes/providerRoutes.js
 import express from "express";
-import { getAllProviders, getProvider, getProviderAppointments, getProviderAppointmentStats, getProviders, getProvidersByService, getProviderSchedule, getProviderTodaysAppointments, getProviderUpcomingAppointments, updateProviderWorkingHours } from "../controllers/providerController.js";
+import { getAllProviders, getProvider, getProviderAppointments, getProviderAppointmentStats, getProviders, getProvidersByService, getProviderSchedule, getProviderUpcomingAppointments, getTodaysAppointments, updateProviderWorkingHours } from "../controllers/providerController.js";
 import providerModel from "../models/providerModel.js";
 import mongoose from "mongoose";
 
@@ -17,7 +17,7 @@ providerRouter.get('/', getProvidersByService); // New route to get providers by
 providerRouter.get('/:providerId/appointments', getProviderAppointments);
 
 // Get today's appointments for a specific provider
-providerRouter.get('/:providerId/today-appointments', getProviderTodaysAppointments);
+providerRouter.get('/:providerId', getTodaysAppointments);
 
 // Get upcoming appointments for a specific provider
 providerRouter.get('/:providerId/upcoming-appointments', getProviderUpcomingAppointments);

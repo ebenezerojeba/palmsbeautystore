@@ -44,8 +44,8 @@ adminRouter.patch('/staff/:id/toggle', toggleStaffStatus);
 
 // Providers
 adminRouter.get('/services-with-providers', ServicesWithProvider);
-adminRouter.post('/createprovider', upload.single('profileimage'), createProvider);
-adminRouter.put('/:providerId', upload.single('profileimage'), updateProvider);
+adminRouter.post('/createprovider', upload.single('profileImage'), createProvider);
+adminRouter.put('/:providerId', upload.single('profileImage'), updateProvider);
 adminRouter.post('/service/:serviceId/provider/:providerId', addProviderToService);
 adminRouter.delete('/service/:serviceId/provider/:providerId', removeProviderFromService);
 

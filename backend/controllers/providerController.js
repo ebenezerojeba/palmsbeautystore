@@ -484,7 +484,7 @@ export const createProvider = async (req, res) => {
     const savedProvider = await newProvider.save();
     await savedProvider.populate("services", "title duration price");
 
-    res.status(201).json({ success: true, provider: savedProvider });
+    res.status(201).json({ success: true, message: "Provider Added", provider: savedProvider });
   } catch (error) {
     console.error("Error creating provider:", error);
     res.status(500).json({ success: false, message: "Failed to create provider", error: error.message });
@@ -684,50 +684,34 @@ export const getProviderAppointments = async (req, res) => {
 };
 
 // Get today's appointments for a provider
-export const getProviderTodaysAppointments = async (req, res) => {
+// providerController.js
+export const getTodaysAppointments = async (req, res) => {
   try {
     const { providerId } = req.params;
+    // console.log("Requested provider ID:", providerId);
 
-    // Validate providerId
-    if (!providerId || !providerId.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({
-        success: false,
-        message: "Valid provider ID is required"
-      });
-    }
+    const provider = await providerModel.findById(providerId);
+    if (!provider) return res.status(404).json({ success: false, message: "Provider not found" });
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Example query
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
 
-    const appointments = await appointmentModel
-      .find({
-        providerId,
-        date: {
-          $gte: today,
-          $lt: tomorrow
-        },
-        status: { $in: ['pending', 'confirmed'] }
-      })
-      .sort({ time: 1 })
-      .populate('userId', 'name email phone')
-      .select("-__v")
-      .lean();
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
 
-    res.status(200).json({
-      success: true,
-      appointments,
-      date: today.toISOString().split('T')[0]
+    const appointments = await Appointment.find({
+      providerId,
+      date: { $gte: startOfDay, $lte: endOfDay },
     });
+
+    res.json({ success: true, appointments });
   } catch (error) {
     console.error("Error fetching today's appointments:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch today's appointments"
-    });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 // Get upcoming appointments for a provider (next 7 days)
 export const getProviderUpcomingAppointments = async (req, res) => {
