@@ -1033,24 +1033,21 @@ const handleBooking = async () => {
                           <span className="font-medium">{formatNaira(service.price)}</span>
                         </div>
                       ))}
-                      
 
                       <div className="border-t border-gray-200 pt-3 space-y-2">
-                            <div className="flex justify-between text-sm text-gray-600">
+                            {/* <div className="flex justify-between text-sm text-gray-600">
                           <span>Stylist:</span>
                           <span>{chosenProvider?.name}</span>
-                        </div>
+                        </div> */}
                         <div className="flex justify-between text-sm text-gray-600">
-                          <span>Duration:</span>
-                          <span>{formatDuration(getTotalDuration())}</span>
+                          {/* <span>Duration:</span>
+                          <span>{formatDuration(getTotalDuration())}</span> */}
                         </div>
                         <div className="flex justify-between text-base font-semibold">
                           <span>Price:</span>
                           <span>{formatNaira(getTotalPrice())}</span>
-                        </div>
-                    
+                        </div> 
 
-                      
                       </div>
                     </div>
 
