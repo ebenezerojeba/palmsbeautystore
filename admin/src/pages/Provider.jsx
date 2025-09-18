@@ -319,28 +319,39 @@ const Provider = () => {
       showMessage('error', 'Failed to update working hours: ' + error.message);
     }
   };
-  const updateProvider = async (providerId, data) => {
-    try {
-      const formData = new FormData();
-      Object.keys(data).forEach(key => {
-        formData.append(key, data[key]);
-      });
 
-      if (data.profileImage) {
-        formData.append("profileimage", data.profileImage);
-      }
+const updateProvider = async (providerId, data) => {
+  try {
+    const formData = new FormData();
+    Object.keys(data).forEach((key) => {
+      formData.append(key, data[key]);
+    });
 
-      const response = await fetch(`${backendUrl}/api/admin/${providerId}`, {
-        method: "PUT",
-        body: formData
-      });
-
-      const result = await response.json();
-      console.log(result);
-    } catch (error) {
-      console.error("Error:", error);
+    if (data.profileImage) {
+      formData.append("profileImage", data.profileImage); // keep consistent with backend field
     }
-  };
+
+    const response = await fetch(`${backendUrl}/api/admin/${providerId}`, {
+      method: "PUT",
+      body: formData,
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      toast.success(result.message || "Provider updated successfully");
+      // Optionally refresh UI or trigger reload
+      return result;
+    } else {
+      toast.error(result.message || "Failed to update provider");
+      return null;
+    }
+  } catch (error) {
+    console.error("Error updating provider:", error);
+    toast.error("Something went wrong while updating provider");
+    return null;
+  }
+};
 
   const filteredProviders = providers.filter(provider => {
     if (!provider) return false;
@@ -351,8 +362,6 @@ const Provider = () => {
       (provider.services && provider.services.some(s => s._id === serviceFilter));
     return matchesSearch && matchesService;
   });
-
-
 
   // Fetch all appointments for a provider
   // Fetch all appointments for a provider
