@@ -31,7 +31,7 @@ import {
 const Appointment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const {  userData, backendUrl } = useContext(AppContext);
+  const { userData, backendUrl } = useContext(AppContext);
   const { formatNaira } = useContext(ShopContext);
 
   // State management
@@ -55,10 +55,9 @@ const Appointment = () => {
   const [agreeToCancellationPolicy, setAgreeToCancellationPolicy] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [savePaymentMethod, setSavePaymentMethod] = useState(false);
-  const [savedCards, setSavedCards] = useState([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("new");
   const [showCancellationPolicy, setShowCancellationPolicy] = useState(false);
-  const [showTermsConditions, setShowTermsConditions] = useState(false);
+  
   // Preferences and settings
   const [reminderPreferences, setReminderPreferences] = useState({
     email24h: false,
@@ -68,26 +67,26 @@ const Appointment = () => {
   });
 
   // Consent form
- const [consentForm, setConsentForm] = useState({
-  healthConditions: "",
-  allergies: "",
-  medications: "",
-  previousTreatments: "",
-  skinSensitivities: "",
-  pregnancyStatus: false,
-  consentToTreatment: false,
-  consentToPhotography: false,
-  emergencyContact: {
-    name: "",
-    phone: "",
-    relationship: ""
+  const [consentForm, setConsentForm] = useState({
+    healthConditions: "",
+    allergies: "",
+    medications: "",
+    previousTreatments: "",
+    skinSensitivities: "",
+    pregnancyStatus: false,
+    consentToTreatment: false,
+    consentToPhotography: false,
+    emergencyContact: {
+      name: "",
+      phone: "",
+      relationship: ""
+    }
+  });
+  const [showConsentForm, setShowConsentForm] = useState(true);
+
+  const scrollToTop = () => {
+
   }
-});
-const [showConsentForm, setShowConsentForm] = useState(true);
-
-const scrollToTop = () => {
-
-}
   // Fetch service information and all services
   useEffect(() => {
     const fetchService = async () => {
@@ -95,13 +94,13 @@ const scrollToTop = () => {
         const res = await fetch(`${backendUrl}/api/services/services/${id}`);
         const data = await res.json();
         if (data.service) {
-  setServiceInfo({
-    ...data.service,
-    providerName: data.service.providers?.[0]?.name || ''
-  });
-  setSelectedServices([data.service]);
-}
- else {
+          setServiceInfo({
+            ...data.service,
+            providerName: data.service.providers?.[0]?.name || ''
+          });
+          setSelectedServices([data.service]);
+        }
+        else {
           toast.error("Service not found");
           navigate("/services");
         }
@@ -123,35 +122,15 @@ const scrollToTop = () => {
       }
     };
 
-    // Fetch saved payment methods
-    const fetchSavedCards = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      try {
-        const res = await fetch(`${backendUrl}/api/payment/saved-cards`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (data.cards) {
-          setSavedCards(data.cards);
-        }
-      } catch (err) {
-        console.log("No saved cards found");
-      }
-    };
-
     if (id) {
       fetchService();
       fetchAllServices();
-      fetchSavedCards();
     }
   }, [id, backendUrl, navigate]);
 
   // Update reminder preferences when userData changes
   useEffect(() => {
     if (userData) {
-      // You could fetch user's saved preferences here if needed
     }
   }, [userData]);
 
@@ -160,178 +139,90 @@ const scrollToTop = () => {
     return selectedServices.reduce((total, service) => total + Number(service.price || 0), 0);
   };
 
-const getTotalDuration = () => {
-  const total = selectedServices.reduce((total, service) => {
-    const duration = parseInt(service.duration) || 90; // Ensure consistent parsing
-    return total + duration;
-  }, 0);
-  console.log('Total duration calculated:', total, 'from services:', selectedServices);
-  return total;
-};
-//Updated useEffect for fetching available slots
-useEffect(() => {
-  const fetchAvailableSlots = async () => {
-    if (selectedServices.length === 0) return;
-
-    setIsLoading(true);
-    try {
-      const startDate = new Date().toISOString().split('T')[0];
-      const endDate = new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-      // Prepare services data with better structure
-      const servicesForSlots = selectedServices.map(service => ({
-        _id: service._id,
-        title: service.title,
-        duration: service.duration || 90,
-        price: service.price
-      }));
-
-      // Prepare query parameters
-      const queryParams = new URLSearchParams({
-        serviceId: id,
-        startDate,
-        endDate,
-        selectedServices: JSON.stringify(servicesForSlots)
-      });
-
-      console.log('Fetching slots with params:', {
-        serviceId: id,
-        startDate,
-        endDate,
-        selectedServices: servicesForSlots,
-        totalDuration: getTotalDuration()
-      });
-
-      const res = await fetch(
-        `${backendUrl}/api/appointment/available-slots?${queryParams.toString()}`
-      );
-      
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      
-      const data = await res.json();
-      console.log('Received slots data:', data);
-
-      if (data.availableSlots) {
-        setAvailableSlots(data.availableSlots);
-      } else {
-        setAvailableSlots([]);
-      }
-    } catch (err) {
-      console.error('Error fetching slots:', err);
-      toast.error("Failed to fetch available slots");
-      setAvailableSlots([]);
-    } finally {
-      setIsLoading(false);
-    }
+  const getTotalDuration = () => {
+    const total = selectedServices.reduce((total, service) => {
+      const duration = parseInt(service.duration) || 90;
+      return total + duration;
+    }, 0);
+    return total;
   };
+  // Fetching available slots
+  useEffect(() => {
+    const fetchAvailableSlots = async () => {
+      if (selectedServices.length === 0) return;
 
-  fetchAvailableSlots();
-}, [selectedServices, id, backendUrl]);
+      setIsLoading(true);
+      try {
+        const startDate = new Date().toISOString().split('T')[0];
+        const endDate = new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
+        // Preparing services data with better structure
+        const servicesForSlots = selectedServices.map(service => ({
+          _id: service._id,
+          title: service.title,
+          duration: service.duration || 90,
+          price: service.price
+        }));
 
-// Add this to your frontend useEffect for better performance
-// useEffect(() => {
-//   let isCancelled = false;
-  
-//   const fetchAvailableSlots = async () => {
-//     if (selectedServices.length === 0) return;
-
-//     setIsLoading(true);
-//     setAvailableSlots([]); // Clear previous slots immediately
-    
-//     try {
-//       const startDate = new Date().toISOString().split('T')[0];
-//       const endDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // Reduced to 14 days
-
-//       const servicesForSlots = selectedServices.map(service => ({
-//         _id: service._id,
-//         title: service.title,
-//         duration: service.duration || 90,
-//         price: service.price
-//       }));
-
-//       const queryParams = new URLSearchParams({
-//         serviceId: id,
-//         startDate,
-//         endDate,
-//         selectedServices: JSON.stringify(servicesForSlots)
-//       });
-
-//       // Add timeout for better UX
-//       const controller = new AbortController();
-//       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
-//       const res = await fetch(
-//         `${backendUrl}/api/appointment/available-slots?${queryParams.toString()}`,
-//         { signal: controller.signal }
-//       );
-      
-//       clearTimeout(timeoutId);
-
-//       if (!res.ok) {
-//         throw new Error(`HTTP error! status: ${res.status}`);
-//       }
-      
-//       const data = await res.json();
-
-//       // Only update if component is still mounted
-//       if (!isCancelled) {
-//         if (data.availableSlots && data.availableSlots.length > 0) {
-//           setAvailableSlots(data.availableSlots);
-//         } else {
-//           setAvailableSlots([]);
-//           toast.info("No available slots found for selected services");
-//         }
-//       }
-//     } catch (err) {
-//       if (!isCancelled && err.name !== 'AbortError') {
-//         console.error('Error fetching slots:', err);
-//         toast.error("Failed to fetch available slots");
-//         setAvailableSlots([]);
-//       }
-//     } finally {
-//       if (!isCancelled) {
-//         setIsLoading(false);
-//       }
-//     }
-//   };
-
-//   // Debounce the API call to prevent too many requests
-//   const timeoutId = setTimeout(fetchAvailableSlots, 300);
-
-//   return () => {
-//     isCancelled = true;
-//     clearTimeout(timeoutId);
-//   };
-// }, [selectedServices, id, backendUrl]);
+        // Preparing query parameters
+        const queryParams = new URLSearchParams({
+          serviceId: id,
+          startDate,
+          endDate,
+          selectedServices: JSON.stringify(servicesForSlots)
+        });
 
 
+        const res = await fetch(
+          `${backendUrl}/api/appointment/available-slots?${queryParams.toString()}`
+        );
 
-  const addService = (service) => {
-  const isAlreadySelected = selectedServices.some(s => s._id === service._id);
-  if (!isAlreadySelected) {
-    const serviceToAdd = {
-      ...service,
-      _id: service._id,
-      title: service.title,
-      duration: parseInt(service.duration) || 90, // Consistent parsing
-      price: parseFloat(service.price) || 0
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        if (data.availableSlots) {
+          setAvailableSlots(data.availableSlots);
+        } else {
+          setAvailableSlots([]);
+        }
+      } catch (err) {
+        console.error('Error fetching slots:', err);
+        toast.error("Failed to fetch available slots");
+        setAvailableSlots([]);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    setSelectedServices(prev => [...prev, serviceToAdd]);
-    setShowAddService(false);
+    fetchAvailableSlots();
+  }, [selectedServices, id, backendUrl]);
 
-    // Reset date/time when services change
-    setSelectedDate("");
-    setSelectedTime("");
+  const addService = (service) => {
+    const isAlreadySelected = selectedServices.some(s => s._id === service._id);
+    if (!isAlreadySelected) {
+      const serviceToAdd = {
+        ...service,
+        _id: service._id,
+        title: service.title,
+        duration: parseInt(service.duration) || 90,
+        price: parseFloat(service.price) || 0
+      };
 
-    toast.success(`${service.title} added to your appointment`);
-  } else {
-    toast.info("This service is already selected");
-  }
-};
+      setSelectedServices(prev => [...prev, serviceToAdd]);
+      setShowAddService(false);
+
+      // Reset date/time when services change
+      setSelectedDate("");
+      setSelectedTime("");
+
+      toast.success(`${service.title} added to your appointment`);
+    } else {
+      toast.info("This service is already selected");
+    }
+  };
 
   // Remove service from selection
   const removeService = (serviceId) => {
@@ -362,133 +253,126 @@ useEffect(() => {
       return false;
     }
     if (!consentForm.consentToTreatment) {
-  toast.warn("Please provide consent for treatment");
-  return false;
-}
+      toast.warn("Please provide consent for treatment");
+      return false;
+    }
 
     return true;
   };
 
-  
-    const randomIndex = Math.floor(Math.random() * serviceInfo?.providers.length);
-const chosenProvider = serviceInfo?.providers[randomIndex];
+
+  const randomIndex = Math.floor(Math.random() * serviceInfo?.providers.length);
+  const chosenProvider = serviceInfo?.providers[randomIndex];
 
 
 
-const handlePayment = () => {
-  console.log('Payment URL:', paymentUrl); // Add this for debugging
-  
-  if (paymentUrl) {
-    // Use window.open for better compatibility or window.location.href
-    // window.open(paymentUrl, '_blank'); // Opens in new tab
-     window.location.href = paymentUrl; // Opens in same tab
-  } 
-};
-
-
-// Also, add some debugging to your handleBooking function to ensure paymentUrl is being set correctly:
-const handleBooking = async () => {
-  if (!validateBookingData()) return;
-
-  if (!userData) {
-    toast.warn("User information not available");
-    return;
-  }
-
-  const token = localStorage.getItem('token');
-  if (!token) {
-    toast.error("Please log in first!");
-    return;
-  }
-
-  setIsBooking(true);
-
-  try {
-    const bookingData = {
-      services: selectedServices.map((service, index) => ({
-        serviceId: service._id,
-        serviceTitle: service.title,
-        duration: parseInt(service.duration) || 90,
-        price: parseFloat(service.price) || 0,
-        order: index + 1
-      })),
-      
-      date: selectedDate,
-      time: selectedTime,
-      providerId: chosenProvider._id, 
-      providerName: chosenProvider.name,
-      totalDuration: getTotalDuration(),
-      
-      payment: {
-        amount: getTotalPrice(),
-        currency: "CAD", 
-        paymentMethod: selectedPaymentMethod === "new" ? "new_card" : selectedPaymentMethod
-      },
-
-      userName: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
-      userEmail: userData.email,
-      userPhone: userData.phone,
-      
-      clientNotes,
-      specialRequests,
-      reminderPreferences,
-      
-      paymentPreferences: {
-        savePaymentMethod,
-        selectedPaymentMethod
-      },
-
-      agreementConfirmations: {
-        cancellationPolicy: agreeToCancellationPolicy,
-        termsAndConditions: agreeToTerms
-      }, 
-
-      consentForm: {
-        healthConditions: consentForm.healthConditions,
-        allergies: consentForm.allergies,
-        consentToTreatment: consentForm.consentToTreatment,
-        submittedAt: new Date().toISOString()
-      },
-    };
-
-    console.log('Sending booking data:', bookingData); // Debug log
-
-    const res = await fetch(`${backendUrl}/api/appointment/book-multiple-appointment`, {
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(bookingData),
-    });
-
-    const data = await res.json();
-    console.log('Booking response:', data); // Debug log
-
-    if (res.ok) {
-      if (data.appointment && data.appointment._id) {
-        setAppointmentId(data.appointment._id);
-      }
-      
-      if (data.paymentUrl) {
-        setPaymentUrl(data.paymentUrl);
-        setShowPayment(true);
-        toast.success("Appointment created! Please complete payment to confirm.");
-      } else {
-        console.error('No payment URL in response:', data);
-        toast.error("Booking created but payment URL not received. Please contact support.");
-      }
-    } else {
-      console.error('Booking failed:', data);
-      toast.error(data.message || "Booking failed. Please try again.");
+  const handlePayment = () => {
+    if (paymentUrl) {
+      window.location.href = paymentUrl;
     }
-  } catch (err) {
-    console.error("Booking error:", err);
-    toast.error("Something went wrong. Please try again.");
-  } finally {
-    setIsBooking(false);
-  }
-};
+  };
+
+
+  // Handle booking
+  const handleBooking = async () => {
+    if (!validateBookingData()) return;
+
+    if (!userData) {
+      toast.warn("User information not available");
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error("Please log in first!");
+      return;
+    }
+
+    setIsBooking(true);
+
+    try {
+      const bookingData = {
+        services: selectedServices.map((service, index) => ({
+          serviceId: service._id,
+          serviceTitle: service.title,
+          duration: parseInt(service.duration) || 90,
+          price: parseFloat(service.price) || 0,
+          order: index + 1
+        })),
+
+        date: selectedDate,
+        time: selectedTime,
+        providerId: chosenProvider._id,
+        providerName: chosenProvider.name,
+        totalDuration: getTotalDuration(),
+
+        payment: {
+          amount: getTotalPrice(),
+          currency: "CAD",
+          paymentMethod: selectedPaymentMethod === "new" ? "new_card" : selectedPaymentMethod
+        },
+
+        userName: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
+        userEmail: userData.email,
+        userPhone: userData.phone,
+
+        clientNotes,
+        specialRequests,
+        reminderPreferences,
+
+        paymentPreferences: {
+          savePaymentMethod,
+          selectedPaymentMethod
+        },
+
+        agreementConfirmations: {
+          cancellationPolicy: agreeToCancellationPolicy,
+          termsAndConditions: agreeToTerms
+        },
+
+        consentForm: {
+          healthConditions: consentForm.healthConditions,
+          allergies: consentForm.allergies,
+          consentToTreatment: consentForm.consentToTreatment,
+          submittedAt: new Date().toISOString()
+        },
+      };
+
+      const res = await fetch(`${backendUrl}/api/appointment/book-multiple-appointment`, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(bookingData),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        if (data.appointment && data.appointment._id) {
+          setAppointmentId(data.appointment._id);
+        }
+
+        if (data.paymentUrl) {
+          setPaymentUrl(data.paymentUrl);
+          setShowPayment(true);
+          toast.success("Appointment created! Please complete payment to confirm.");
+        } else {
+          console.error('No payment URL in response:', data);
+          toast.error("Booking created but payment URL not received. Please contact support.");
+        }
+      } else {
+        console.error('Booking failed:', data);
+        toast.error(data.message || "Booking failed. Please try again.");
+      }
+    } catch (err) {
+      console.error("Booking error:", err);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsBooking(false);
+    }
+  };
 
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
@@ -512,19 +396,19 @@ const handleBooking = async () => {
     }
   };
 
-   // Format time range display
+  // Format time range display
   const formatTimeRange = (startTime, duration) => {
     const [startHour, startMinute] = startTime.split(':').map(Number);
     const startDate = new Date();
     startDate.setHours(startHour, startMinute, 0, 0);
-    
+
     const endDate = new Date(startDate.getTime() + duration * 60 * 1000);
     const endTime = endDate.toTimeString().slice(0, 5);
-    
+
     return `${startTime} - ${endTime}`;
   };
 
-// Toggle date expansion
+  // Toggle date expansion
   const toggleDateExpansion = (date) => {
     setExpandedDates(prev => ({
       ...prev,
@@ -553,7 +437,7 @@ const handleBooking = async () => {
     }
   }
 
-    const totalDuration = getTotalDuration();
+  const totalDuration = getTotalDuration();
   const durationCategory = getDurationCategory(totalDuration);
   const isLongService = totalDuration > 480; // More than 8 hours
 
@@ -604,44 +488,10 @@ const handleBooking = async () => {
                   />
                 </div>
 
-                <div className="flex items-center space-x-3 mt-4">
-                  <input
-                    type="checkbox"
-                    id="first-time-client"
-                    checked={isFirstTimeClient}
-                    onChange={(e) => setIsFirstTimeClient(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded"
-                  />
-                  <label htmlFor="first-time-client" className="text-sm text-gray-700">
-                    This is my first time booking with this service provider
-                  </label>
-                </div>
+               
               )} */}
-              {/* <div className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                      {serviceInfo.title}
-                    </h2>
-                    <p className="text-gray-600 mb-4">{serviceInfo.description}</p>
-                    <div className="flex items-center space-x-6">
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Clock className="h-4 w-4 mr-1" />
-                        {formatDuration(serviceInfo.duration || 90)}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <CreditCard className="h-4 w-4 mr-1" />
-                        {formatNaira(serviceInfo.price)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div> */}
-            {/* </div> */}
 
-
-
-          </div>
+            </div>
             {/* Selected Services */}
             <div className="bg-white rounded-lg shadow-sm">
               <div className="p-6 border-b border-gray-200">
@@ -744,12 +594,12 @@ const handleBooking = async () => {
                     Select Date
                   </label>
 
- {isLoading ? (
-  <div className="flex flex-col items-center justify-center py-8">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600 mb-3"></div>
-    <p className="text-gray-600 text-sm">Finding available times...</p>
-    <p className="text-gray-500 text-xs"></p>
-  </div>
+                  {isLoading ? (
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600 mb-3"></div>
+                      <p className="text-gray-600 text-sm">Finding available times...</p>
+                      <p className="text-gray-500 text-xs"></p>
+                    </div>
                   ) : availableSlots.length > 0 ? (
                     <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
                       {availableSlots.map((daySlot, index) => (
@@ -760,8 +610,8 @@ const handleBooking = async () => {
                             setSelectedTime("");
                           }}
                           className={`p-3 text-center rounded-lg border transition-all ${selectedDate === daySlot.date
-                              ? "border-pink-500 bg-pink-50 text-gray-700"
-                              : "border-gray-200 hover:border-gray-300 text-gray-700"
+                            ? "border-pink-500 bg-pink-50 text-gray-700"
+                            : "border-gray-200 hover:border-gray-300 text-gray-700"
                             }`}
                         >
                           <div className="text-xs font-medium">
@@ -787,81 +637,69 @@ const handleBooking = async () => {
 
                 {/* Time Selection */}
                 {selectedDate && (
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-3">
-      Select Time
-      {getTotalDuration() > 480 && (
-        <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
-          Extended Service ({formatDuration(getTotalDuration())})
-        </span>
-      )}
-    </label>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Select Time
+                      {getTotalDuration() > 480 && (
+                        <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
+                          Extended Service ({formatDuration(getTotalDuration())})
+                        </span>
+                      )}
+                    </label>
 
-    {(() => {
-      const selectedDay = availableSlots.find(slot => slot.date === selectedDate);
-      return selectedDay ? (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-          {selectedDay.slots.map((timeSlot, index) => (
-            <button
-              key={index}
-              onClick={() => setSelectedTime(timeSlot.time)}
-              className={`p-3 text-sm font-medium rounded-lg border transition-all ${
-                selectedTime === timeSlot.time
-                  ? "border-pink-500 bg-pink-50 text-gray-900"
-                  : "border-gray-200 hover:border-gray-300 text-gray-700"
-              }`}
-            >
-              <div>{timeSlot.time}</div>
-              {timeSlot.spansMultipleDays && (
-                <div className="text-xs text-orange-600 hidden mt-1">Multi-day</div>
-              )}
-              {timeSlot.estimatedEndTime && timeSlot.estimatedEndTime !== 'Next Day' && (
-                <div className="text-xs text-gray-500">
-                  End: {timeSlot.estimatedEndTime}
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-8 text-gray-500">
-          <p>No available time slots for this date</p>
-        </div>
-      );
-    })()}
-  </div>
-)}
+                    {(() => {
+                      const selectedDay = availableSlots.find(slot => slot.date === selectedDate);
+                      return selectedDay ? (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                          {selectedDay.slots.map((timeSlot, index) => (
+                            <button
+                              key={index}
+                              onClick={() => setSelectedTime(timeSlot.time)}
+                              className={`p-3 text-sm font-medium rounded-lg border transition-all ${selectedTime === timeSlot.time
+                                  ? "border-pink-500 bg-pink-50 text-gray-900"
+                                  : "border-gray-200 hover:border-gray-300 text-gray-700"
+                                }`}
+                            >
+                              <div>{timeSlot.time}</div>
+                              {timeSlot.spansMultipleDays && (
+                                <div className="text-xs text-orange-600 hidden mt-1">Multi-day</div>
+                              )}
+                              {timeSlot.estimatedEndTime && timeSlot.estimatedEndTime !== 'Next Day' && (
+                                <div className="text-xs text-gray-500">
+                                  End: {timeSlot.estimatedEndTime}
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <p>No available time slots for this date</p>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
             </div>
 
-  {/* <!-- Thank you message --> */}
-  
-
-  
+            {/* <!-- Thank you message --> */}
             <p class="text-gray-700">
-                <span class="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-800 to-gray-700 text-lg">
-                    Thank you for booking with us!
-                </span> All prices displayed on the website are tax inclusive. Add-ons such as braiding, extensions, wash, and detangling will be calculated during checkout.
+              <span class="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-800 to-gray-700 text-lg">
+                Thank you for booking with us!
+              </span> All prices displayed on the website are tax inclusive. Add-ons such as braiding, extensions, wash, and detangling will be calculated during checkout.
             </p>
 
             {/* <!-- Important note --> */}
             <div class="bg-gray-100 border-l-4 border-gray-500 p-4 rounded-r">
-                <p class="text-gray-800 font-medium">Please note:</p>
-                <p class="text-gray-700">The time indicated per appointment are estimations and can vary based on size of head, quantity of braids and length in comparison to your height.</p>
+              <p class="text-gray-800 font-medium">Please note:</p>
+              <p class="text-gray-700">The time indicated per appointment are estimations and can vary based on size of head, quantity of braids and length in comparison to your height.</p>
             </div>
+
             
-            {/* <!-- Additional information --> */}
-
-           
-
             {/* Terms and Policies */}
             <div className="bg-white rounded-lg shadow-sm">
-              {/* <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <Shield className="h-5 w-5 mr-2" />
-                  Terms & Policies
-                </h3>
-              </div> */}
+
               <div className="p-1 space-y-4">
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <div className="flex items-start">
@@ -870,7 +708,7 @@ const handleBooking = async () => {
                       <h4 className="text-sm font-medium text-gray-800 mb-2">
                         Cancellation Policy
                       </h4>
-                   
+
                       <button
                         onClick={() => setShowCancellationPolicy(true)}
                         className="text-sm text-gray-800 underline hover:text-gray-900"
@@ -894,111 +732,84 @@ const handleBooking = async () => {
                       I understand and agree to the cancellation policy *
                     </label>
                   </div>
-{/* 
-                   <div className="flex items-start space-x-3">
-                    <input
-                      type="checkbox"
-                      id="agree-terms"
-                      checked={agreeToTerms}
-                      onChange={(e) => setAgreeToTerms(e.target.checked)}
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded mt-1"
-                    />
-                    <label htmlFor="agree-terms" className="text-sm text-gray-700">
-                      I agree to the{" "}
-                      <button
-                        onClick={() => setShowTermsConditions(true)}
-                        className="text-blue-600 underline hover:text-blue-800"
-                      >
-                        terms and conditions
-                      </button>{" "}
-                      and{" "}
-                      <button
-                        onClick={() => window.open('/privacy-policy', '_blank')}
-                        className="text-blue-600 underline hover:text-blue-800"
-                      >
-                        privacy policy
-                      </button>
-                      *
-                    </label>
-                  </div>  */}
                 </div>
               </div>
             </div>
           </div>
 
-            {/* Consent Form */}
-<div className="bg-white rounded-lg shadow-sm">
-  <div className="p-1 border-b border-gray-200">
-    <div className="flex items-center justify-between">
-      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-        <FileText className="h-5 w-5 mr-2" />
-        Consent Form
-      </h3>
-      <button
-        // onClick={() => setShowConsentForm(!showConsentForm)}
-        className="text-sm text-blue-600 hover:text-blue-800"
-      >
-        {/* {showConsentForm ? 'Hide Form' : 'Show Form'} */}
-      </button>
-    </div>
-  </div>
-  
-  {showConsentForm && (
-    <div className="p-6 space-y-6">
-      {/* Health Information */}
-      <div className="space-y-4">
-        {/* <h4 className="font-medium text-gray-900">Health Information</h4> */}
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Do you have any health conditions we should be aware of?
-          </label>
-          <textarea
-            value={consentForm.healthConditions}
-            onChange={(e) => setConsentForm({...consentForm, healthConditions: e.target.value})}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            rows="2"
-            placeholder="Please list any relevant health conditions..."
-          />
-        </div>
+          {/* Consent Form */}
+          <div className="bg-white rounded-lg shadow-sm">
+            <div className="p-1 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <FileText className="h-5 w-5 mr-2" />
+                  Consent Form
+                </h3>
+                <button
+                  // onClick={() => setShowConsentForm(!showConsentForm)}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  {/* {showConsentForm ? 'Hide Form' : 'Show Form'} */}
+                </button>
+              </div>
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Allergies (especially to hair products, chemicals, or materials)
-          </label>
-          <textarea
-            value={consentForm.allergies}
-            onChange={(e) => setConsentForm({...consentForm, allergies: e.target.value})}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            rows="2"
-            placeholder="List any known allergies..."
-          />
-        </div>
-      </div>
+            {showConsentForm && (
+              <div className="p-6 space-y-6">
+                {/* Health Information */}
+                <div className="space-y-4">
+                  {/* <h4 className="font-medium text-gray-900">Health Information</h4> */}
 
-      {/* Consent Checkboxes */}
-      <div className="space-y-4">
-        {/* <h4 className="font-medium text-gray-900">Consent & Agreement</h4> */}
-        
-        <div className="space-y-3">
-          <div className="flex items-start space-x-3">
-            <input
-              type="checkbox"
-              id="consent-treatment"
-              checked={consentForm.consentToTreatment}
-              onChange={(e) => setConsentForm({...consentForm, consentToTreatment: e.target.checked})}
-              className="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded mt-1"
-            />
-            <label htmlFor="consent-treatment" className="text-sm text-gray-700">
-              I consent to receive the selected beauty/hair services and understand the procedures involved 
-            </label>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Do you have any health conditions we should be aware of?
+                    </label>
+                    <textarea
+                      value={consentForm.healthConditions}
+                      onChange={(e) => setConsentForm({ ...consentForm, healthConditions: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      rows="2"
+                      placeholder="Please list any relevant health conditions..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Allergies (especially to hair products, chemicals, or materials)
+                    </label>
+                    <textarea
+                      value={consentForm.allergies}
+                      onChange={(e) => setConsentForm({ ...consentForm, allergies: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      rows="2"
+                      placeholder="List any known allergies..."
+                    />
+                  </div>
+                </div>
+
+                {/* Consent Checkboxes */}
+                <div className="space-y-4">
+                  {/* <h4 className="font-medium text-gray-900">Consent & Agreement</h4> */}
+
+                  <div className="space-y-3">
+                    <div className="flex items-start space-x-3">
+                      <input
+                        type="checkbox"
+                        id="consent-treatment"
+                        checked={consentForm.consentToTreatment}
+                        onChange={(e) => setConsentForm({ ...consentForm, consentToTreatment: e.target.checked })}
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded mt-1"
+                      />
+                      <label htmlFor="consent-treatment" className="text-sm text-gray-700">
+                        I consent to receive the selected beauty/hair services and understand the procedures involved
+                      </label>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-
-        </div>
-      </div>
-    </div>
-  )}
-</div>
 
 
           {/* Sidebar */}
@@ -1015,13 +826,12 @@ const handleBooking = async () => {
                   <>
                     <div className="bg-gray-100 rounded-lg p-4">
                       <div className="flex items-center text-gray-700 mb-2">
-                        {/* <Calendar className="h-4 w-4 mr-2" /> */}
+
                         <span className="font-medium">
                           {formatDate(selectedDate)}
                         </span>
                       </div>
                       <div className="flex items-center text-gray-700">
-                        {/* <Clock className="h-4 w-4 mr-2" /> */}
                         <span className="font-medium">{selectedTime}</span>
                       </div>
                     </div>
@@ -1035,27 +845,22 @@ const handleBooking = async () => {
                       ))}
 
                       <div className="border-t border-gray-200 pt-3 space-y-2">
-                            {/* <div className="flex justify-between text-sm text-gray-600">
-                          <span>Stylist:</span>
-                          <span>{chosenProvider?.name}</span>
-                        </div> */}
+
                         <div className="flex justify-between text-sm text-gray-600">
-                          {/* <span>Duration:</span>
-                          <span>{formatDuration(getTotalDuration())}</span> */}
+
                         </div>
                         <div className="flex justify-between text-base font-semibold">
                           <span>Price:</span>
                           <span>{formatNaira(getTotalPrice())}</span>
-                        </div> 
+                        </div>
 
                       </div>
                     </div>
 
                     {/* Client Summary */}
                   </>
-                ) :(
+                ) : (
                   <div className="text-center py-8 text-gray-500">
-                    {/* <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" /> */}
                     <p>Select date and time to see summary</p>
                   </div>
                 )}
@@ -1064,8 +869,8 @@ const handleBooking = async () => {
               <div className="p-6 flex justify-center">
                 <button
                   onClick={handleBooking}
-                  disabled={isBooking || !selectedDate || !selectedTime || !agreeToCancellationPolicy || !consentForm.consentToTreatment }
-                  className= "bg-pink-900 text-white py-3 px-4 rounded-lg justify-center items-center font-medium hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed "
+                  disabled={isBooking || !selectedDate || !selectedTime || !agreeToCancellationPolicy || !consentForm.consentToTreatment}
+                  className="bg-pink-900 text-white py-3 px-4 rounded-lg justify-center items-center font-medium hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed "
                 >
                   {isBooking ? (
                     <>
@@ -1113,7 +918,7 @@ const handleBooking = async () => {
                           <p className="text-sm text-gray-500 mt-1">{service.description}</p>
                           <div className="flex items-center space-x-4 mt-2">
                             <span className="text-sm text-gray-500">
-                              {formatDuration(service.duration)}
+                              {/* {formatDuration(service.duration)} */}
                             </span>
                             <span className="text-sm font-medium text-gray-900">
                               {formatNaira(service.price)}
@@ -1154,29 +959,29 @@ const handleBooking = async () => {
             </div>
 
             <div class="bg-gray-50 p-6 rounded-2xl shadow-md text-gray-700 text-sm leading-relaxed space-y-4">
-  <p>
-    We ask that you please reschedule or cancel your appointment 48 before hand to enable us give a  client your spot  or you may be charged 50% of the price of your appointment .
-  </p>
+              <p>
+                We ask that you please reschedule or cancel your appointment 48 before hand to enable us give a  client your spot  or you may be charged 50% of the price of your appointment .
+              </p>
 
-  <p>
-    All prices displayed on the website are <span class="font-semibold">taxes included</span> and finalized. Add-ons (braiding extensions, wash, or detangling services) will be calculated during checkout.
-  </p>
+              <p>
+                All prices displayed on the website are <span class="font-semibold">taxes included</span> and finalized. Add-ons (braiding extensions, wash, or detangling services) will be calculated during checkout.
+              </p>
 
-  <div>
-    <h2 class="text-base font-bold text-gray-900 mb-2">Service Cancellation Policy</h2>
-    <ol class="list-decimal list-inside space-y-2">
-      <li>
-        <span class="font-semibold">Cancellation by the Customer:</span> Customers may reschedule their service once by providing written notice to 
-        <a href="mailto:Stylebyesther@palmsbeautystore.com" class="text-blue-600 underline">Stylebyesther@palmsbeautystore.com</a> 
-        <span class="font-semibold">48 hours</span> before their appointment. The notice must include the customer's name, contact information, and service details. 
-        <span class="font-semibold">Booking fees are not refundable.</span>
-      </li>
-      <li>
-        <span class="font-semibold">Cancellations by Palmsbeautystore:</span> Palmsbeautystore reserves the right to cancel a service in cases of non-payment, violation of terms, or breach of agreement. Notice will be provided, and refunds will apply only if the service provider is unavailable due to unforeseen circumstances.
-      </li>
-    </ol>
-  </div>
-</div>
+              <div>
+                <h2 class="text-base font-bold text-gray-900 mb-2">Service Cancellation Policy</h2>
+                <ol class="list-decimal list-inside space-y-2">
+                  <li>
+                    <span class="font-semibold">Cancellation by the Customer:</span> Customers may reschedule their service once by providing written notice to
+                    <a href="mailto:Stylebyesther@palmsbeautystore.com" class="text-blue-600 underline">Stylebyesther@palmsbeautystore.com</a>
+                    <span class="font-semibold">48 hours</span> before their appointment. The notice must include the customer's name, contact information, and service details.
+                    <span class="font-semibold">Booking fees are not refundable.</span>
+                  </li>
+                  <li>
+                    <span class="font-semibold">Cancellations by Palmsbeautystore:</span> Palmsbeautystore reserves the right to cancel a service in cases of non-payment, violation of terms, or breach of agreement. Notice will be provided, and refunds will apply only if the service provider is unavailable due to unforeseen circumstances.
+                  </li>
+                </ol>
+              </div>
+            </div>
 
             <div className="p-6 border-t border-gray-200">
               <button
@@ -1189,82 +994,6 @@ const handleBooking = async () => {
           </div>
         </div>
       )}
-
-      {/* Terms & Conditions Modal */}
-      {showTermsConditions && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Terms & Conditions
-                </h3>
-                <button
-                  onClick={() => setShowTermsConditions(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
-              <div className="prose prose-sm max-w-none">
-                <h4 className="text-base font-semibold mb-3">Service Agreement</h4>
-                <p className="mb-4">
-                  By booking an appointment, you agree to the following terms and conditions:
-                </p>
-
-                <h4 className="text-base font-semibold mb-3">1. Appointment Booking</h4>
-                <ul className="list-disc pl-6 space-y-1 mb-4">
-                  <li>All appointments must be booked in advance</li>
-                  <li>Payment is required at time of booking to secure your appointment</li>
-                  <li>Appointment times are subject to availability</li>
-                </ul>
-
-                <h4 className="text-base font-semibold mb-3">2. Client Responsibilities</h4>
-                <ul className="list-disc pl-6 space-y-1 mb-4">
-                  <li>Arrive on time for your scheduled appointment</li>
-                  <li>Provide accurate health and contact information</li>
-                  <li>Inform us of any allergies, medical conditions, or concerns</li>
-                  <li>Follow pre and post-appointment care instructions</li>
-                </ul>
-
-                <h4 className="text-base font-semibold mb-3">3. Privacy & Confidentiality</h4>
-                <p className="mb-4">
-                  All client information is kept strictly confidential in accordance with our privacy policy. 
-                  We do not share personal information with third parties without explicit consent.
-                </p>
-
-                <h4 className="text-base font-semibold mb-3">4. Liability</h4>
-                <p className="mb-4">
-                  While we maintain the highest standards of safety and professionalism, clients participate 
-                  in services at their own risk. Please inform us of any medical conditions that may affect 
-                  your treatment.
-                </p>
-
-                <h4 className="text-base font-semibold mb-3">5. Payment Terms</h4>
-                <ul className="list-disc pl-6 space-y-1 mb-4">
-                  <li>Payment is due at time of booking</li>
-                  <li>Refunds are subject to our cancellation policy</li>
-                  <li>Prices are subject to change without notice</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-200">
-              <button
-                onClick={() => setShowTermsConditions(false)}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                I Understand
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-
 
       {/* Payment Modal */}
       {showPayment && (
@@ -1303,7 +1032,7 @@ const handleBooking = async () => {
                 Pay Now - {formatNaira(getTotalPrice())}
               </button>
 
-             
+
             </div>
           </div>
         </div>
@@ -1311,6 +1040,5 @@ const handleBooking = async () => {
     </div>
   );
 };
-
 export default Appointment;
 
