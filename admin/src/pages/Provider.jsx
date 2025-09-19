@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import axios from 'axios';
 import {
   User,
@@ -54,22 +54,14 @@ const Provider = () => {
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   const [appointmentStats, setAppointmentStats] = useState(null);
   const [appointmentsLoading, setAppointmentsLoading] = useState(false);
-  // Add this state to track initial load
-const [initialLoadComplete, setInitialLoadComplete] = useState(false);
-// Add this near your other state declarations:
-const selectedProviderId = useMemo(() => selectedProvider?._id, [selectedProvider?._id]);
 
-// Then use this in your useEffect:
-useEffect(() => {
-  if (selectedProviderId && view === 'appointments' && !appointmentsLoading) {
-    loadProviderAppointments(selectedProviderId);
-  }
-}, [selectedProviderId, view]); // Much more stable dependencies
-
+// Add refs to prevent race conditions
+  const appointmentsAbortRef = useRef(null);
+  const currentProviderRef = useRef(null);
   // const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  // const backendUrl = "https://palmsbeautystore-backend.onrender.com"
-  const backendUrl = "http://localhost:3000"
+  const backendUrl = "https://palmsbeautystore-backend.onrender.com"
+  // const backendUrl = "http://localhost:3000"
 
   useEffect(() => {
     loadProviders();
@@ -78,29 +70,14 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
-  let isMounted = true;
-  const abortController = new AbortController();
-
-
-  const loadData = async () => {
-    if (selectedProvider && view === 'appointments') {
-      try {
-        await loadProviderAppointments(selectedProvider._id);
-      } catch (error) {
-        if (isMounted) {
-          console.error('Failed to load appointments:', error);
-        }
-      }
+    // Only load appointments if we have a selected provider, we're in appointments view, and we're not already loading
+    if (selectedProvider?._id && view === 'appointments' && !appointmentsLoading) {
+      loadProviderAppointments(selectedProvider._id);
     }
-  };
+  }, [selectedProvider?._id, view]); // Stable dependencies
 
-  loadData();
 
-  return () => {
-    isMounted = false;
-    abortController.abort();
-  };
-}, [selectedProvider, view]);
+
 
   const showMessage = (type, message) => {
     if (type === 'success') {
@@ -406,147 +383,118 @@ const updateProvider = async (providerId, data) => {
   });
 
 
-  // Fetch all appointments for a provider
-const fetchProviderAppointments = async (providerId) => {
-  try {
-    const response = await fetch(`${backendUrl}/api/provider/${providerId}/appointments`);
-    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error fetching provider appointments:', error);
-    throw error;
-  }
-};
+  const loadProviderAppointments = useCallback(async (providerId) => {
+    if (!providerId) {
+      console.warn('No provider ID provided for loading appointments');
+      return;
+    }
 
-// Fetch today's appointments - FIXED ENDPOINT
-const fetchTodaysAppointments = async (providerId) => {
-  try {
-    const response = await fetch(
-      `${backendUrl}/api/provider/${providerId}/todays-appointments`
-    );
-    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching today's appointments:", error);
-    throw error;
-  }
-};
+    // Prevent multiple simultaneous calls for the same provider
+    if (appointmentsLoading && currentProviderRef.current === providerId) {
+      console.log('Already loading appointments for this provider, skipping...');
+      return;
+    }
 
-// Fetch upcoming appointments - FIXED ENDPOINT
-const fetchUpcomingAppointments = async (providerId) => {
-  try {
-    const response = await fetch(
-      `${backendUrl}/api/provider/${providerId}/upcoming-appointments`
-    );
-    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error fetching upcoming appointments:', error);
-    throw error;
-  }
-};
+    // Cancel any ongoing request
+    if (appointmentsAbortRef.current) {
+      appointmentsAbortRef.current.abort();
+    }
 
-// Fetch appointment statistics
-const fetchAppointmentStats = async (providerId) => {
-  try {
-    const response = await fetch(
-      `${backendUrl}/api/provider/${providerId}/appointment-stats`
-    );
-    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error fetching appointment stats:', error);
-    throw error;
-  }
-};
+    // Create new abort controller
+    appointmentsAbortRef.current = new AbortController();
+    const signal = appointmentsAbortRef.current.signal;
+
+    currentProviderRef.current = providerId;
+    setAppointmentsLoading(true);
+
+    try {
+      console.log('Loading appointments for provider:', providerId);
+
+      // Create all API promises with the same signal
+      const apiCalls = [
+        fetch(`${backendUrl}/api/provider/${providerId}/appointments`, { signal }),
+        fetch(`${backendUrl}/api/provider/${providerId}/todays-appointments`, { signal }),
+        fetch(`${backendUrl}/api/provider/${providerId}/upcoming-appointments`, { signal }),
+        fetch(`${backendUrl}/api/provider/${providerId}/appointment-stats`, { signal })
+      ];
+
+      const results = await Promise.allSettled(apiCalls);
+
+      // Check if request was aborted
+      if (signal.aborted) {
+        console.log('Request was aborted');
+        return;
+      }
+
+      // Process results
+      const [allAppointmentsResult, todayResult, upcomingResult, statsResult] = results;
+
+      // Handle all appointments
+      if (allAppointmentsResult.status === 'fulfilled' && allAppointmentsResult.value.ok) {
+        const data = await allAppointmentsResult.value.json();
+        setProviderAppointments(data.appointments || []);
+      } else {
+        console.error('Failed to load all appointments:', allAppointmentsResult.reason);
+        setProviderAppointments([]);
+      }
+
+      // Handle today's appointments
+      if (todayResult.status === 'fulfilled' && todayResult.value.ok) {
+        const data = await todayResult.value.json();
+        setTodaysAppointments(data.appointments || []);
+      } else {
+        console.error('Failed to load today appointments:', todayResult.reason);
+        setTodaysAppointments([]);
+      }
+
+      // Handle upcoming appointments
+      if (upcomingResult.status === 'fulfilled' && upcomingResult.value.ok) {
+        const data = await upcomingResult.value.json();
+        setUpcomingAppointments(data.appointments || []);
+      } else {
+        console.error('Failed to load upcoming appointments:', upcomingResult.reason);
+        setUpcomingAppointments([]);
+      }
+
+      // Handle appointment stats
+      if (statsResult.status === 'fulfilled' && statsResult.value.ok) {
+        const data = await statsResult.value.json();
+        setAppointmentStats(data.stats || null);
+      } else {
+        console.error('Failed to load appointment stats:', statsResult.reason);
+        setAppointmentStats(null);
+      }
+
+      console.log('Successfully loaded all appointment data');
+
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('Appointment loading was aborted');
+      } else {
+        console.error('Error loading appointments:', error);
+        showMessage('error', 'Failed to load appointments: ' + error.message);
+        
+        // Reset states on error
+        setProviderAppointments([]);
+        setTodaysAppointments([]);
+        setUpcomingAppointments([]);
+        setAppointmentStats(null);
+      }
+    } finally {
+      setAppointmentsLoading(false);
+      currentProviderRef.current = null;
+    }
+  }, [appointmentsLoading, backendUrl]); // Stable dependencies
 
 
-const loadProviderAppointment = async (providerId) => {
-  console.log('Loading appointments for provider:', providerId);
-  
-  setAppointmentsLoading(true);
-  try {
-    const endpoints = [
-      `${backendUrl}/api/provider/${providerId}/appointments`,
-      `${backendUrl}/api/provider/${providerId}/todays-appointments`,
-      `${backendUrl}/api/provider/${providerId}/upcoming-appointments`,
-      `${backendUrl}/api/provider/${providerId}/appointment-stats`
-    ];
-    
-    console.log('API endpoints:', endpoints);
-    
-    const responses = await Promise.all(endpoints.map(url => fetch(url)));
-    console.log('Response statuses:', responses.map(r => r.status));
-    
-    const data = await Promise.all(responses.map(r => r.json()));
-    console.log('Response data:', data);
-    
-    // ... rest of your function
-    
-  } catch (error) {
-    console.error('Detailed error:', error);
-  }
-};
-
-
-const loadProviderAppointments = async (providerId) => {
-  if (!providerId) return;
-  if (appointmentsLoading) {
-    console.log('Appointments already loading, skipping...');
-    return;
-  }
-  
-  console.log('Loading appointments for:', providerId);
-  
-  setAppointmentsLoading(true);
-  try {
-    // Use Promise.allSettled instead of Promise.all to handle failures gracefully
-    const results = await Promise.allSettled([
-      fetchProviderAppointments(providerId),
-      fetchTodaysAppointments(providerId),
-      fetchUpcomingAppointments(providerId),
-      fetchAppointmentStats(providerId)
-    ]);
-
-    // Process each result individually
-    const [allAppointments, todayAppointments, upcomingAppointments, stats] = results;
-
-    setProviderAppointments(
-      allAppointments.status === 'fulfilled' 
-        ? allAppointments.value.appointments || [] 
-        : []
-    );
-    
-    setTodaysAppointments(
-      todayAppointments.status === 'fulfilled' 
-        ? todayAppointments.value.appointments || [] 
-        : []
-    );
-    
-    setUpcomingAppointments(
-      upcomingAppointments.status === 'fulfilled' 
-        ? upcomingAppointments.value.appointments || [] 
-        : []
-    );
-    
-    setAppointmentStats(
-      stats.status === 'fulfilled' 
-        ? stats.value.stats || null 
-        : null
-    );
-    
-    setInitialLoadComplete(true);
-    
-  } catch (error) {
-    console.error('Unexpected error in loadProviderAppointments:', error);
-  } finally {
-    setAppointmentsLoading(false);
-  }
-};
+// Clean up function
+  useEffect(() => {
+    return () => {
+      if (appointmentsAbortRef.current) {
+        appointmentsAbortRef.current.abort();
+      }
+    };
+  }, []);
   const MessageAlert = () => {
     if (!error && !success) return null;
 
@@ -577,100 +525,96 @@ const loadProviderAppointments = async (providerId) => {
 
 
 
-  const AppointmentStatsCards = ({ stats, loading }) => {
+  // const AppointmentStatsCards = ({ stats, loading }) => {
+  //   if (loading) {
+  //     return (
+  //       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+  //         {[1, 2, 3, 4].map(i => (
+  //           <div key={i} className="bg-white rounded-lg p-4 border border-gray-200">
+  //             <div className="animate-pulse">
+  //               <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+  //               <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+  //             </div>
+  //           </div>
+  //         ))}
+  //       </div>
+  //     );
+  //   }
+
+  //   if (!stats) return null;
+
+  //   const statCards = [
+  //     {
+  //       title: 'Total Appointments',
+  //       value: stats.total || 0,
+  //       icon: Calendar,
+  //       color: 'text-gray-600',
+  //       bgColor: 'bg-gray-50'
+  //     },
+  //     {
+  //       title: 'Today\'s Appointments',
+  //       value: stats.today || 0,
+  //       icon: Clock,
+  //       color: 'text-green-600',
+  //       bgColor: 'bg-green-50'
+  //     },
+  //     {
+  //       title: 'Upcoming',
+  //       value: stats.upcoming || 0,
+  //       icon: Clock4,
+  //       color: 'text-yellow-600',
+  //       bgColor: 'bg-yellow-50'
+  //     },
+  //     {
+  //       title: 'Completed',
+  //       value: stats.completed || 0,
+  //       icon: CheckCircle,
+  //       color: 'text-purple-600',
+  //       bgColor: 'bg-purple-50'
+  //     }
+  //   ];
+
+  //   return (
+  //     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+  //       {statCards.map((stat, index) => (
+  //         <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
+  //           <div className="flex items-center justify-between">
+  //             <div>
+  //               <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+  //               <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+  //             </div>
+  //             <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+  //               <stat.icon className={`w-6 h-6 ${stat.color}`} />
+  //             </div>
+  //           </div>
+  //         </div>
+  //       ))}
+  //     </div>
+  //   );
+  // };
+
+
+
+ const AppointmentsSection = React.memo(({
+    appointments,
+    title,
+    emptyMessage = "No appointments found",
+    loading = false
+  }) => {
     if (loading) {
       return (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="bg-white rounded-lg p-4 border border-gray-200">
-              <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-                <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="animate-pulse">
+                <div className="h-16 bg-gray-200 rounded"></div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       );
     }
-
-    if (!stats) return null;
-
-    const statCards = [
-      {
-        title: 'Total Appointments',
-        value: stats.total || 0,
-        icon: Calendar,
-        color: 'text-gray-600',
-        bgColor: 'bg-gray-50'
-      },
-      {
-        title: 'Today\'s Appointments',
-        value: stats.today || 0,
-        icon: Clock,
-        color: 'text-green-600',
-        bgColor: 'bg-green-50'
-      },
-      {
-        title: 'Upcoming',
-        value: stats.upcoming || 0,
-        icon: Clock4,
-        color: 'text-yellow-600',
-        bgColor: 'bg-yellow-50'
-      },
-      {
-        title: 'Completed',
-        value: stats.completed || 0,
-        icon: CheckCircle,
-        color: 'text-purple-600',
-        bgColor: 'bg-purple-50'
-      }
-    ];
-
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        {statCards.map((stat, index) => (
-          <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-              </div>
-              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                <stat.icon className={`w-6 h-6 ${stat.color}`} />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-
-
-
-const AppointmentsSection = React.memo(({
-  appointments,
-  title,
-  emptyMessage = "No appointments found",
-  loading = false
-}) => {
-  // Memoize the appointments to prevent unnecessary re-renders
-  const memoizedAppointments = React.useMemo(() => appointments, [appointments]);
-
-  if (loading) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
-        <div className="space-y-3">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="animate-pulse">
-              <div className="h-16 bg-gray-200 rounded"></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -695,10 +639,10 @@ const AppointmentsSection = React.memo(({
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">
-                        {appointment.client?.name || appointment.clientName || 'Unknown Client'}
+                        {appointment?.userName || appointment.userName || 'Unknown Client'}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {appointment.service?.title || appointment.serviceName || 'Unknown Service'}
+                        {appointment.serviceTitle ||  'Unknown Service'}
                       </p>
                     </div>
                   </div>
@@ -708,7 +652,7 @@ const AppointmentsSection = React.memo(({
                     {new Date(appointment.date).toLocaleDateString()}
                   </p>
                   <p className="text-sm text-gray-600">
-                    {appointment.startTime} - {appointment.endTime}
+                    {appointment?.time} - {appointment.endTime}
                   </p>
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' :
                     appointment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
@@ -1276,10 +1220,10 @@ const AppointmentsSection = React.memo(({
             </button>
           </div>
 
-          <AppointmentStatsCards
+          {/* <AppointmentStatsCards
             stats={appointmentStats}
             loading={appointmentsLoading}
-          />
+          /> */}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AppointmentsSection
@@ -1289,12 +1233,12 @@ const AppointmentsSection = React.memo(({
               loading={appointmentsLoading}
             />
 
-            <AppointmentsSection
+            {/* <AppointmentsSection
               appointments={upcomingAppointments}
               title="Upcoming Appointments"
               emptyMessage="No upcoming appointments"
               loading={appointmentsLoading}
-            />
+            /> */}
           </div>
         </div>
 
@@ -1409,43 +1353,47 @@ const AppointmentsSection = React.memo(({
     );
   };
 
+    // FIXED: AppointmentsView component with proper loading and error handling
   const AppointmentsView = ({ provider }) => {
-    useEffect(() => {
-      if (provider) {
-        loadProviderAppointments(provider._id);
-      }
-    }, [provider]);
-
     if (!provider) return null;
 
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-4 sm:p-6 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            {/* Back button */}
             <button
-              onClick={() => setView("detail")}
+              onClick={() => setView("grid")}
               className="text-gray-600 hover:text-gray-700 font-medium text-sm sm:text-base"
             >
-              ← Back to Provider Details
+              ← Back to Providers
             </button>
 
-            {/* Title */}
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 text-center sm:text-left">
               Appointments for {provider.name}
             </h2>
 
-            {/* Spacer for alignment on larger screens */}
-            <div className="hidden sm:block w-24"></div>
+            <button
+              onClick={() => loadProviderAppointments(provider._id)}
+              disabled={appointmentsLoading}
+              className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+            >
+              {appointmentsLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                  Loading...
+                </>
+              ) : (
+                'Refresh'
+              )}
+            </button>
           </div>
         </div>
 
-
         <div className="p-6">
-          <AppointmentStatsCards
+          {/* <AppointmentStatsCards
             stats={appointmentStats}
             loading={appointmentsLoading}
-          />
+          /> */}
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <AppointmentsSection
@@ -1455,15 +1403,15 @@ const AppointmentsSection = React.memo(({
               loading={appointmentsLoading}
             />
 
-            <AppointmentsSection
+            {/* <AppointmentsSection
               appointments={upcomingAppointments}
               title="Upcoming Appointments"
               emptyMessage="No upcoming appointments"
               loading={appointmentsLoading}
-            />
+            /> */}
 
             <AppointmentsSection
-              appointments={providerAppointments.slice(0, 10)} // Show recent 10
+              appointments={providerAppointments.slice(0, 10)}
               title="Recent Appointments"
               emptyMessage="No appointment history"
               loading={appointmentsLoading}
@@ -1473,13 +1421,6 @@ const AppointmentsSection = React.memo(({
           <div className="mt-8">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">All Appointments</h3>
-              <button
-                onClick={() => loadProviderAppointments(provider._id)}
-                disabled={appointmentsLoading}
-                className="text-gray-600 hover:text-gray-700 text-sm font-medium"
-              >
-                Refresh
-              </button>
             </div>
 
             <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -1513,24 +1454,24 @@ const AppointmentsSection = React.memo(({
                               <User className="w-8 h-8 text-gray-400 mr-3" />
                               <div>
                                 <div className="text-sm font-medium text-gray-900">
-                                  {appointment.client?.name || appointment.clientName || 'Unknown'}
+                                  {appointment?.userName || appointment.userName || 'Unknown'}
                                 </div>
                                 <div className="text-sm text-gray-500">
-                                  {appointment.client?.email || appointment.clientEmail || ''}
+                                  {appointment?.userEmail || appointment.userEmail || ''}
                                 </div>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {appointment.service?.title || appointment.serviceName || 'Unknown Service'}
+                              {appointment?.serviceTitle || appointment.serviceTitle || 'Unknown Service'}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {new Date(appointment.date).toLocaleDateString()}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {appointment.startTime} - {appointment.endTime}
+                            {appointment.time}  {appointment.endTime}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' :
@@ -1554,7 +1495,6 @@ const AppointmentsSection = React.memo(({
       </div>
     );
   };
-
 
   const GridView = () => {
     return (
