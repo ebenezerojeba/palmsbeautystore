@@ -31,9 +31,9 @@ import {
 const Appointment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { userData, backendUrl } = useContext(AppContext);
+  const { userData, } = useContext(AppContext);
   const { formatNaira } = useContext(ShopContext);
-
+const  backendUrl = "http://localhost:3000"
   // State management
   const [serviceInfo, setServiceInfo] = useState(null);
   const [allServices, setAllServices] = useState([]);
@@ -93,13 +93,15 @@ const Appointment = () => {
       try {
         const res = await fetch(`${backendUrl}/api/services/services/${id}`);
         const data = await res.json();
-        if (data.service) {
-          setServiceInfo({
-            ...data.service,
-            providerName: data.service.providers?.[0]?.name || ''
-          });
-          setSelectedServices([data.service]);
-        }
+       if (data.service) {
+  setServiceInfo({
+    ...data.service,
+    providers: data.service.providers || [],   // make sure providers is kept
+    providerName: data.service.providers?.[0]?.name || ''
+  });
+  setSelectedServices([data.service]);
+}
+
         else {
           toast.error("Service not found");
           navigate("/services");
@@ -261,9 +263,6 @@ const Appointment = () => {
   };
 
 
-  const randomIndex = Math.floor(Math.random() * serviceInfo?.providers.length);
-  const chosenProvider = serviceInfo?.providers[randomIndex];
-
 
 
   const handlePayment = () => {
@@ -275,105 +274,134 @@ const Appointment = () => {
 
   // Handle booking
   const handleBooking = async () => {
-    if (!validateBookingData()) return;
+  if (!validateBookingData()) return;
 
-    if (!userData) {
-      toast.warn("User information not available");
-      return;
-    }
+  if (!userData) {
+    toast.warn("User information not available");
+    return;
+  }
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      toast.error("Please log in first!");
-      return;
-    }
+  // Enhanced provider validation
+  if (!serviceInfo || !serviceInfo.providers || serviceInfo.providers.length === 0) {
+    toast.error("No providers available for this service");
+    return;
+  }
 
-    setIsBooking(true);
+  // Filter out invalid providers first
+  const validProviders = serviceInfo.providers.filter(provider => 
+    provider && provider._id && provider.name
+  );
 
-    try {
-      const bookingData = {
-        services: selectedServices.map((service, index) => ({
-          serviceId: service._id,
-          serviceTitle: service.title,
-          duration: parseInt(service.duration) || 90,
-          price: parseFloat(service.price) || 0,
-          order: index + 1
-        })),
+  if (validProviders.length === 0) {
+    toast.error("No valid providers available for this service");
+    return;
+  }
 
-        date: selectedDate,
-        time: selectedTime,
-        providerId: chosenProvider._id,
-        providerName: chosenProvider.name,
-        totalDuration: getTotalDuration(),
+  // Select random provider from valid ones
+  const randomIndex = Math.floor(Math.random() * validProviders.length);
+  const chosenProvider = validProviders[randomIndex];
 
-        payment: {
-          amount: getTotalPrice(),
-          currency: "CAD",
-          paymentMethod: selectedPaymentMethod === "new" ? "new_card" : selectedPaymentMethod
-        },
+  // Double-check the chosen provider (this should never fail now)
+  if (!chosenProvider || !chosenProvider._id) {
+    toast.error("Provider selection failed. Please try again.");
+    return;
+  }
 
-        userName: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
-        userEmail: userData.email,
-        userPhone: userData.phone,
+  console.log("Chosen Provider:", chosenProvider);
 
-        clientNotes,
-        specialRequests,
-        reminderPreferences,
+  const token = localStorage.getItem('token');
+  if (!token) {
+    toast.error("Please log in first!");
+    return;
+  }
 
-        paymentPreferences: {
-          savePaymentMethod,
-          selectedPaymentMethod
-        },
+  setIsBooking(true);
 
-        agreementConfirmations: {
-          cancellationPolicy: agreeToCancellationPolicy,
-          termsAndConditions: agreeToTerms
-        },
+  try {
+    const bookingData = {
+      services: selectedServices.map((service, index) => ({
+        serviceId: service._id,
+        serviceTitle: service.title,
+        duration: parseInt(service.duration) || 90,
+        price: parseFloat(service.price) || 0,
+        order: index + 1
+      })),
 
-        consentForm: {
-          healthConditions: consentForm.healthConditions,
-          allergies: consentForm.allergies,
-          consentToTreatment: consentForm.consentToTreatment,
-          submittedAt: new Date().toISOString()
-        },
-      };
+      date: selectedDate,
+      time: selectedTime,
+      providerId: chosenProvider._id,
+      providerName: chosenProvider.name,
+      totalDuration: getTotalDuration(),
 
-      const res = await fetch(`${backendUrl}/api/appointment/book-multiple-appointment`, {
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(bookingData),
-      });
+      payment: {
+        amount: getTotalPrice(),
+        currency: "CAD",
+        paymentMethod: selectedPaymentMethod === "new" ? "new_card" : selectedPaymentMethod
+      },
 
-      const data = await res.json();
+      userName: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
+      userEmail: userData.email,
+      userPhone: userData.phone,
 
-      if (res.ok) {
-        if (data.appointment && data.appointment._id) {
-          setAppointmentId(data.appointment._id);
-        }
+      clientNotes,
+      specialRequests,
+      reminderPreferences,
 
-        if (data.paymentUrl) {
-          setPaymentUrl(data.paymentUrl);
-          setShowPayment(true);
-          toast.success("Appointment created! Please complete payment to confirm.");
-        } else {
-          console.error('No payment URL in response:', data);
-          toast.error("Booking created but payment URL not received. Please contact support.");
-        }
-      } else {
-        console.error('Booking failed:', data);
-        toast.error(data.message || "Booking failed. Please try again.");
+      paymentPreferences: {
+        savePaymentMethod,
+        selectedPaymentMethod
+      },
+
+      agreementConfirmations: {
+        cancellationPolicy: agreeToCancellationPolicy,
+        termsAndConditions: agreeToTerms
+      },
+
+      consentForm: {
+        healthConditions: consentForm.healthConditions,
+        allergies: consentForm.allergies,
+        consentToTreatment: consentForm.consentToTreatment,
+        submittedAt: new Date().toISOString()
+      },
+    };
+
+    console.log("Booking data being sent:", bookingData); // Debug log
+
+    const res = await fetch(`${backendUrl}/api/appointment/book-multiple-appointment`, {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(bookingData),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      if (data.appointment && data.appointment._id) {
+        setAppointmentId(data.appointment._id);
       }
-    } catch (err) {
-      console.error("Booking error:", err);
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setIsBooking(false);
-    }
-  };
 
+      if (data.paymentUrl) {
+        setPaymentUrl(data.paymentUrl);
+        setShowPayment(true);
+        toast.success("Appointment created! Please complete payment to confirm.");
+      } else {
+        console.error('No payment URL in response:', data);
+        toast.error("Booking created but payment URL not received. Please contact support.");
+      }
+    } else {
+      console.error('Booking failed:', data);
+      toast.error(data.message || "Booking failed. Please try again.");
+    }
+  } catch (err) {
+    console.error("Booking error:", err);
+    toast.error("Something went wrong. Please try again.");
+  } finally {
+    setIsBooking(false);
+  }
+};
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', {
