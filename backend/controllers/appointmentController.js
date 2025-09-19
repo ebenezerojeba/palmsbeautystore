@@ -774,7 +774,7 @@ const bookMultipleAppointment = async (req, res) => {
       appointment: newAppointment,
       paymentUrl: session.url,
       assignedProvider: {
-        _id: providerData._id,
+        // _id: providerData._id,
         name: providerData.name,
         profileImage: providerData.profileImage
       }
