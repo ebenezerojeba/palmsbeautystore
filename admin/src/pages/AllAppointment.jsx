@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useCallback, useMemo } from "react";
 import {
   X,
   Check,
@@ -11,9 +11,7 @@ import {
   User,
   Phone,
   Mail,
-  Filter,
   Search,
-  Download,
   AlertCircle,
   CheckCircle2,
   XCircle
@@ -28,12 +26,23 @@ const AllAppointments = () => {
     completeAppointment, 
     slotDateFormat,
     loadingStates,
-    loadingId // Use loadingId from context
+    loadingId 
   } = useContext(AdminContexts);
 
+  // Add state to track if initial load has been attempted
+  const [hasInitialLoad, setHasInitialLoad] = useState(false);
+  const [error, setError] = useState(null);
+
   useEffect(() => {
-    getAllAppointments();
-  }, []);
+    // Only call once when component mounts and hasn't been loaded yet
+    if (!hasInitialLoad && !loadingStates?.appointments) {
+      setHasInitialLoad(true);
+      getAllAppointments().catch(err => {
+        console.error('Failed to load appointments:', err);
+        setError('Failed to load appointments. Please refresh the page or try again.');
+      });
+    }
+  }, []); // Empty dependency array - only run once on mount
 
   // State management
   const [view, setView] = useState('list');
@@ -42,55 +51,102 @@ const AllAppointments = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Color palette for appointments
-  const appointmentColors = [
-    'bg-blue-100 text-blue-800 border-blue-200',
-    'bg-purple-100 text-purple-800 border-purple-200',
-    'bg-pink-100 text-pink-800 border-pink-200',
-    'bg-indigo-100 text-indigo-800 border-indigo-200',
-    'bg-cyan-100 text-cyan-800 border-cyan-200',
-    'bg-teal-100 text-teal-800 border-teal-200',
-    'bg-emerald-100 text-emerald-800 border-emerald-200',
-    'bg-lime-100 text-lime-800 border-lime-200',
-    'bg-amber-100 text-amber-800 border-amber-200',
-    'bg-orange-100 text-orange-800 border-orange-200',
-    'bg-rose-100 text-rose-800 border-rose-200',
-    'bg-violet-100 text-violet-800 border-violet-200'
+  // Color palette for providers
+  const providerColors = [
+    // { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200', accent: 'bg-blue-500' },
+    { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-200', accent: 'bg-purple-500' },
+    { bg: 'bg-pink-100', text: 'text-pink-800', border: 'border-pink-200', accent: 'bg-pink-500' },
+    { bg: 'bg-indigo-100', text: 'text-indigo-800', border: 'border-indigo-200', accent: 'bg-indigo-500' },
+    { bg: 'bg-cyan-100', text: 'text-cyan-800', border: 'border-cyan-200', accent: 'bg-cyan-500' },
+    { bg: 'bg-teal-100', text: 'text-teal-800', border: 'border-teal-200', accent: 'bg-teal-500' },
+    { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-200', accent: 'bg-emerald-500' },
+    { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-200', accent: 'bg-amber-500' },
+    { bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-200', accent: 'bg-orange-500' },
+    { bg: 'bg-rose-100', text: 'text-rose-800', border: 'border-rose-200', accent: 'bg-rose-500' },
+    { bg: 'bg-violet-100', text: 'text-violet-800', border: 'border-violet-200', accent: 'bg-violet-500' },
+    { bg: 'bg-lime-100', text: 'text-lime-800', border: 'border-lime-200', accent: 'bg-lime-500' }
   ];
 
-  // Function to get consistent color for an appointment
-  const getAppointmentColor = (appointmentId, status) => {
-    if (status === 'completed') return 'bg-green-100 text-green-800 border-green-200';
-    if (status === 'cancelled') return 'bg-red-100 text-red-800 border-red-200';
-    if (status === 'confirmed') return 'bg-blue-100 text-blue-800 border-blue-200';
-    if (status === 'no-show') return 'bg-gray-100 text-gray-800 border-gray-200';
-    
-    // Use appointment ID to generate consistent color for pending appointments
-    const colorIndex = appointmentId ? appointmentId.length % appointmentColors.length : 0;
-    return appointmentColors[colorIndex];
-  };
+  // Helper function to normalize status - MOVED UP
+  const getAppointmentStatus = useCallback((appointment) => {
+    return appointment?.status || (
+      appointment?.isCompleted ? 'completed' : 
+      appointment?.isCancelled ? 'cancelled' : 
+      'pending'
+    );
+  }, []);
 
-  // Simplified handlers using context functions directly
-  const handleCancelAppointment = async (appointmentId) => {
+  // Get unique providers for color assignment
+  const uniqueProviders = useMemo(() => {
+    if (!appointments) return [];
+    const providers = [...new Set(appointments.map(apt => apt.providerName).filter(Boolean))];
+    return providers;
+  }, [appointments]);
+
+  // Function to get consistent color for a provider
+  const getProviderColor = useCallback((providerName) => {
+    if (!providerName) return providerColors[0];
+    const providerIndex = uniqueProviders.indexOf(providerName);
+    const colorIndex = providerIndex >= 0 ? providerIndex % providerColors.length : 0;
+    return providerColors[colorIndex];
+  }, [uniqueProviders, providerColors]);
+
+  // Function to get appointment styling based on status and provider
+  const getAppointmentStyling = useCallback((appointment) => {
+    const status = getAppointmentStatus(appointment);
+    const providerColor = getProviderColor(appointment.providerName);
+    
+    // Override colors for certain statuses
+    if (status === 'completed') {
+      return {
+        bg: 'bg-green-100',
+        text: 'text-green-800',
+        border: 'border-green-200',
+        accent: 'bg-green-500'
+      };
+    }
+    if (status === 'cancelled') {
+      return {
+        bg: 'bg-red-100',
+        text: 'text-red-800',
+        border: 'border-red-200',
+        accent: 'bg-red-500'
+      };
+    }
+    if (status === 'no-show') {
+      return {
+        bg: 'bg-gray-100',
+        text: 'text-gray-800',
+        border: 'border-gray-200',
+        accent: 'bg-gray-500'
+      };
+    }
+    
+    // Use provider color for pending/confirmed appointments
+    return providerColor;
+  }, [getAppointmentStatus, getProviderColor]);
+
+  // Centralized handlers using context functions
+  const handleCancelAppointment = useCallback(async (appointmentId) => {
     try {
       await cancelAppointment(appointmentId);
-      // The context will handle all state updates automatically
     } catch (error) {
       console.error('Error cancelling appointment:', error);
+      // You might want to show a toast notification here
     }
-  };
+  }, [cancelAppointment]);
 
-  const handleCompleteAppointment = async (appointmentId) => {
+  const handleCompleteAppointment = useCallback(async (appointmentId) => {
     try {
       await completeAppointment(appointmentId);
-      // The context will handle all state updates automatically
     } catch (error) {
       console.error('Error completing appointment:', error);
+      // You might want to show a toast notification here
     }
-  };
+  }, [completeAppointment]);
 
   // Calendar functions
-  const getDaysInMonth = (date) => {
+  const getDaysInMonth = useCallback((date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1);
@@ -109,9 +165,10 @@ const AllAppointments = () => {
     }
 
     return days;
-  };
+  }, []);
 
-  const isSameDay = (d1, d2) => {
+  const isSameDay = useCallback((d1, d2) => {
+    if (!d1 || !d2) return false;
     const date1 = new Date(d1);
     const date2 = new Date(d2);
     return (
@@ -119,77 +176,83 @@ const AllAppointments = () => {
       date1.getMonth() === date2.getMonth() &&
       date1.getDate() === date2.getDate()
     );
-  };
+  }, []);
 
-  const getAppointmentsForDate = (date) => {
-    if (!date) return [];
+  const getAppointmentsForDate = useCallback((date) => {
+    if (!date || !appointments) return [];
     return appointments.filter(apt => isSameDay(apt.date, date));
-  };
+  }, [appointments, isSameDay]);
 
-  const navigateMonth = (direction) => {
+  const navigateMonth = useCallback((direction) => {
     setCurrentDate(prev => {
       const newDate = new Date(prev);
       newDate.setMonth(prev.getMonth() + direction);
       return newDate;
     });
-  };
+  }, []);
 
-  // Filter appointments using the status field from your updated backend
-  const filteredAppointments = appointments.filter(apt => {
-    const matchesSearch = apt.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      apt.serviceTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      apt.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      apt.userPhone.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesStatus = statusFilter === 'all' ||
-      (statusFilter === 'pending' && (!apt.status || apt.status === 'pending')) ||
-      (statusFilter === 'completed' && apt.status === 'completed') ||
-      (statusFilter === 'cancelled' && apt.status === 'cancelled');
-
-    return matchesSearch && matchesStatus;
-  });
-
-  // Updated StatusBadge component to use the status field
-  const StatusBadge = ({ item }) => {
-    // Support both old and new status format for backward compatibility
-    const status = item.status || (item.isCompleted ? 'completed' : item.isCancelled ? 'cancelled' : 'pending');
+  // Memoized filtered appointments for performance
+  const filteredAppointments = useMemo(() => {
+    if (!appointments) return [];
     
-    if (status === 'completed') {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full font-medium">
-          <CheckCircle2 className="w-3 h-3" />
-          Completed
-        </span>
+    return appointments.filter(apt => {
+      if (!apt) return false;
+      
+      const matchesSearch = (
+        apt.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        apt.serviceTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        apt.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        apt.userPhone?.toLowerCase().includes(searchTerm.toLowerCase())
       );
-    }
-    if (status === 'cancelled') {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full font-medium">
-          <XCircle className="w-3 h-3" />
-          Cancelled
-        </span>
-      );
-    }
-    if (status === 'confirmed') {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full font-medium">
-          <CheckCircle2 className="w-3 h-3" />
-          Confirmed
-        </span>
-      );
-    }
-    if (status === 'no-show') {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full font-medium">
-          <XCircle className="w-3 h-3" />
-          No Show
-        </span>
-      );
-    }
+
+      const status = getAppointmentStatus(apt);
+      const matchesStatus = statusFilter === 'all' ||
+        (statusFilter === 'pending' && status === 'pending') ||
+        (statusFilter === 'completed' && status === 'completed') ||
+        (statusFilter === 'cancelled' && status === 'cancelled');
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [appointments, searchTerm, statusFilter, getAppointmentStatus]);
+  
+  // StatusBadge component
+  const StatusBadge = ({ appointment }) => {
+    const status = getAppointmentStatus(appointment);
+    
+    const statusConfig = {
+      completed: {
+        className: "bg-green-100 text-green-800",
+        icon: <CheckCircle2 className="w-3 h-3" />,
+        label: "Completed"
+      },
+      cancelled: {
+        className: "bg-red-100 text-red-800",
+        icon: <XCircle className="w-3 h-3" />,
+        label: "Cancelled"
+      },
+      confirmed: {
+        className: "bg-gray-200 text-gray-800",
+        icon: <CheckCircle2 className="w-3 h-3" />,
+        label: "Confirmed"
+      },
+      'no-show': {
+        className: "bg-gray-100 text-gray-800",
+        icon: <XCircle className="w-3 h-3" />,
+        label: "No Show"
+      },
+      pending: {
+        className: "bg-amber-100 text-amber-800",
+        icon: <AlertCircle className="w-3 h-3" />,
+        label: "Pending"
+      }
+    };
+
+    const config = statusConfig[status] || statusConfig.pending;
+
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-amber-100 text-amber-800 rounded-full font-medium">
-        <AlertCircle className="w-3 h-3" />
-        Pending
+      <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs ${config.className} rounded-full font-medium`}>
+        {config.icon}
+        {config.label}
       </span>
     );
   };
@@ -202,6 +265,7 @@ const AllAppointments = () => {
         onClick={onClick}
         disabled={disabled || isProcessing}
         className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border ${color} rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1`}
+        aria-label={`${action} appointment`}
       >
         {isProcessing ? <Loader className="w-3 h-3 animate-spin" /> : icon}
         <span className="hidden sm:inline">{isProcessing ? `${action}ing...` : label}</span>
@@ -215,38 +279,48 @@ const AllAppointments = () => {
 
     return (
       <div
-        className={`min-h-[80px] sm:min-h-[100px] p-1 sm:p-2 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${
+        className={`min-h-[100px] sm:min-h-[120px] p-1 sm:p-2 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${
           isToday ? 'bg-blue-50 border-blue-200' : ''
         } ${isSelected ? 'bg-blue-100 border-blue-300' : ''}`}
         onClick={() => date && setSelectedDate(date)}
       >
         {date && (
           <>
-            <div className={`text-xs sm:text-sm font-medium mb-1 ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
+            <div className={`text-xs sm:text-sm font-medium mb-2 ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
               {date.getDate()}
             </div>
-            <div className="space-y-0.5 sm:space-y-1">
-              {dayAppointments.slice(0, 2).map((apt, idx) => {
-                const status = apt.status || (apt.isCompleted ? 'completed' : apt.isCancelled ? 'cancelled' : 'pending');
-                const colorClass = getAppointmentColor(apt._id, status);
+            <div className="space-y-1">
+              {dayAppointments.slice(0, 3).map((apt, idx) => {
+                const styling = getAppointmentStyling(apt);
                 return (
                   <div
-                    key={idx}
-                    className={`text-xs p-1 sm:p-1.5 rounded-md border ${colorClass} transition-colors`}
-                    title={`${apt.time} - ${apt.userName} - ${apt.serviceTitle}`}
+                    key={apt._id || idx}
+                    className={`text-xs p-2 rounded-md border ${styling.bg} ${styling.text} ${styling.border} transition-colors relative overflow-hidden`}
+                    title={`${apt.time} - ${apt.userName} - ${apt.serviceTitle} (${apt.providerName})`}
                   >
-                    <div className="font-bold text-xs sm:text-sm truncate mb-0.5">
-                      {apt.userName}
-                    </div>
-                    <div className="font-semibold text-xs truncate">
-                      {apt.serviceTitle}
+                    {/* Provider color accent bar */}
+                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${styling.accent}`}></div>
+                    
+                    <div className="ml-1">
+                      <div className="font-bold text-xs truncate mb-1">
+                        {apt.userName}
+                      </div>
+                      <div className="font-medium text-xs truncate mb-1">
+                        {apt.serviceTitle}
+                      </div>
+                      <div className="font-semibold text-xs truncate opacity-90">
+                        {apt.providerName || 'No Provider'}
+                      </div>
+                      <div className="text-xs opacity-75 mt-1">
+                        {apt.time}
+                      </div>
                     </div>
                   </div>
                 );
               })}
-              {dayAppointments.length > 2 && (
-                <div className="text-xs text-gray-500 font-medium">
-                  +{dayAppointments.length - 2} more
+              {dayAppointments.length > 3 && (
+                <div className="text-xs text-gray-500 font-medium pl-1">
+                  +{dayAppointments.length - 3} more
                 </div>
               )}
             </div>
@@ -257,71 +331,170 @@ const AllAppointments = () => {
   };
 
   const AppointmentCard = ({ appointment }) => {
-    // Support both old and new status format
-    const status = appointment.status || (appointment.isCompleted ? 'completed' : appointment.isCancelled ? 'cancelled' : 'pending');
-    const canTakeAction = status === 'pending' || (!appointment.status && !appointment.isCancelled && !appointment.isCompleted);
+    const status = getAppointmentStatus(appointment);
+    const canTakeAction = status === 'pending';
+
+    // Format date for display
+    const formatDate = (dateString) => {
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'Invalid Date';
+        return date.toLocaleDateString('en-US', {
+          weekday: 'short',
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+      } catch (error) {
+        return 'Invalid Date';
+      }
+    };
+
+    // Format duration
+    const formatDuration = (minutes) => {
+      if (!minutes || isNaN(minutes)) return 'N/A';
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      if (hours > 0 && mins > 0) {
+        return `${hours}h ${mins}m`;
+      } else if (hours > 0) {
+        return `${hours}h`;
+      } else {
+        return `${mins}m`;
+      }
+    };
+
+    // Get service title - handle both array and direct service
+    const serviceTitle = appointment.services && appointment.services.length > 0 
+      ? appointment.services[0].serviceTitle 
+      : appointment.serviceTitle || 'Service not specified';
 
     return (
-      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 mb-3">
+      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200 max-w-sm mx-auto">
+        {/* Header with name and status */}
+        <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-lg text-gray-900 truncate">{appointment.userName}</h3>
-            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-              <Phone className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">{appointment.userPhone}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1 sm:hidden">
-              <Mail className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">{appointment.userEmail}</span>
-            </div>
+            <h3 className="font-semibold text-lg text-gray-900 truncate">
+              {appointment.userName || 'Unknown User'}
+            </h3>
           </div>
           <div className="flex-shrink-0">
-            <StatusBadge item={appointment} />
+            <StatusBadge appointment={appointment} />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600 mb-4">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 flex-shrink-0" />
-            <span>{appointment.time}</span>
+        {/* Contact Information */}
+        <div className="space-y-2 mb-4">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Phone className="w-4 h-4 flex-shrink-0" />
+            <span className="truncate">{appointment.userPhone || 'N/A'}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <User className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{appointment.serviceTitle}</span>
-          </div>
-          <div className="hidden sm:flex items-center gap-2 sm:col-span-2">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
             <Mail className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{appointment.userEmail}</span>
+            <span className="truncate">{appointment.userEmail || 'N/A'}</span>
           </div>
         </div>
 
+        {/* Appointment Details */}
+        <div className="bg-gray-50 rounded-lg p-3 mb-4 space-y-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Calendar className="w-4 h-4 flex-shrink-0 text-gray-500" />
+            <span className="font-medium text-gray-900">{formatDate(appointment.date)}</span>
+          </div>
+          
+          <div className="flex items-center gap-2 text-sm">
+            <Clock className="w-4 h-4 flex-shrink-0 text-gray-500" />
+            <span className="text-gray-700">{appointment.time || 'N/A'}</span>
+            <span className="text-gray-500">({formatDuration(appointment.totalDuration)})</span>
+          </div>
+          
+          <div className="flex items-start gap-2 text-sm">
+            <User className="w-4 h-4 flex-shrink-0 text-gray-500 mt-0.5" />
+            <div>
+              <div className="font-medium text-gray-900">{serviceTitle}</div>
+              <div className="text-gray-600 mt-1">
+                <span className="text-xs">Stylist: </span>
+                <span className="font-medium">{appointment.providerName || 'N/A'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Client Notes (if any) */}
+        {appointment.clientNotes && appointment.clientNotes.trim() && (
+          <div className="mb-4">
+            <div className="text-xs font-medium text-gray-500 mb-1">Notes:</div>
+            <div className="text-sm text-gray-700 bg-blue-50 p-2 rounded border-l-4 border-blue-200">
+              {appointment.clientNotes}
+            </div>
+          </div>
+        )}
+
+        {/* Consent Form (if any) */}
+    {appointment.consentForm && (
+  (appointment.consentForm.healthConditions || appointment.consentForm.allergies) && (
+    <div className="mb-4">
+      <div className="text-xs font-medium text-gray-500 mb-1">Consent Form</div>
+      <div className="text-sm text-gray-700 bg-blue-50 p-2 rounded border-l-4 border-blue-200">
+        {appointment.consentForm.healthConditions && (
+          <div>Health Condition: {appointment.consentForm.healthConditions}</div>
+        )}
+        {appointment.consentForm.allergies && (
+          <div>Allergies: {appointment.consentForm.allergies}</div>
+        )}
+      </div>
+    </div>
+  )
+)}
+
+        {/* Action Buttons */}
         {canTakeAction && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 pt-3 border-t border-gray-100">
             <ActionButton
-              color="border-red-400 text-red-600 focus:ring-red-500"
+              color="border-red-300 text-red-600 hover:border-red-400 focus:ring-red-500"
               icon={<X className="w-3 h-3" />}
               onClick={() => handleCancelAppointment(appointment._id)}
               label="Cancel"
               appointmentId={appointment._id}
-              action="cancel"
-              disabled={loadingId === appointment._id}
+              action="Cancel"
+              disabled={!appointment._id}
             />
             <ActionButton
-              color="border-green-500 text-green-600 focus:ring-green-500"
+              color="border-green-300 text-green-600 hover:border-green-400 focus:ring-green-500"
               icon={<Check className="w-3 h-3" />}
               onClick={() => handleCompleteAppointment(appointment._id)}
               label="Complete"
               appointmentId={appointment._id}
-              action="complete"
-              disabled={loadingId === appointment._id}
+              action="Complete"
+              disabled={!appointment._id}
             />
           </div>
         )}
+
+        {/* Booking Info */}
+        <div className="mt-4 pt-3 border-t border-gray-100">
+          <div className="text-xs text-gray-500">
+            {appointment.bookedAt ? (
+              <>
+                Booked on {new Date(appointment.bookedAt).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </>
+            ) : (
+              'Booking date not available'
+            )}
+          </div>
+        </div>
       </div>
     );
   };
 
-  if (loadingStates.appointments) {
+  // Loading state
+  if (loadingStates?.appointments) {
     return (
       <div className="w-full p-4 md:p-6">
         <div className="w-full max-w-7xl mx-auto">
@@ -339,6 +512,41 @@ const AllAppointments = () => {
     );
   }
 
+  // Error state
+  if (error) {
+    return (
+      <div className="w-full p-4 md:p-6">
+        <div className="w-full max-w-7xl mx-auto text-center py-12">
+          <AlertCircle className="mx-auto h-12 w-12 text-red-400 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to load appointments</h3>
+          <p className="text-gray-500 mb-4">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              setHasInitialLoad(false);
+            }}
+            className="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state (when not loading but no appointments)
+  if (!appointments || appointments.length === 0) {
+    return (
+      <div className="w-full p-4 md:p-6">
+        <div className="w-full max-w-7xl mx-auto text-center py-12">
+          <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No appointments found</h3>
+          <p className="text-gray-500">No appointments have been scheduled yet.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full p-4 md:p-6 bg-gray-50 min-h-screen">
       <div className="w-full max-w-7xl mx-auto">
@@ -346,7 +554,12 @@ const AllAppointments = () => {
         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
           <div className="flex flex-col space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Appointment Management</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                Appointment Management
+                <span className="text-sm font-normal text-gray-500 ml-2">
+                  ({filteredAppointments.length} appointments)
+                </span>
+              </h1>
 
               {/* View Toggle */}
               <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
@@ -416,12 +629,14 @@ const AllAppointments = () => {
                     <button
                       onClick={() => navigateMonth(-1)}
                       className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      aria-label="Previous month"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => navigateMonth(1)}
                       className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      aria-label="Next month"
                     >
                       <ChevronRight className="w-5 h-5" />
                     </button>
@@ -473,8 +688,8 @@ const AllAppointments = () => {
                     {getAppointmentsForDate(selectedDate).length === 0 ? (
                       <p className="text-gray-500 text-center py-8 text-sm">No appointments scheduled</p>
                     ) : (
-                      getAppointmentsForDate(selectedDate).map((apt, idx) => (
-                        <AppointmentCard key={idx} appointment={apt} />
+                      getAppointmentsForDate(selectedDate).map((apt) => (
+                        <AppointmentCard key={apt._id} appointment={apt} />
                       ))
                     )}
                   </div>
@@ -497,8 +712,8 @@ const AllAppointments = () => {
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200">
-                  {filteredAppointments.map((appointment, index) => (
-                    <div key={index} className="p-4">
+                  {filteredAppointments.map((appointment) => (
+                    <div key={appointment._id} className="p-4">
                       <AppointmentCard appointment={appointment} />
                     </div>
                   ))}
@@ -518,6 +733,9 @@ const AllAppointments = () => {
                       Service
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Provider
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Date & Time
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -532,34 +750,37 @@ const AllAppointments = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredAppointments.map((appointment, index) => {
-                    const status = appointment.status || (appointment.isCompleted ? 'completed' : appointment.isCancelled ? 'cancelled' : 'pending');
-                    const canTakeAction = status === 'pending' || (!appointment.status && !appointment.isCancelled && !appointment.isCompleted);
+                  {filteredAppointments.map((appointment) => {
+                    const status = getAppointmentStatus(appointment);
+                    const canTakeAction = status === 'pending';
 
                     return (
-                      <tr key={index} className="hover:bg-gray-50 transition-colors">
+                      <tr key={appointment._id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4">
                           <div>
                             <div className="text-sm font-medium text-gray-900">
-                              {appointment.userName}
+                              {appointment.userName || 'Unknown User'}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {appointment.userEmail}
+                              {appointment.userEmail || 'N/A'}
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">
-                          {appointment.serviceTitle}
+                          {appointment.serviceTitle || 'N/A'}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">
-                          <div>{slotDateFormat(appointment.date)}</div>
-                          <div className="text-gray-500">{appointment.time}</div>
+                          {appointment.providerName || 'N/A'}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">
-                          {appointment.userPhone}
+                          <div>{slotDateFormat ? slotDateFormat(appointment.date) : new Date(appointment.date).toLocaleDateString()}</div>
+                          <div className="text-gray-500">{appointment.time || 'N/A'}</div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {appointment.userPhone || 'N/A'}
                         </td>
                         <td className="px-6 py-4">
-                          <StatusBadge item={appointment} />
+                          <StatusBadge appointment={appointment} />
                         </td>
                         <td className="px-6 py-4">
                           {canTakeAction && (
@@ -570,8 +791,8 @@ const AllAppointments = () => {
                                 onClick={() => handleCancelAppointment(appointment._id)}
                                 label="Cancel"
                                 appointmentId={appointment._id}
-                                action="cancel"
-                                disabled={loadingId === appointment._id}
+                                action="Cancel"
+                                disabled={!appointment._id}
                               />
                               <ActionButton
                                 color="border-green-500 text-green-600 focus:ring-green-500"
@@ -579,8 +800,8 @@ const AllAppointments = () => {
                                 onClick={() => handleCompleteAppointment(appointment._id)}
                                 label="Complete"
                                 appointmentId={appointment._id}
-                                action="complete"
-                                disabled={loadingId === appointment._id}
+                                action="Complete"
+                                disabled={!appointment._id}
                               />
                             </div>
                           )}

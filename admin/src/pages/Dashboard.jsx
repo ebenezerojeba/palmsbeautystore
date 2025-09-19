@@ -1,27 +1,21 @@
 import React, { useEffect, useContext, useState } from "react";
 import { 
-  Check, 
   Clock, 
   Users, 
-  X, 
   Calendar, 
   Mail, 
   Phone, 
-  Loader2, 
   CheckCircle, 
   XCircle, 
   Filter,
   TrendingUp,
-  Search,
-  MoreVertical,
-  Eye,
-  AlertCircle,
-  DollarSign,
-  Activity,
-  Notebook,
-  NotebookPen,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Activity,
+  DollarSign,
+  X,
+  Eye,
+  NotebookPen
 } from "lucide-react";
 import { AdminContexts } from "../context/AdminContexts";
 
@@ -32,78 +26,56 @@ const Dashboard = () => {
     dashData,
     getDashData,
     slotDateFormat,
-    cancelAppointment,
-    completeAppointment,
-    confirmAppointment,
-    loadingId,
     appointments,
-    getAllAppointments
+    getAllAppointments,
   } = useContext(AdminContexts);
 
   const [filterStatus, setFilterStatus] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [expandedCard, setExpandedCard] = useState(null);
   const navigate = useNavigate();
   
   useEffect(() => {
-    getDashData();
-    getAllAppointments();
-  }, []);
+    // Load dashboard data and appointments on mount - only once
+    const loadData = async () => {
+      try {
+        await Promise.all([getDashData(), getAllAppointments()]);
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      }
+    };
+    
+    loadData();
+  }, []); // Empty dependency array - only run once on mount
 
-  const handleCancelAppointment = async (appointmentId) => {
-    try {
-      await cancelAppointment(appointmentId);
-      await Promise.all([getDashData(), getAllAppointments()]);
-    } catch (error) {
-      console.error('Error cancelling appointment:', error);
-    }
-  };
+  // No need for second useEffect - stats are calculated from appointments data directly
 
-  const handleCompleteAppointment = async (appointmentId) => {
-    try {
-      await completeAppointment(appointmentId);
-      await Promise.all([getDashData(), getAllAppointments()]);
-    } catch (error) {
-      console.error('Error completing appointment:', error);
-    }
-  };
-
-  const handleConfirmAppointment = async (appointmentId) => {
-    try {
-      await confirmAppointment(appointmentId);
-      await Promise.all([getDashData(), getAllAppointments()]);
-    } catch (error) {
-      console.error('Error confirming appointment:', error);
-    }
-  };
-
-
-  
   const getFilteredAppointments = () => {
-    let appointmentsToFilter = filterStatus === 'all' 
-      ? dashData?.latestAppointments || []
-      : appointments || [];
+    // Always use the latest appointments data from context
+    const appointmentsToFilter = filterStatus === 'all' 
+      ? (appointments || []).slice(0, 10) // Show latest 10 for dashboard
+      : (appointments || []).filter(apt => {
+          const status = getAppointmentStatus(apt);
+          return status === filterStatus;
+        });
 
-    if (filterStatus !== 'all') {
-      appointmentsToFilter = appointmentsToFilter.filter(apt => apt.status === filterStatus);
-    }
-
-    if (searchTerm) {
-      appointmentsToFilter = appointmentsToFilter.filter(apt => 
-        apt.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        apt.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        apt.serviceTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        apt.services?.some(service => 
-          service.serviceTitle?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      );
-    }
-
-    return appointmentsToFilter;
+    return appointmentsToFilter.sort((a, b) => {
+      // Sort by date and time, most recent first
+      const dateA = new Date(`${a.date} ${a.time}`);
+      const dateB = new Date(`${b.date} ${b.time}`);
+      return dateB - dateA;
+    });
   };
 
-  const getStatusStats = () => {
+  // Centralized status determination
+  const getAppointmentStatus = (appointment) => {
+    if (appointment?.status) return appointment.status;
+    if (appointment?.isCompleted) return 'completed';
+    if (appointment?.isCancelled) return 'cancelled';
+    return 'pending';
+  };
+
+const getStatusStats = () => {
     const stats = {
       completed: dashData?.completedAppointments || 0,
       pending: dashData?.pendingAppointments || 0,
@@ -115,6 +87,7 @@ const Dashboard = () => {
     };
     return stats;
   };
+
 
   const StatCard = ({ icon, value, label, bgColor, textColor, status, trend, onClick, isRevenue = false }) => (
     <div 
@@ -137,7 +110,7 @@ const Dashboard = () => {
       </div>
       <div>
         <p className={`text-lg sm:text-xl font-bold ${textColor} mb-1`}>
-          {isRevenue ? `${value?.toLocaleString() || 0}` : (value || 0)}
+          {isRevenue ? `$${value?.toLocaleString() || 0}` : (value || 0)}
         </p>
         <p className="text-xs sm:text-sm text-gray-600">{label}</p>
       </div>
@@ -149,25 +122,22 @@ const Dashboard = () => {
   };
 
   const StatusBadge = ({ status, item }) => {
-    let actualStatus = status;
-    if (item && !status) {
-      if (item.isCompleted) actualStatus = 'completed';
-      else if (item.isCancelled) actualStatus = 'cancelled';
-      else actualStatus = 'pending';
-    }
+    const actualStatus = getAppointmentStatus(item);
 
     const styles = {
       cancelled: "bg-red-50 text-red-700 border border-red-200",
       completed: "bg-green-50 text-green-700 border border-green-200",
       pending: "bg-yellow-50 text-yellow-700 border border-yellow-200",
-      confirmed: "bg-gray-50 text-gray-700 border border-gray-200",
+      confirmed: "bg-blue-50 text-blue-700 border border-blue-200",
+      'no-show': "bg-gray-50 text-gray-700 border border-gray-200",
     };
     
     const displayText = {
       cancelled: 'Cancelled',
       completed: 'Completed',
       pending: 'Pending',
-      confirmed: 'Confirmed'
+      confirmed: 'Confirmed',
+      'no-show': 'No Show'
     };
     
     return (
@@ -177,23 +147,8 @@ const Dashboard = () => {
     );
   };
 
-  const ActionButton = ({ onClick, icon, color, title, disabled = false, loading = false, compact = false }) => (
-    <button
-      onClick={onClick}
-      className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed
-        ${color === 'red' ? 'text-red-600 border-red-200 hover:bg-red-50' :
-          color === 'green' ? 'text-green-600 border-green-200 hover:bg-green-50' :
-          color === 'gray' ? 'text-gray-600 border-gray-200 hover:bg-gray-50' :
-          'text-gray-600 border-gray-200 hover:bg-gray-50'}`}
-      disabled={disabled}
-      title={title}
-    >
-      {loading ? <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" /> : 
-       React.cloneElement(icon, { className: `w-3 h-3 sm:w-4 sm:h-4` })}
-    </button>
-  );
-
-  if (!dashData) {
+  // Loading state - show skeleton while loading
+  if (!appointments && !dashData) {
     return (
       <div className="p-4 bg-gray-50 min-h-screen">
         <div className="max-w-7xl mx-auto">
@@ -225,15 +180,9 @@ const Dashboard = () => {
                 Dashboard
               </h1>
               <p className="text-sm text-gray-600">
-                Appointments and business performance
+                Appointments and business performance overview
               </p>
             </div>
-            {/* <button
-              onClick={() => navigate('/appointments')}
-              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm"
-            >
-              View All Appointments
-            </button> */}
           </div>
         </div>
         
@@ -262,13 +211,13 @@ const Dashboard = () => {
             icon={<CheckCircle />}
             value={stats.confirmed}
             label="Confirmed"
-            bgColor="bg-gray-100"
-            textColor="text-gray-600"
+            bgColor="bg-blue-100"
+            textColor="text-blue-600"
             status="confirmed"
             onClick={handleFilterClick}
           />
           <StatCard
-            icon={<Check />}
+            icon={<CheckCircle />}
             value={stats.completed}
             label="Completed"
             bgColor="bg-green-100"
@@ -290,7 +239,7 @@ const Dashboard = () => {
             trend={10}
           />
           <StatCard
-            icon={<X />}
+            icon={<XCircle />}
             value={stats.cancelled}
             label="Cancelled"
             bgColor="bg-red-100"
@@ -300,33 +249,31 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Appointments Table */}
+        {/* Appointments Table - Display Only */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {/* Table Header */}
           <div className="border-b border-gray-200 p-4">
             <div className="flex flex-col space-y-3">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-gray-500" />
-                <h2 className="text-base font-semibold text-gray-900">
-                  Recent Appointments
-                </h2>
-                <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
-                  {filteredAppointments.length}
-                </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-gray-500" />
+                  <h2 className="text-base font-semibold text-gray-900">
+                    Recent Appointments
+                  </h2>
+                  <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                    {filteredAppointments.length}
+                  </span>
+                </div>
+                
+                <button
+                  onClick={() => navigate('/appointments')}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  View All
+                </button>
               </div>
               
               <div className="flex flex-col gap-2">
-                {/* <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 w-full text-sm"
-                  />
-                </div> */}
-                
                 <button
                   onClick={() => setShowFilters(!showFilters)}
                   className="flex w-30 items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
@@ -361,16 +308,14 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* Table Content */}
+          {/* Table Content - Read Only */}
           <div className="divide-y divide-gray-100">
             {filteredAppointments.length === 0 ? (
               <div className="px-4 py-8 text-center">
                 <Calendar className="w-8 h-8 text-gray-300 mx-auto mb-3" />
                 <h3 className="text-sm font-medium text-gray-900 mb-1">No appointments</h3>
                 <p className="text-xs text-gray-500">
-                  {searchTerm 
-                    ? "Try different search terms" 
-                    : "No matching appointments"}
+                  No appointments match the current filter
                 </p>
               </div>
             ) : (
@@ -390,7 +335,7 @@ const Dashboard = () => {
                             <h3 className="text-sm font-semibold text-gray-900 truncate">
                               {item.serviceTitle || item.services?.[0]?.serviceTitle || 'Service'}
                             </h3>
-                            <StatusBadge status={item.status} item={item} />
+                            <StatusBadge item={item} />
                           </div>
                           <p className="text-xs text-gray-600">{item.userName}</p>
                         </div>
@@ -411,7 +356,7 @@ const Dashboard = () => {
                         <div className="flex items-center">
                           <Calendar className="w-3 h-3 mr-1 text-gray-400" />
                           <span>
-                            {slotDateFormat(item.date)} • {slotDateFormat(item.time)}
+                            {slotDateFormat(item.date)} • {item.time}
                           </span>
                         </div>
                       </div>
@@ -419,20 +364,6 @@ const Dashboard = () => {
                       {/* Expandable Details */}
                       {isExpanded && (
                         <div className="space-y-3 mb-3">
-                          {/* Multi-service display */}
-                          {item.services && item.services.length > 1 && (
-                            <div>
-                              <p className="text-xs text-gray-500 mb-1">Additional:</p>
-                              <div className="flex flex-wrap gap-1">
-                                {item.services.slice(1).map((service, idx) => (
-                                  <span key={idx} className="text-xs bg-gray-50 text-gray-700 px-2 py-0.5 rounded-full border border-gray-200">
-                                    {service.serviceTitle}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          
                           {/* Contact Info */}
                           <div className="space-y-1 text-xs text-gray-600">
                             <div className="flex items-center">
@@ -449,98 +380,6 @@ const Dashboard = () => {
                                 <span className="text-xs">{item.clientNotes}</span>
                               </div>
                             )}
-{/* // Replace the existing consent form section with this: */}
-{item.consentForm && (
-  <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-    <div className="flex items-center mb-2">
-      <NotebookPen className="w-3 h-3 mr-1 text-blue-600" />
-      <span className="text-xs font-medium text-blue-800">Health & Consent Information</span>
-    </div>
-    
-    <div className="space-y-2 text-xs">
-      {/* Health Conditions */}
-      {item.consentForm?.healthConditions && (
-        <div>
-          <span className="font-medium text-gray-700">Health Conditions: </span>
-          <span className="text-gray-600">{item.consentForm?.healthConditions}</span>
-        </div>
-      )}
-      
-      {/* Allergies */}
-      {item.consentForm.allergies && (
-        <div>
-          <span className="font-medium text-gray-700">Allergies: </span>
-          <span className="text-gray-600">{item.consentForm.allergies}</span>
-        </div>
-      )}
-      
-      {/* Medications */}
-      {item.consentForm.medications && (
-        <div>
-          <span className="font-medium text-gray-700">Medications: </span>
-          <span className="text-gray-600">{item.consentForm.medications}</span>
-        </div>
-      )}
-      
-      {/* Previous Treatments */}
-      {item.consentForm.previousTreatments && (
-        <div>
-          <span className="font-medium text-gray-700">Previous Treatments: </span>
-          <span className="text-gray-600">{item.consentForm.previousTreatments}</span>
-        </div>
-      )}
-      
-      {/* Skin Sensitivities */}
-      {item.consentForm.skinSensitivities && (
-        <div>
-          <span className="font-medium text-gray-700">Skin Sensitivities: </span>
-          <span className="text-gray-600">{item.consentForm.skinSensitivities}</span>
-        </div>
-      )}
-      
-      {/* Pregnancy Status */}
-      {item.consentForm.pregnancyStatus && (
-        <div>
-          <span className="font-medium text-gray-700">Pregnancy Status: </span>
-          <span className="text-orange-600 font-medium">Pregnant/Nursing</span>
-        </div>
-      )}
-      
-      {/* Emergency Contact */}
-      {item.consentForm.emergencyContact && (
-        item.consentForm.emergencyContact.name || 
-        item.consentForm.emergencyContact.phone
-      ) && (
-        <div>
-          <span className="font-medium text-gray-700">Emergency Contact: </span>
-          <span className="text-gray-600">
-            {item.consentForm.emergencyContact.name}
-            {item.consentForm.emergencyContact.phone && 
-              ` (${item.consentForm.emergencyContact.phone})`}
-            {item.consentForm.emergencyContact.relationship && 
-              ` - ${item.consentForm.emergencyContact.relationship}`}
-          </span>
-        </div>
-      )}
-      
-      {/* Consent Status */}
-      <div className="flex items-center gap-3 pt-1">
-        {item.consentForm.consentToTreatment && (
-          <span className="inline-flex items-center text-xs px-2 py-0.5 bg-green-50 text-green-700 rounded-full border border-green-200">
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Treatment Consent
-          </span>
-        )}
-        {item.consentForm.consentToPhotography && (
-          <span className="inline-flex items-center text-xs px-2 py-0.5 bg-gray-50 text-gray-700 rounded-full border border-gray-200">
-            <Eye className="w-3 h-3 mr-1" />
-            Photo Consent
-          </span>
-        )}
-      </div>
-    </div>
-  </div>
-)}
                           </div>
       
                           {/* Payment Info */}
@@ -561,51 +400,15 @@ const Dashboard = () => {
                         </div>
                       )}
 
-                      {/* Actions */}
+                      {/* View Only Action */}
                       <div className="flex items-center justify-end gap-1 mt-2">
-                        {(item.status === 'cancelled' || item.status === 'completed' || item.isCancelled || item.isCompleted) ? (
-                          <ActionButton
-                            onClick={() => navigate(`/appointments/${item._id}`)}
-                            icon={<Eye />}
-                            color="gray"
-                            title="View"
-                            compact={true}
-                          />
-                        ) : (
-                          <>
-                            {(item.status === 'pending' || (!item.status && !item.isCompleted && !item.isCancelled)) && (
-                              <ActionButton
-                                onClick={() => handleConfirmAppointment(item._id)}
-                                icon={<CheckCircle />}
-                                color="gray"
-                                title="Confirm"
-                                disabled={loadingId === item._id}
-                                loading={loadingId === item._id}
-                                compact={true}
-                              />
-                            )}
-                            
-                            <ActionButton
-                              onClick={() => handleCompleteAppointment(item._id)}
-                              icon={<Check />}
-                              color="green"
-                              title="Complete"
-                              disabled={loadingId === item._id}
-                              loading={loadingId === item._id}
-                              compact={true}
-                            />
-                            
-                            <ActionButton
-                              onClick={() => handleCancelAppointment(item._id)}
-                              icon={<X />}
-                              color="red"
-                              title="Cancel"
-                              disabled={loadingId === item._id}
-                              loading={loadingId === item._id}
-                              compact={true}
-                            />
-                          </>
-                        )}
+                        <button
+                          onClick={() => navigate(`/appointments/${item._id}`)}
+                          className="p-1.5 rounded-lg border text-blue-600 border-blue-200 hover:bg-blue-50"
+                          title="View Details"
+                        >
+                          <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
                       </div>
                     </div>
 
@@ -617,20 +420,8 @@ const Dashboard = () => {
                             <h3 className="text-sm font-semibold text-gray-900 truncate">
                               {item.serviceTitle || item.services?.[0]?.serviceTitle || 'Service'}
                             </h3>
-                            <StatusBadge status={item.status} item={item} />
+                            <StatusBadge item={item} />
                           </div>
-                          
-                          {item.services && item.services.length > 1 && (
-                            <div className="mb-2">
-                              <div className="flex flex-wrap gap-1">
-                                {item.services.slice(1).map((service, idx) => (
-                                  <span key={idx} className="text-xs bg-gray-50 text-gray-700 px-2 py-0.5 rounded-full border border-gray-200">
-                                    {service.serviceTitle}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
                           
                           <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
                             <div className="flex items-center">
@@ -648,7 +439,7 @@ const Dashboard = () => {
                             <div className="flex items-center">
                               <Calendar className="w-3 h-3 mr-1 text-gray-400" />
                               <span>
-                                {slotDateFormat(item.date)} • {slotDateFormat(item.time)}
+                                {slotDateFormat(item.date)} • {item.time}
                               </span>
                             </div>
                           </div>
@@ -669,50 +460,15 @@ const Dashboard = () => {
                           )}
                         </div>
 
+                        {/* View Only Action */}
                         <div className="flex items-center gap-1">
-                          {(item.status === 'cancelled' || item.status === 'completed' || item.isCancelled || item.isCompleted) ? (
-                            <ActionButton
-                              onClick={() => navigate(`/appointments/${item._id}`)}
-                              icon={<Eye />}
-                              color="gray"
-                              title="View"
-                              compact={true}
-                            />
-                          ) : (
-                            <>
-                              {(item.status === 'pending' || (!item.status && !item.isCompleted && !item.isCancelled)) && (
-                                <ActionButton
-                                  onClick={() => handleConfirmAppointment(item._id)}
-                                  icon={<CheckCircle />}
-                                  color="gray"
-                                  title="Confirm"
-                                  disabled={loadingId === item._id}
-                                  loading={loadingId === item._id}
-                                  compact={true}
-                                />
-                              )}
-                              
-                              <ActionButton
-                                onClick={() => handleCompleteAppointment(item._id)}
-                                icon={<Check />}
-                                color="green"
-                                title="Complete"
-                                disabled={loadingId === item._id}
-                                loading={loadingId === item._id}
-                                compact={true}
-                              />
-                              
-                              <ActionButton
-                                onClick={() => handleCancelAppointment(item._id)}
-                                icon={<X />}
-                                color="red"
-                                title="Cancel"
-                                disabled={loadingId === item._id}
-                                loading={loadingId === item._id}
-                                compact={true}
-                              />
-                            </>
-                          )}
+                          <button
+                            onClick={() => navigate(`/appointments/${item._id}`)}
+                            className="p-2 rounded-lg border text-gray-600 border-gray-200 hover:bg-gray-50"
+                            title="View Details"
+                          >
+                            <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                          </button>
                         </div>
                       </div>
                     </div>

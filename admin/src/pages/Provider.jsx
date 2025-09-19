@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import {
   User,
@@ -28,6 +28,8 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { toast } from 'react-toastify'
+import ScheduleManagement from '../components/Provider/ScheduleManagement';
+import EditProvider from '../components/Provider/EditProvider';
 
 const Provider = () => {
   const [providers, setProviders] = useState([]);
@@ -52,18 +54,53 @@ const Provider = () => {
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   const [appointmentStats, setAppointmentStats] = useState(null);
   const [appointmentsLoading, setAppointmentsLoading] = useState(false);
+  // Add this state to track initial load
+const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+// Add this near your other state declarations:
+const selectedProviderId = useMemo(() => selectedProvider?._id, [selectedProvider?._id]);
 
+// Then use this in your useEffect:
+useEffect(() => {
+  if (selectedProviderId && view === 'appointments' && !appointmentsLoading) {
+    loadProviderAppointments(selectedProviderId);
+  }
+}, [selectedProviderId, view]); // Much more stable dependencies
 
   // const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  const backendUrl = "https://palmsbeautystore-backend.onrender.com"
-  // const backendUrl = "http://localhost:3000"
+  // const backendUrl = "https://palmsbeautystore-backend.onrender.com"
+  const backendUrl = "http://localhost:3000"
 
   useEffect(() => {
     loadProviders();
     loadServices();
     loadServicesWithProviders();
   }, []);
+
+  useEffect(() => {
+  let isMounted = true;
+  const abortController = new AbortController();
+
+
+  const loadData = async () => {
+    if (selectedProvider && view === 'appointments') {
+      try {
+        await loadProviderAppointments(selectedProvider._id);
+      } catch (error) {
+        if (isMounted) {
+          console.error('Failed to load appointments:', error);
+        }
+      }
+    }
+  };
+
+  loadData();
+
+  return () => {
+    isMounted = false;
+    abortController.abort();
+  };
+}, [selectedProvider, view]);
 
   const showMessage = (type, message) => {
     if (type === 'success') {
@@ -301,8 +338,9 @@ const Provider = () => {
       const result = await response.json();
 
       if (result.success) {
-        showMessage('success', 'Working hours updated successfully!');
+        toast.success('Working hours updated successfully!');
         await loadProviders();
+        setView('grid')
 
         // Update selected provider
         if (selectedProvider && selectedProvider._id === providerId) {
@@ -323,32 +361,36 @@ const Provider = () => {
 const updateProvider = async (providerId, data) => {
   try {
     const formData = new FormData();
-    Object.keys(data).forEach((key) => {
-      formData.append(key, data[key]);
-    });
 
-    if (data.profileImage) {
-      formData.append("profileImage", data.profileImage); // keep consistent with backend field
-    }
+    Object.keys(data).forEach((key) => {
+      if (key === "profileImagePreview") return; // don't send preview
+      if (key === "profileImage" && data[key] instanceof File) {
+        formData.append("profileImage", data[key]); // file
+      } else {
+        formData.append(key, data[key]);
+      }
+    });
 
     const response = await fetch(`${backendUrl}/api/admin/${providerId}`, {
       method: "PUT",
       body: formData,
     });
 
+    // Parse the response JSON
     const result = await response.json();
 
     if (result.success) {
       toast.success(result.message || "Provider updated successfully");
-      // Optionally refresh UI or trigger reload
-      // return result;
+      loadProviders(); // Refresh the providers list
+      setView('grid'); // Go back to grid view
+      return result;
     } else {
       toast.error(result.message || "Failed to update provider");
       return null;
     }
   } catch (error) {
-    console.error("Error updating provider:", error);
-    toast.error("Something went wrong while updating provider");
+    console.error('Error updating provider:', error);
+    toast.error("An error occurred while updating the provider");
     return null;
   }
 };
@@ -363,123 +405,154 @@ const updateProvider = async (providerId, data) => {
     return matchesSearch && matchesService;
   });
 
+
   // Fetch all appointments for a provider
-  // Fetch all appointments for a provider
-  const fetchProviderAppointments = async (providerId) => {
-    try {
-      const response = await fetch(`${backendUrl}/api/provider/${providerId}/appointments`);
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-      const data = await response.json();
+const fetchProviderAppointments = async (providerId) => {
+  try {
+    const response = await fetch(`${backendUrl}/api/provider/${providerId}/appointments`);
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching provider appointments:', error);
+    throw error;
+  }
+};
 
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to fetch appointments');
-      }
+// Fetch today's appointments - FIXED ENDPOINT
+const fetchTodaysAppointments = async (providerId) => {
+  try {
+    const response = await fetch(
+      `${backendUrl}/api/provider/${providerId}/todays-appointments`
+    );
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching today's appointments:", error);
+    throw error;
+  }
+};
 
-      return data;
-    } catch (error) {
-      console.error('Error fetching provider appointments:', error);
-      throw error;
-    }
-  };
+// Fetch upcoming appointments - FIXED ENDPOINT
+const fetchUpcomingAppointments = async (providerId) => {
+  try {
+    const response = await fetch(
+      `${backendUrl}/api/provider/${providerId}/upcoming-appointments`
+    );
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching upcoming appointments:', error);
+    throw error;
+  }
+};
 
-  // Fetch today's appointments
-  const fetchTodaysAppointments = async (providerId) => {
-    try {
-      // console.log("Requested provider ID:", providerId);
-      const response = await fetch(
-        `${backendUrl}/api/provider/${providerId}`
-      );
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.message || "Failed to fetch today's appointments");
-      }
-
-      return data;
-    } catch (error) {
-      console.error("Error fetching today's appointments:", error);
-      throw error;
-    }
-  };
-
-
-  // Fetch appointment statistics
-  const fetchAppointmentStats = async (providerId) => {
-    try {
-      const response = await fetch(`${backendUrl}/api/provider/${providerId}/appointment-stats`);
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to fetch appointment stats');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error fetching appointment stats:', error);
-      throw error;
-    }
-  };
-
-  // Fetch upcoming appointments
-  const fetchUpcomingAppointment = async (providerId) => {
-    try {
-      const response = await fetch(`${backendUrl}/api/provider/${providerId}/upcoming-appointents`);
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to fetch upcoming appointments');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error fetching upcoming appointments:', error);
-      throw error;
-    }
-  };
-
-  const loadProviderAppointments = async (providerId) => {
-    if (!providerId) return;
-
-    setAppointmentsLoading(true);
-    try {
-      const [allAppointments, todayAppointments, upcomingAppointments, stats] = await Promise.all([
-        fetchProviderAppointments(providerId),
-        fetchTodaysAppointments(providerId),
-        fetchUpcomingAppointment(providerId),
-        fetchAppointmentStats(providerId)
-      ]);
-
-      // Check if data exists before setting state
-      setProviderAppointments(allAppointments.appointments || []);
-      setTodaysAppointments(todayAppointments.appointments || []);
-      setUpcomingAppointments(upcomingAppointments.appointments || []);
-      setAppointmentStats(stats.stats || null);
-
-      console.log('Appointments loaded successfully:', {
-        all: allAppointments.appointments?.length,
-        today: todayAppointments.appointments?.length,
-        upcoming: upcomingAppointments.appointments?.length,
-        stats: stats.stats
-      });
-
-    } catch (error) {
-      console.error('Failed to load provider appointments:', error);
-      showMessage('error', 'Failed to load appointments: ' + error.message);
-    } finally {
-      setAppointmentsLoading(false);
-    }
-  };
+// Fetch appointment statistics
+const fetchAppointmentStats = async (providerId) => {
+  try {
+    const response = await fetch(
+      `${backendUrl}/api/provider/${providerId}/appointment-stats`
+    );
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching appointment stats:', error);
+    throw error;
+  }
+};
 
 
+const loadProviderAppointment = async (providerId) => {
+  console.log('Loading appointments for provider:', providerId);
+  
+  setAppointmentsLoading(true);
+  try {
+    const endpoints = [
+      `${backendUrl}/api/provider/${providerId}/appointments`,
+      `${backendUrl}/api/provider/${providerId}/todays-appointments`,
+      `${backendUrl}/api/provider/${providerId}/upcoming-appointments`,
+      `${backendUrl}/api/provider/${providerId}/appointment-stats`
+    ];
+    
+    console.log('API endpoints:', endpoints);
+    
+    const responses = await Promise.all(endpoints.map(url => fetch(url)));
+    console.log('Response statuses:', responses.map(r => r.status));
+    
+    const data = await Promise.all(responses.map(r => r.json()));
+    console.log('Response data:', data);
+    
+    // ... rest of your function
+    
+  } catch (error) {
+    console.error('Detailed error:', error);
+  }
+};
+
+
+const loadProviderAppointments = async (providerId) => {
+  if (!providerId) return;
+  if (appointmentsLoading) {
+    console.log('Appointments already loading, skipping...');
+    return;
+  }
+  
+  console.log('Loading appointments for:', providerId);
+  
+  setAppointmentsLoading(true);
+  try {
+    // Use Promise.allSettled instead of Promise.all to handle failures gracefully
+    const results = await Promise.allSettled([
+      fetchProviderAppointments(providerId),
+      fetchTodaysAppointments(providerId),
+      fetchUpcomingAppointments(providerId),
+      fetchAppointmentStats(providerId)
+    ]);
+
+    // Process each result individually
+    const [allAppointments, todayAppointments, upcomingAppointments, stats] = results;
+
+    setProviderAppointments(
+      allAppointments.status === 'fulfilled' 
+        ? allAppointments.value.appointments || [] 
+        : []
+    );
+    
+    setTodaysAppointments(
+      todayAppointments.status === 'fulfilled' 
+        ? todayAppointments.value.appointments || [] 
+        : []
+    );
+    
+    setUpcomingAppointments(
+      upcomingAppointments.status === 'fulfilled' 
+        ? upcomingAppointments.value.appointments || [] 
+        : []
+    );
+    
+    setAppointmentStats(
+      stats.status === 'fulfilled' 
+        ? stats.value.stats || null 
+        : null
+    );
+    
+    setInitialLoadComplete(true);
+    
+  } catch (error) {
+    console.error('Unexpected error in loadProviderAppointments:', error);
+  } finally {
+    setAppointmentsLoading(false);
+  }
+};
   const MessageAlert = () => {
     if (!error && !success) return null;
 
     return (
       <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${success ? 'bg-green-100 text-green-800 border border-green-200' :
-          'bg-red-100 text-red-800 border border-red-200'
+        'bg-red-100 text-red-800 border border-red-200'
         }`}>
         <div className="flex items-center">
           {success ? (
@@ -575,26 +648,29 @@ const updateProvider = async (providerId, data) => {
 
 
 
-  const AppointmentsSection = ({
-    appointments,
-    title,
-    emptyMessage = "No appointments found",
-    loading = false
-  }) => {
-    if (loading) {
-      return (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
-          <div className="space-y-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="animate-pulse">
-                <div className="h-16 bg-gray-200 rounded"></div>
-              </div>
-            ))}
-          </div>
+const AppointmentsSection = React.memo(({
+  appointments,
+  title,
+  emptyMessage = "No appointments found",
+  loading = false
+}) => {
+  // Memoize the appointments to prevent unnecessary re-renders
+  const memoizedAppointments = React.useMemo(() => appointments, [appointments]);
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="animate-pulse">
+              <div className="h-16 bg-gray-200 rounded"></div>
+            </div>
+          ))}
         </div>
-      );
-    }
+      </div>
+    );
+  }
 
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -635,9 +711,9 @@ const updateProvider = async (providerId, data) => {
                     {appointment.startTime} - {appointment.endTime}
                   </p>
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                      appointment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        appointment.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                          'bg-gray-100 text-gray-800'
+                    appointment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      appointment.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
                     }`}>
                     {appointment.status || 'pending'}
                   </span>
@@ -648,7 +724,7 @@ const updateProvider = async (providerId, data) => {
         )}
       </div>
     );
-  };
+  });
 
 
 
@@ -656,9 +732,9 @@ const updateProvider = async (providerId, data) => {
     if (!provider) return null;
 
     const rating = provider.rating || { average: 0, count: 0 };
-    // const imageUrl = provider.profileImage
-    //   ? `${backendUrl}/${provider.profileImage.replace(/\\/g, "/")}`
-    //   : `https://ui-avatars.com/api/?name=${encodeURIComponent(provider.name || "Unknown")}&size=64&background=3b89f6&color=ffffff`;
+    const imageUrl = provider.profileImage
+      ? `${backendUrl}/${provider.profileImage.replace(/\\/g, "/")}`
+      : `https://ui-avatars.com/api/?name=${encodeURIComponent(provider.name || "Unknown")}&size=64&background=3b89f6&color=ffffff`;
 
 
     return (
@@ -666,13 +742,13 @@ const updateProvider = async (providerId, data) => {
         <div className="p-6">
           <div className="flex items-start space-x-4">
             <div className="flex-shrink-0">
-              {/* <img
+              <img
                 src={imageUrl}
                 alt={provider.name || "Unknown Provider"}
                 className="w-16 h-16 rounded-full object-cover"
-              /> */}
+              />
 
-              <img
+              {/* <img
                 src={
                   provider.profileImage ||
                   `https://ui-avatars.com/api/?name=${encodeURIComponent(
@@ -686,7 +762,7 @@ const updateProvider = async (providerId, data) => {
                     provider.name || 'Unknown'
                   )}&size=64&background=3b82f6&color=ffffff`;
                 }}
-              />
+              /> */}
               <div className="flex items-center justify-center mt-2">
                 {provider.isActive ? (
                   <span className="flex items-center text-green-600 text-xs">
@@ -823,15 +899,22 @@ const updateProvider = async (providerId, data) => {
 
 
   const ProviderDetail = ({ provider }) => {
-    useEffect(() => {
-      if (selectedProvider && selectedProvider.services) {
-        console.log('Provider services structure:', selectedProvider.services);
-        selectedProvider.services.forEach((service, index) => {
-          console.log(`Service ${index}:`, service);
-        });
-      }
-    }, [selectedProvider]);
-    if (!provider) return null;
+      // Replace with a safer version if needed
+  // useEffect(() => {
+  //   if (provider?.services) {
+  //     // Only log once on mount, not on every render
+  //     console.log('Provider services loaded:', provider.services.length);
+  //   }
+  // }, []);
+    // useEffect(() => {
+    //   if (selectedProvider && selectedProvider.services) {
+    //     console.log('Provider services structure:', selectedProvider.services);
+    //     selectedProvider.services.forEach((service, index) => {
+    //       console.log(`Service ${index}:`, service);
+    //     });
+    //   }
+    // }, [selectedProvider]);
+    // if (!provider) return null;
 
     const [expanded, setExpanded] = useState(false);
     const [showAllServices, setShowAllServices] = useState(false);
@@ -883,11 +966,11 @@ const updateProvider = async (providerId, data) => {
           <div className="flex flex-col sm:flex-row items-start sm:space-x-6 space-y-4 sm:space-y-0">
 
             <div className="flex-shrink-0">
-              {/* <img
+              <img
                 src={imageUrl}
                 alt={provider.name || "Unknown Provider"}
                 className="w-16 h-16 rounded-full object-cover"
-              /> */}
+              />
               {/* <img
               src={
                 provider.profileImage ||
@@ -926,8 +1009,8 @@ const updateProvider = async (providerId, data) => {
                 {/* Status badge */}
                 <span
                   className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 sm:mt-0 ${provider.isActive
-                      ? "bg-green-00 text-green-800"
-                      : "bg-red-00 text-red-800"
+                    ? "bg-green-00 text-green-800"
+                    : "bg-red-00 text-red-800"
                     }`}
                 >
                   {provider.isActive ? (
@@ -1326,170 +1409,6 @@ const updateProvider = async (providerId, data) => {
     );
   };
 
-  const ScheduleManagement = ({ provider }) => {
-    const [workingHours, setWorkingHours] = useState(
-      provider.workingHours && provider.workingHours.length > 0
-        ? provider.workingHours
-        : [
-          { dayOfWeek: 0, isWorking: false, startTime: '09:00', endTime: '17:00' },
-          { dayOfWeek: 1, isWorking: true, startTime: '09:00', endTime: '17:00' },
-          { dayOfWeek: 2, isWorking: true, startTime: '09:00', endTime: '17:00' },
-          { dayOfWeek: 3, isWorking: true, startTime: '09:00', endTime: '17:00' },
-          { dayOfWeek: 4, isWorking: true, startTime: '09:00', endTime: '17:00' },
-          { dayOfWeek: 5, isWorking: true, startTime: '09:00', endTime: '17:00' },
-          { dayOfWeek: 6, isWorking: false, startTime: '09:00', endTime: '17:00' }
-        ]
-    );
-    const [isSaving, setIsSaving] = useState(false);
-
-    const updateWorkingDay = (dayOfWeek, field, value) => {
-      setWorkingHours(prev => {
-        const newHours = [...prev];
-        const dayIndex = newHours.findIndex(wh => wh.dayOfWeek === dayOfWeek);
-
-        if (dayIndex !== -1) {
-          newHours[dayIndex] = { ...newHours[dayIndex], [field]: value };
-        } else {
-          // Create new working day if it doesn't exist
-          const defaultTime = field === 'startTime' ? value :
-            field === 'endTime' ? value : '09:00';
-          newHours.push({
-            dayOfWeek,
-            isWorking: field === 'isWorking' ? value : false,
-            startTime: field === 'startTime' ? value : defaultTime,
-            endTime: field === 'endTime' ? value : '17:00'
-          });
-        }
-
-        return newHours.sort((a, b) => a.dayOfWeek - b.dayOfWeek);
-      });
-    };
-
-    const handleSave = async () => {
-      setIsSaving(true);
-      try {
-        await updateProviderWorkingHours(provider._id, workingHours);
-      } catch (error) {
-        console.error('Error saving schedule:', error);
-      } finally {
-        setIsSaving(false);
-      }
-    };
-
-    const dayNames = [
-      'Sunday',
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday'
-    ];
-
-    return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="p-4 sm:p-6 border-b border-gray-200">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            {/* Back button */}
-            <button
-              onClick={() => setView("detail")}
-              className="text-gray-600 hover:text-gray-700 font-medium text-sm sm:text-base"
-            >
-              ← Back to Provider Details
-            </button>
-
-            {/* Title */}
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 text-center sm:text-left">
-              Schedule for {provider.name}
-            </h2>
-
-            {/* Spacer for alignment on larger screens */}
-            <div className="hidden sm:block w-24"></div>
-          </div>
-        </div>
-
-
-        <div className="p-6">
-          <div className="max-w-2xl mx-auto">
-            <div className="space-y-4">
-              {dayNames.map((dayName, index) => {
-                const daySchedule = workingHours.find(wh => wh.dayOfWeek === index) ||
-                  { dayOfWeek: index, isWorking: false, startTime: '09:00', endTime: '17:00' };
-
-                return (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <input
-                        type="checkbox"
-                        checked={daySchedule.isWorking}
-                        onChange={(e) => updateWorkingDay(index, 'isWorking', e.target.checked)}
-                        className="h-4 w-4 text-gray-600 rounded focus:ring-gray-500"
-                      />
-                      <span className="w-24 font-medium text-gray-700">{dayName}</span>
-                    </div>
-
-                    {daySchedule.isWorking ? (
-                      <div className="flex items-center space-x-3">
-                        <div className="flex items-center space-x-2">
-                          <label className="text-sm text-gray-600">From:</label>
-                          <input
-                            type="time"
-                            value={daySchedule.startTime}
-                            onChange={(e) => updateWorkingDay(index, 'startTime', e.target.value)}
-                            className="px-2 py-1 border border-gray-300 rounded text-sm"
-                          />
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <label className="text-sm text-gray-600">To:</label>
-                          <input
-                            type="time"
-                            value={daySchedule.endTime}
-                            onChange={(e) => updateWorkingDay(index, 'endTime', e.target.value)}
-                            className="px-2 py-1 border border-gray-300 rounded text-sm"
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-gray-500">Closed</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="mt-8 flex justify-end space-x-3">
-              <button
-                onClick={() => setView('detail')}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center"
-              >
-                {isSaving ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Schedule
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-
-
   const AppointmentsView = ({ provider }) => {
     useEffect(() => {
       if (provider) {
@@ -1615,10 +1534,10 @@ const updateProvider = async (providerId, data) => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                                appointment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                  appointment.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                    appointment.status === 'completed' ? 'bg-gray-100 text-gray-800' :
-                                      'bg-gray-100 text-gray-800'
+                              appointment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                appointment.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                  appointment.status === 'completed' ? 'bg-gray-100 text-gray-800' :
+                                    'bg-gray-100 text-gray-800'
                               }`}>
                               {appointment.status || 'pending'}
                             </span>
@@ -1631,245 +1550,6 @@ const updateProvider = async (providerId, data) => {
               )}
             </div>
           </div>
-        </div>
-      </div>
-    );
-  };
-
-
-
-  const EditProvider = ({ provider, onSave, onCancel }) => {
-    const [formData, setFormData] = useState({
-      name: provider.name || '',
-      email: provider.email || '',
-      phone: provider.phone || '',
-      bio: provider.bio || '',
-      isActive: provider.isActive || false
-    });
-    const [isSaving, setIsSaving] = useState(false);
-
-    const handleSubmit = async (e) => {
-      e.preventDefault();
-      setIsSaving(true);
-      try {
-        await onSave(provider._id, formData);
-      } catch (error) {
-        console.error('Error saving provider:', error);
-      } finally {
-        setIsSaving(false);
-      }
-    };
-
-    const handleChange = (field, value) => {
-      setFormData(prev => ({ ...prev, [field]: value }));
-    };
-
-    return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="p-4 sm:p-6 border-b border-gray-200">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            {/* Back button */}
-            <button
-              onClick={() => setView("detail")}
-              className="text-gray-600 hover:text-gray-700 font-medium text-sm sm:text-base"
-            >
-              ← Back to Provider Details
-            </button>
-
-            {/* Title */}
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 text-center sm:text-left">
-              Edit Provider
-            </h2>
-
-            {/* Spacer for alignment on larger screens */}
-            <div className="hidden sm:block w-24"></div>
-          </div>
-        </div>
-
-
-        <div className="p-6">
-          <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-4">
-            {/* Profile Picture Upload */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Profile Picture
-              </label>
-
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                {/* Image Preview with Edit Overlay */}
-                <div className="relative self-start sm:self-auto">
-                  <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
-                    {formData.profileImage ? (
-                      <>
-                        <img
-                          src={formData.profileImage}
-                          alt="Profile preview"
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 hover:opacity-100 transition-opacity duration-200 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-medium text-center px-2">
-                            Change Image
-                          </span>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-gray-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        <span className="text-xs">No Image</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Upload Controls */}
-                <div className="flex-1">
-                  <label
-                    htmlFor="profileImage"
-                    className="cursor-pointer inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="-ml-1 mr-2 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                    {formData.profileImage ? 'Change Photo' : 'Upload Photo'}
-                  </label>
-                  <input
-                    id="profileImage"
-                    name="profileImage"
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        // Validate file type
-                        if (!file.type.startsWith('image/')) {
-                          alert('Please select an image file');
-                          return;
-                        }
-
-                        // Validate file size (max 5MB)
-                        if (file.size > 5 * 1024 * 1024) {
-                          alert('Image must be less than 5MB');
-                          return;
-                        }
-
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          handleChange("profileImage", reader.result);
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                  />
-
-                  <p className="mt-2 text-xs text-gray-500">
-                    Recommended: Square JPG, PNG or GIF, at least 200x200 pixels, max 5MB
-                  </p>
-
-                  {formData.profileImage && (
-                    <button
-                      type="button"
-                      className="mt-2 inline-flex items-center text-sm text-red-600 hover:text-red-800"
-                      onClick={() => handleChange("profileImage", "")}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="-ml-1 mr-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      Remove Photo
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleChange('name', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone
-              </label>
-              <input
-                type="text"
-                value={formData.phone}
-                onChange={(e) => handleChange('phone', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Bio
-              </label>
-              <textarea
-                value={formData.bio}
-                onChange={(e) => handleChange('bio', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                rows={4}
-              ></textarea>
-            </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={formData.isActive}
-                onChange={(e) => handleChange('isActive', e.target.checked)}
-                className="h-4 w-4 text-gray-600 rounded focus:ring-gray-500"
-              />
-              <label className="text-sm text-gray-700">Active</label>
-            </div>
-
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={onCancel}
-                type="button"
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                disabled={isSaving}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center"
-              >
-                {isSaving ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Changes
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
         </div>
       </div>
     );
@@ -1941,540 +1621,31 @@ const updateProvider = async (providerId, data) => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
             {filteredProviders.map(provider => (
-              <ProviderCard key={provider._id} provider={provider} />
-            ))}
+        <ProviderCard
+          key={provider._id} 
+          provider={provider}
+          onViewDetails={(provider) => {
+            setSelectedProvider(provider);
+            setView("detail");
+          }}
+          onViewAppointments={(provider) => {
+            setSelectedProvider(provider);
+            loadProviderAppointments(provider._id);
+            setView("appointments");
+          }}
+          onViewSchedule={(provider) => {
+            setSelectedProvider(provider);
+            loadProviderSchedule(provider._id);
+            setView("schedule");
+          }}
+          onEdit={(provider) => {
+            setEditingProvider(provider);
+            setView("edit-provider");
+          }}
+        />
+      ))}
           </div>
         )}
-      </div>
-    );
-  };
-
-  //   const GridView = () => {
-
-  //     return (
-  //       <div>
-  //         <div className="mb-6">
-  //           <div className="flex items-center justify-between mb-4">
-  //             <h1 className="text-2xl font-bold text-gray-900">Service Providers</h1>
-
-  //              <button
-  //               onClick={() => setShowAddProviderModal(true)}
-  //               className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-  //             >
-  //               <UserPlus className="w-5 h-5 mr-2" />
-  //               Add Provider
-  //             </button>
-  //           </div>
-
-
-  //           {/* Search and Filter Bar */}
-  //           <div className="flex flex-col sm:flex-row gap-4">
-  //             <div className="flex-1 relative">
-  //               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-  //               <input
-  //                 type="text"
-  //                 placeholder="Search providers by name or email..."
-  //                 value={searchTerm}
-  //                 onChange={(e) => setSearchTerm(e.target.value)}
-  //                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-  //               />
-  //             </div>
-  //             <div className="relative">
-  //               <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-  //               <select
-  //                 value={serviceFilter}
-  //                 onChange={(e) => setServiceFilter(e.target.value)}
-  //                 className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent text-black  bg-white"
-  //               >
-  //                 <option value="">All Services</option>
-  // {services.map(service => (
-  //   <option key={service._id} value={service._id} style={{ color: 'black' }}>
-  //     {service.title}
-  //   </option>
-  // ))}
-  //               </select>
-  //             </div>
-  //           </div>
-  //         </div>
-
-  //         {loading ? (
-  //           <div className="flex items-center justify-center py-12">
-  //             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
-  //             <span className="ml-2 text-gray-600">Loading providers...</span>
-  //           </div>
-  //         ) : filteredProviders.length === 0 ? (
-  //           <div className="text-center py-12">
-  //             <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-  //             <h3 className="text-lg font-medium text-gray-900 mb-2">No providers found</h3>
-  //             <p className="text-gray-500">
-  //               {searchTerm || serviceFilter 
-  //                 ? "Try adjusting your search criteria or filters." 
-  //                 : "There are no providers to display."}
-  //             </p>
-  //           </div>
-  //         ) : (
-  //           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-  //             {filteredProviders.map(provider => (
-  //               <ProviderCard key={provider._id} provider={provider} />
-  //             ))}
-  //           </div>
-  //         )}
-  //       </div>
-  //     );
-  //   };
-
-  // Add Provider Modal Component
-  const AddProviderModal = ({ onClose, onAdd }) => {
-    const [formData, setFormData] = useState({
-      name: '',
-      email: '',
-      phone: '',
-      bio: '',
-      services: [],
-      workingHours: [
-        { dayOfWeek: 0, isWorking: false, startTime: '09:00', endTime: '17:00' },
-        { dayOfWeek: 1, isWorking: true, startTime: '09:00', endTime: '17:00' },
-        { dayOfWeek: 2, isWorking: true, startTime: '09:00', endTime: '17:00' },
-        { dayOfWeek: 3, isWorking: true, startTime: '09:00', endTime: '17:00' },
-        { dayOfWeek: 4, isWorking: true, startTime: '09:00', endTime: '17:00' },
-        { dayOfWeek: 5, isWorking: true, startTime: '09:00', endTime: '17:00' },
-        { dayOfWeek: 6, isWorking: false, startTime: '09:00', endTime: '17:00' }
-      ],
-      bookingBuffer: 15,
-      profileImage: null
-    });
-    const [errors, setErrors] = useState({});
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [showWorkingHours, setShowWorkingHours] = useState(false);
-
-    const handleChange = (e) => {
-      const { name, value, type, checked } = e.target;
-      setFormData(prev => ({
-        ...prev,
-        [name]: type === 'checkbox' ? checked : value
-      }));
-
-      // Clear error when field is edited
-      if (errors[name]) {
-        setErrors(prev => ({
-          ...prev,
-          [name]: ''
-        }));
-      }
-    };
-
-    const handleServiceChange = (serviceId) => {
-      setFormData(prev => {
-        const services = [...prev.services];
-        const index = services.indexOf(serviceId);
-
-        if (index > -1) {
-          services.splice(index, 1);
-        } else {
-          services.push(serviceId);
-        }
-
-        return { ...prev, services };
-      });
-    };
-    const handleWorkingHoursChange = (dayIndex, field, value) => {
-      setFormData(prev => {
-        const workingHours = [...prev.workingHours];
-        workingHours[dayIndex] = {
-          ...workingHours[dayIndex],
-          [field]: value // Remove the string comparison, just use the value directly
-        };
-        return { ...prev, workingHours };
-      });
-    };
-
-    const handleImageChange = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        setFormData(prev => ({
-          ...prev,
-          profileImage: file
-        }));
-      }
-    };
-
-
-
-
-    const handleSubmit = async (e) => {
-      e.preventDefault();
-      setIsSubmitting(true)
-      try {
-        const payload = new FormData();
-        payload.append("name", formData.name);
-        payload.append("email", formData.email);
-        payload.append("phone", formData.phone);
-        payload.append("bio", formData.bio);
-        payload.append("bookingBuffer", formData.bookingBuffer);
-
-        // Fix: Don't stringify if services are ObjectIds
-        if (Array.isArray(formData.services)) {
-          formData.services.forEach(service => {
-            payload.append("services[]", service); // Send as array
-          });
-        }
-
-        // Fix: Don't stringify if workingHours is complex object
-        payload.append("workingHours", JSON.stringify(formData.workingHours));
-
-        if (formData.profileImage) {
-          payload.append("profileImage", formData.profileImage);
-        }
-
-        const result = await addProvider(payload);
-        toast.success(result.message)
-        console.log("Provider created:", result);
-      } catch (err) {
-        const errorMessage =
-          err.response?.data?.message || err.message || "Something went wrong";
-        toast.error(errorMessage);
-      }
-    };
-
-
-
-    const dayNames = [
-      'Sunday',
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday'
-    ];
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Add New Provider</h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-              disabled={isSubmitting}
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
-
-
-{/* Profile Picture Upload */}
-<div className="mb-6">
-  <label className="block text-sm font-medium text-gray-700 mb-2">
-    Profile Picture
-  </label>
-  
-  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-    {/* Image Preview with Edit Overlay */}
-    <div className="relative self-start sm:self-auto">
-      <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
-        {formData.profileImage ? (
-          <>
-            <img
-              src={formData.profileImage}
-              alt="Profile preview"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 hover:opacity-100 transition-opacity duration-200 rounded-full flex items-center justify-center">
-              <span className="text-white text-xs font-medium text-center px-2">
-                Change Image
-              </span>
-            </div>
-          </>
-        ) : (
-          <div className="flex flex-col items-center justify-center text-gray-400">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            <span className="text-xs">No Image</span>
-          </div>
-        )}
-      </div>
-    </div>
-
-    {/* Upload Controls */}
-    <div className="flex-1">
-      <label
-        htmlFor="profileImage"
-        className="cursor-pointer inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="-ml-1 mr-2 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-        </svg>
-        {formData.profileImage ? 'Change Photo' : 'Upload Photo'}
-      </label>
-      <input
-        id="profileImage"
-        name="profileImage"
-        type="file"
-        accept="image/*"
-        className="sr-only"
-        onChange={(e) => {
-          const file = e.target.files[0];
-          if (file) {
-            // Validate file type
-            if (!file.type.startsWith('image/')) {
-              alert('Please select an image file');
-              return;
-            }
-            
-            // Validate file size (max 5MB)
-            // if (file.size > 5 * 1024 * 1024) {
-            //   alert('Image must be less than 5MB');
-            //   return;
-            // }
-            
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              handleChange("profileImage", reader.result);
-            };
-            reader.readAsDataURL(file);
-          }
-        }}
-      />
-      
-      <p className="mt-2 text-xs text-gray-500">
-        Recommended: Square JPG, PNG or GIF, at least 200x200 pixels, max 5MB
-      </p>
-      
-      {formData.profileImage && (
-        <button
-          type="button"
-          className="mt-2 inline-flex items-center text-sm text-red-600 hover:text-red-800"
-          onClick={() => handleChange("profileImage", "")}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="-ml-1 mr-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-          Remove Photo
-        </button>
-      )}
-    </div>
-  </div>
-</div>
-
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent ${errors.name ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  disabled={isSubmitting}
-                />
-                {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent ${errors.email ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  disabled={isSubmitting}
-                />
-                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone *
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent ${errors.phone ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  disabled={isSubmitting}
-                />
-                {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Booking Buffer (minutes)
-                </label>
-                <input
-                  type="number"
-                  name="bookingBuffer"
-                  value={formData.bookingBuffer}
-                  onChange={handleChange}
-                  min="0"
-                  max="60"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                  disabled={isSubmitting}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Bio
-              </label>
-              <textarea
-                name="bio"
-                value={formData.bio}
-                onChange={handleChange}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                disabled={isSubmitting}
-              />
-            </div>
-
-            {/* <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Profile Image
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                disabled={isSubmitting}
-              />
-            </div> */}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Services
-              </label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-40 overflow-y-auto p-2 border border-gray-300 rounded-lg">
-                {services.map(service => (
-                  <label key={service._id} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.services.includes(service._id)}
-                      onChange={() => handleServiceChange(service._id)}
-                      className="rounded text-gray-600 focus:ring-gray-500"
-                      disabled={isSubmitting}
-                    />
-                    <span className="text-sm text-gray-700">{service.title}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="button"
-                onClick={() => setShowWorkingHours(!showWorkingHours)}
-                className="flex items-center text-sm font-medium text-gray-600 hover:text-gray-700 mb-2"
-              >
-                {showWorkingHours ? (
-                  <ChevronDown className="w-4 h-4 mr-1" />
-                ) : (
-                  <ChevronRight className="w-4 h-4 mr-1" />
-                )}
-                Working Hours
-              </button>
-
-              {showWorkingHours && (
-                <div className="space-y-3 p-3 border border-gray-200 rounded-lg">
-                  {dayNames.map((dayName, index) => {
-                    const daySchedule =
-                      formData.workingHours[index] || {
-                        dayOfWeek: index,
-                        isWorking: false,
-                        startTime: "09:00",
-                        endTime: "17:00",
-                      };
-
-                    return (
-                      <div
-                        key={index}
-                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-2 bg-gray-50 rounded"
-                      >
-                        <div className="flex items-center space-x-3 w-full sm:w-32">
-                          <input
-                            type="checkbox"
-                            checked={daySchedule.isWorking}
-                            onChange={(e) =>
-                              handleWorkingHoursChange(index, "isWorking", e.target.checked)
-                            }
-                            className="h-4 w-4 text-gray-600 rounded focus:ring-gray-500"
-                            disabled={isSubmitting}
-                          />
-                          <span className="font-medium text-gray-700">{dayName}</span>
-                        </div>
-
-                        {daySchedule.isWorking ? (
-                          <div className="flex flex-col xs:flex-row items-center gap-2 w-full sm:w-auto">
-                            <input
-                              type="time"
-                              value={daySchedule.startTime}
-                              onChange={(e) =>
-                                handleWorkingHoursChange(index, "startTime", e.target.value)
-                              }
-                              className="px-2 py-1 border border-gray-300 rounded text-sm w-full xs:w-28"
-                              disabled={isSubmitting}
-                            />
-                            <span className="text-gray-500">to</span>
-                            <input
-                              type="time"
-                              value={daySchedule.endTime}
-                              onChange={(e) =>
-                                handleWorkingHoursChange(index, "endTime", e.target.value)
-                              }
-                              className="px-2 py-1 border border-gray-300 rounded text-sm w-full xs:w-28"
-                              disabled={isSubmitting}
-                            />
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-500">Closed</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="flex space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                disabled={isSubmitting}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Adding...
-                  </>
-                ) : (
-                  'Add Provider'
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
       </div>
     );
   };
@@ -2488,12 +1659,36 @@ const updateProvider = async (providerId, data) => {
       <div className="max-w-7xl mx-auto w-full overflow-hidden">
         {view === 'grid' && <GridView />}
 
-        {view === 'detail' && selectedProvider && (
-          <ProviderDetail provider={selectedProvider} />
-        )}
+      
+      {view === 'detail' && selectedProvider && (
+  <ProviderDetail
+    provider={selectedProvider}
+    services={services}
+    onBack={() => setView('grid')}
+    onAddService={addServiceToProvider}
+    onRemoveService={removeServiceFromProvider}
+    onViewSchedule={(provider) => {
+      loadProviderSchedule(provider._id);
+      setView("schedule");
+    }}
+    appointmentStats={appointmentStats}
+    todaysAppointments={todaysAppointments}
+    upcomingAppointments={upcomingAppointments}
+    appointmentsLoading={appointmentsLoading}
+    onLoadAppointments={loadProviderAppointments}
+  />
+)}
+
+
+
+      
 
         {view === 'schedule' && selectedProvider && (
-          <ScheduleManagement provider={selectedProvider} />
+          <ScheduleManagement
+            provider={selectedProvider}
+            onUpdateWorkingHours={updateProviderWorkingHours}
+            onBack={() => setView("detail")}
+          />
         )}
         {view === 'appointments' && selectedProvider && (
           <AppointmentsView provider={selectedProvider} />
@@ -2504,6 +1699,7 @@ const updateProvider = async (providerId, data) => {
             provider={editingProvider}
             onSave={updateProvider}
             onCancel={() => setView('grid')}
+            backendUrl={backendUrl}
           />
         )}
 
@@ -2511,8 +1707,11 @@ const updateProvider = async (providerId, data) => {
           <AddProviderModal
             onClose={() => setShowAddProviderModal(false)}
             onAdd={addProvider}
+            services={services}
+            backendUrl={backendUrl}
           />
         )}
+
       </div>
     </div>
   );
