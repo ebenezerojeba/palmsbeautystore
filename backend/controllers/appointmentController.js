@@ -8,9 +8,14 @@ import providerModel from "../models/providerModel.js";
 import dotenv from "dotenv";
 dotenv.config();
 
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const BUFFER_MINUTES = 15;// Buffer time between appointments
 
-// SIMPLIFIED: Quick availability check for booking confirmation
+// / Quick availability check for booking confirmation
 const checkProviderAvailabilityQuick = async (providerId, date, time, duration, workingHours) => {
   const provider = await providerModel.findById(providerId);
   if (!provider) return false;
@@ -33,12 +38,6 @@ const checkProviderAvailabilityQuick = async (providerId, date, time, duration, 
 
   return checkProviderAvailabilityInstant(provider, date, time, duration, appointmentsMap);
 };
-
-
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Get user appointments
 const getUserAppointments = async (req, res) => {
@@ -248,8 +247,7 @@ const getAvailableSlots = async (req, res) => {
   }
 };
 
-// FIXED: Generate unique slots - eliminates duplicates completely
-// ULTRA-OPTIMIZED: Generate unique slots with parallel processing
+//  Generate unique slots with parallel processing
 const generateUniqueAvailableSlots = async (start, end, totalDuration, providers) => {
   const now = new Date();
   const dateRange = [];
@@ -439,7 +437,7 @@ const generateOptimizedTimeSlots = (date, duration, providers, isToday, currentT
   return slots;
 };
 
-// FAST: Find available provider for a single time slot
+// Find available provider for a single time slot
 const findAvailableProviderForSlot = async (providers, date, timeSlot, duration, appointmentsByProvider) => {
   for (const provider of providers) {
     const isAvailable = checkProviderAvailabilityInstant(
@@ -471,7 +469,7 @@ const findAvailableProviderForSlot = async (providers, date, timeSlot, duration,
   return null;
 };
 
-// INSTANT: Check provider availability without async calls
+// Check provider availability without async calls
 const checkProviderAvailabilityInstant = (provider, date, time, duration, providerAppointments) => {
   const dayOfWeek = date.getDay();
   const providerDay = provider.workingHours.find(wh => wh.dayOfWeek === dayOfWeek && wh.isWorking);
@@ -534,14 +532,8 @@ const checkProviderAvailabilityInstant = (provider, date, time, duration, provid
 
   return true;
 };
-// OPTIMIZED: Find first available provider using pre-fetched appointment dat
 
-// FIXED: Generate smart time slots that respect business hours and service duration
-
-
-
-
-// FIXED: Handle multi-day services (10+ hours)
+// Handle multi-day services (10+ hours)
 const handleMultiDayService = async (startDate, totalDuration, providers) => {
   console.log(`🗓️ Handling multi-day service: ${totalDuration} minutes`);
   
@@ -757,7 +749,7 @@ const bookMultipleAppointment = async (req, res) => {
           currency: 'cad',
           product_data: {
             name: `${services.length > 1 ? 'Multiple Services' : services[0].serviceTitle}`,
-            description: `Appointment with ${providerData.name} on ${date} at ${time}`,
+            // description: `Appointment with ${providerData.name} on ${date} at ${time}`,
           },
           unit_amount: Math.round(calculatedAmount * 100), // Convert to cents
         },
@@ -1162,6 +1154,38 @@ const downloadCalendar = async (req, res) => {
   }
 };
 
+// Add this function:
+const checkRealTimeAvailability = async (date, time, duration, providerId) => {
+  const dateObj = new Date(date);
+  const provider = await providerModel.findById(providerId);
+  
+  if (!provider) {
+    return { available: false, suggestedSlots: [] };
+  }
+
+  // Pre-fetch appointments for this date
+  const existingAppointments = await appointmentModel.find({
+    providerId,
+    date: date,
+    status: { $in: ['pending', 'confirmed'] }
+  }).select('time totalDuration duration').lean();
+
+  const appointmentsMap = {};
+  existingAppointments.forEach(apt => {
+    appointmentsMap[apt.time] = apt;
+  });
+
+  const isAvailable = checkProviderAvailabilityInstant(
+    provider,
+    dateObj,
+    time,
+    duration,
+    appointmentsMap
+  );
+
+  return { available: isAvailable, suggestedSlots: [] };
+};
+
 // POST /api/appointments/:id/reschedule
  const rescheduleAppointment = async (req, res) => {
   const { id } = req.params;
@@ -1196,7 +1220,34 @@ const downloadCalendar = async (req, res) => {
 };
 
 const getSingleAppointment = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const userId = req.userId;
 
+    const appointment = await appointmentModel.findOne({
+      _id: appointmentId,
+      userId: userId
+    });
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: "Appointment not found or access denied"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      appointment
+    });
+
+  } catch (error) {
+    console.error("Error fetching appointment:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch appointment"
+    });
+  }
 }
 
 export {

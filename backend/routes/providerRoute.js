@@ -17,7 +17,7 @@ providerRouter.get('/', getProvidersByService); // New route to get providers by
 providerRouter.get('/:providerId/appointments', getProviderAppointments);
 
 // Get today's appointments for a specific provider
-providerRouter.get('/:providerId', getTodaysAppointments);
+providerRouter.get('/:providerId/todays-appointments', getTodaysAppointments);
 
 // Get upcoming appointments for a specific provider
 providerRouter.get('/:providerId/upcoming-appointments', getProviderUpcomingAppointments);

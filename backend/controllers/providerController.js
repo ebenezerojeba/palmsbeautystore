@@ -700,7 +700,7 @@ export const getTodaysAppointments = async (req, res) => {
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    const appointments = await Appointment.find({
+    const appointments = await appointmentModel.find({
       providerId,
       date: { $gte: startOfDay, $lte: endOfDay },
     });
