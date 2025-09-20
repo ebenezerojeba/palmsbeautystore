@@ -172,8 +172,10 @@ export default function SuccessPage() {
         {/* Appointment Details Card */}
         <div className="bg-gray-50 rounded-lg p-6 text-left space-y-4 mb-8">
           <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
-            Appointment Details with {appointment.providerName}
+            Appointment Details
+            
           </h3>
+          
           
           <div className="space-y-3">
             <div className="flex items-center gap-3">
