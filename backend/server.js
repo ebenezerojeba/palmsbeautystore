@@ -43,21 +43,22 @@ app.use(express.json());
 app.use(cors({
   origin: [
     'https://palmsbeautystore-c6wn.vercel.app',
-    'http://localhost:3000', // for local development
+    'http://localhost:3000',
     'http://localhost:5173',
     'http://localhost:5174',
-    '',
-    'https://palmsbeautystore-red.vercel.app'  // if using Vite
+    'https://palmsbeautystore-red.vercel.app'
   ],
   credentials: true,
   allowedHeaders: [
     'Content-Type',
     'Authorization',
-    'x-requested-with', // ← ADD THIS LINE
-    'Accept'
+    'x-requested-with',
+    'Accept',
+    'token'   // ← ADD THIS
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
+
 
 // Handle preflight requests
 app.options("*", cors());
