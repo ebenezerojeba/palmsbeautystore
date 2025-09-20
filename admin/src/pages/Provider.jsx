@@ -1070,7 +1070,7 @@ const updateProvider = async (providerId, data) => {
               </div>
             </div>
 
-            <div>
+            {/* <div>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Available Services</h3>
               </div>
@@ -1137,7 +1137,7 @@ const updateProvider = async (providerId, data) => {
 
               </div>
             </div>
-
+ */}
 
             <div>
               <div className="flex items-center justify-between mb-4">
