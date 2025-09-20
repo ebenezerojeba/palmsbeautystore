@@ -5,6 +5,7 @@ import axios from "axios";
 
 // const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const backendUrl = 'https://palmsbeautystore-backend.onrender.com';
+// const backendUrl = 'http://localhost:3000'
 
 const Orders = ({ token }) => {
   const [orders, setOrders] = useState([]);
