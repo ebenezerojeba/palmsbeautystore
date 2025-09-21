@@ -244,7 +244,7 @@ const Orders = ({ token }) => {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-blue-50 rounded-lg">
-                          <Package className="h-6 w-6 text-blue-600" />
+                          <Package className="h-6 w-6 text-gray-600" />
                         </div>
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900">Order #{order._id.slice(-8)}</h3>
@@ -286,7 +286,7 @@ const Orders = ({ token }) => {
                                     <h5 className="font-semibold text-gray-900 text-lg mb-1">{item.name}</h5>
                                     <div className="flex items-center gap-2 mb-2">
                                       <span className="text-sm font-medium text-gray-700">Quantity:</span>
-                                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
+                                      <span className="bg-blue-100 text-gray-800 px-2 py-1 rounded-full text-sm font-medium">
                                         {item.quantity}
                                       </span>
                                       <span className="text-sm text-gray-600">× ${item.price}</span>
@@ -371,7 +371,7 @@ const Orders = ({ token }) => {
                           {!isExpanded && order.items.length > 2 && (
                             <button
                               onClick={() => toggleOrderExpansion(order._id)}
-                              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                              className="text-gray-600 hover:text-blue-800 text-sm font-medium"
                             >
                               +{order.items.length - 2} more items
                             </button>

@@ -30,6 +30,7 @@ import {
 import { toast } from 'react-toastify'
 import ScheduleManagement from '../components/Provider/ScheduleManagement';
 import EditProvider from '../components/Provider/EditProvider';
+import AddProviderModal from '../components/Provider/AddProvider';
 
 const Provider = () => {
   const [providers, setProviders] = useState([]);
@@ -60,8 +61,8 @@ const Provider = () => {
   const currentProviderRef = useRef(null);
   // const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  const backendUrl = "https://palmsbeautystore-backend.onrender.com"
-  // const backendUrl = "http://localhost:3000"
+  // const backendUrl = "https://palmsbeautystore-backend.onrender.com"
+  const backendUrl = "http://localhost:3000"
 
   useEffect(() => {
     loadProviders();
@@ -145,23 +146,6 @@ const Provider = () => {
   };
 
 
-  const addProvider = async (formData) => {
-    try {
-      const response = await axios.post(
-        `${backendUrl}/api/admin/createprovider`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Failed to add provider:", error);
-      throw error.response?.data || error;
-    }
-  }
   const loadServicesWithProviders = async () => {
     try {
       const response = await fetch(`${backendUrl}/api/admin/services-with-providers`);
@@ -334,6 +318,31 @@ const Provider = () => {
       showMessage('error', 'Failed to update working hours: ' + error.message);
     }
   };
+
+  const addProvider = async (formData) => {
+  try {
+    const response = await axios.post(
+      `${backendUrl}/api/admin/createprovider`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    toast.success(response.data.message || "Provider created successfully");
+    loadProviders(); // Refresh the providers list
+    setView("grid");
+
+    return response.data;
+  } catch (error) {
+    console.error("Failed to add provider:", error);
+    toast.error(error.response?.data?.message || "Failed to create provider");
+    throw error.response?.data || error;
+  }
+};
+
 
 const updateProvider = async (providerId, data) => {
   try {

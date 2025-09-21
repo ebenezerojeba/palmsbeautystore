@@ -7,7 +7,7 @@ import {
   Clock3
 } from 'lucide-react';
 
-// Replace this with your actual token setter
+
 const setToken = (val) => localStorage.setItem("token", val);
 
 const Sidebar = ({ onLogout, notifications = 0, className = '' }) => {
@@ -81,13 +81,13 @@ const Sidebar = ({ onLogout, notifications = 0, className = '' }) => {
     { path: '/list', icon: <List className="w-5 h-5" />, label: 'List Products' },
     { path: '/orders', icon: <Box className="w-5 h-5" />, label: 'Orders' },
     { path: '/services', icon: <Users className="w-5 h-5" />, label: 'Services' },
-    { path: '/hours', icon: <Clock className="w-5 h-5" />, label: 'Hours' },
+    // { path: '/hours', icon: <Clock className="w-5 h-5" />, label: 'Hours' },
     { path: '/provider', icon: <Clock3 className="w-5 h-5" />, label: 'Stylist' },
   ], []);
 
   const bottomMenuItems = useMemo(() => [
     { path: '/settings', icon: <Settings className="w-5 h-5" />, label: 'Settings' },
-    { path: '/help', icon: <HelpCircle className="w-5 h-5" />, label: 'Help & Support' },
+    // { path: '/help', icon: <HelpCircle className="w-5 h-5" />, label: 'Help & Support' },
   ], []);
 
   const NavItem = ({ item }) => (

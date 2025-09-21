@@ -45,14 +45,14 @@ const AdminHome = ({token}) => {
       color: "bg-gray-50 text-gray-600",
       borderColor: "border-gray-100"
     },
-    {
-      title: "Business Hours",
-      description: "Manage and Update Business Time",
-      icon: <Clock12Icon className="w-6 h-6" />,
-      path: "/hours",
-      color: "bg-pink-50 text-pink-600",
-      borderColor: "border-gray-100"
-    },
+    // {
+    //   title: "Business Hours",
+    //   description: "Manage and Update Business Time",
+    //   icon: <Clock12Icon className="w-6 h-6" />,
+    //   path: "/hours",
+    //   color: "bg-pink-50 text-pink-600",
+    //   borderColor: "border-gray-100"
+    // },
     {
       title: "Provider Hours",
       description: "Manage and Update Stylist Time",
