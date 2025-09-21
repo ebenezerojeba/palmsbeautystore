@@ -31,8 +31,8 @@ import {
 const Appointment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { userData, backendUrl } = useContext(AppContext);
-  const { formatNaira } = useContext(ShopContext);
+  const { userData } = useContext(AppContext);
+  const { formatNaira, backendUrl } = useContext(ShopContext);
 // const  backendUrl = "http://localhost:3000"
   // State management
   const [serviceInfo, setServiceInfo] = useState(null);
@@ -475,7 +475,7 @@ const Appointment = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader className="animate-spin h-8 w-8 text-blue-600 mx-auto mb-4" />
+          <Loader className="animate-spin h-8 w-8 text-pink-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading service details...</p>
         </div>
       </div>
@@ -795,7 +795,7 @@ const Appointment = () => {
                     <textarea
                       value={consentForm.healthConditions}
                       onChange={(e) => setConsentForm({ ...consentForm, healthConditions: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
                       rows="2"
                       placeholder="Please list any relevant health conditions..."
                     />
@@ -808,7 +808,7 @@ const Appointment = () => {
                     <textarea
                       value={consentForm.allergies}
                       onChange={(e) => setConsentForm({ ...consentForm, allergies: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
                       rows="2"
                       placeholder="List any known allergies..."
                     />
@@ -826,7 +826,7 @@ const Appointment = () => {
                         id="consent-treatment"
                         checked={consentForm.consentToTreatment}
                         onChange={(e) => setConsentForm({ ...consentForm, consentToTreatment: e.target.checked })}
-                        className="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded mt-1"
+                        className="w-4 h-4 text-gray-600 focus:ring-gray-500 rounded mt-1"
                       />
                       <label htmlFor="consent-treatment" className="text-sm text-gray-700">
                         I consent to receive the selected beauty/hair services and understand the procedures involved

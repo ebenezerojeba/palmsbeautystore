@@ -214,7 +214,7 @@ const Orders = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${statusColors[item.status]}`}>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm border ${statusColors[item.status]}`}>
                         <span className={`w-2 h-2 rounded-full mr-2 ${statusDots[item.status]}`}></span>
                         {item.status}
                       </span>
