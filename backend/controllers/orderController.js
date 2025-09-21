@@ -161,6 +161,15 @@ const placeOrder = async (req, res) => {
     const newOrder = new orderModel(orderData);
     await newOrder.save();
 
+      // Send order confirmation emails (non-blocking)
+    sendOrderEmails(newOrder.toObject()).catch(err => {
+      console.error('Failed to send order emails:', err);
+      // Don't fail the request if email sending fails
+    });
+
+    console.log("✅ Order created successfully and confirmation emails sent");
+
+
     res.json({
       success: true,
       message: "Proceed to payment",
@@ -173,6 +182,25 @@ const placeOrder = async (req, res) => {
       success: false, 
       message: error.message || "An error occurred while processing your order"
     });
+  }
+};
+
+
+// Webhook to handle successful payments and send additional emails
+const handleSuccessfulPayment = async (orderData) => {
+  try {
+    // Update order status to paid
+    await orderModel.findByIdAndUpdate(orderData._id, {
+      isPaid: true,
+      payment: true,
+      status: 'Paid - Processing'
+    });
+
+    console.log(`Order ${orderData._id} marked as paid`);
+    return true;
+  } catch (error) {
+    console.error('Error updating order payment status:', error);
+    return false;
   }
 };
 

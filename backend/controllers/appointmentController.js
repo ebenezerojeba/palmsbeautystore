@@ -6,6 +6,7 @@ import userModel from "../models/userModel.js";
 import Stripe from 'stripe';
 import providerModel from "../models/providerModel.js";
 import dotenv from "dotenv";
+import { sendBookingEmails } from "../services/emailService.js";
 dotenv.config();
 
 
@@ -714,6 +715,12 @@ const bookMultipleAppointment = async (req, res) => {
       date: appointmentDate,
       time,
       clientNotes: clientNotes,
+      consentForm: {
+  healthConditions: consentForm.healthConditions || "",
+  allergies: consentForm.allergies || "",
+  consentToTreatment: consentForm.consentToTreatment || false,
+  submittedAt: consentForm.submittedAt || new Date()
+},
       totalDuration: calculatedDuration,
       isLongDuration: calculatedDuration > 480,
       isMultiDay: calculatedDuration >= 600,
@@ -725,22 +732,16 @@ const bookMultipleAppointment = async (req, res) => {
       }
     });
 
-    // Email data (commented out as before)
-    // const emailData = {
-    //   appointmentId: newAppointment._id.toString(),
-    //   clientName: userData.name,
-    //   clientEmail: userData.email,
-    //   clientPhone: userData.phone,
-    //   providerName: providerData.name,
-    //   providerEmail: providerData.email,
-    //   services: processedServices,
-    //   date: appointmentDate,
-    //   time,
-    //   totalAmount: calculatedAmount,
-    //   clientNotes,
-    // };
+        // Send confirmation emails (non-blocking)
+    sendBookingEmails(newAppointment.toObject()).catch(err => {
+      console.error('Failed to send booking emails:', err);
+      // Don't fail the request if email sending fails
+    });
 
     console.log("✅ Appointment created successfully");
+
+
+
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -1031,6 +1032,11 @@ const verifyAppointmentPayment = async (req, res) => {
     await appointment.save();
     console.log("✅ Appointment updated successfully");
 
+        // Send confirmation emails after payment verification
+    sendBookingEmails(appointment.toObject()).catch(err => {
+      console.error('Failed to send confirmation emails:', err);
+    });
+
     return res.json({
       success: true,
       message: "Payment verified and appointment confirmed",
@@ -1264,3 +1270,10 @@ export {
   bookMultipleAppointment,
   getSingleAppointment
 };
+
+
+
+
+
+
+

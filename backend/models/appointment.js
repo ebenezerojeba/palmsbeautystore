@@ -91,22 +91,12 @@ const appointmentSchema = new mongoose.Schema({
 
   // Consent form
 
-  consentForm: {
-    healthConditions: { type: String, default: "" },
-    allergies: { type: String, default: "" },
-    consentToTreatment: { type: Boolean, required: false },
-    // medications: { type: String, default: "" },
-    // previousTreatments: { type: String, default: "" },
-    // skinSensitivities: { type: String, default: "" },
-    // pregnancyStatus: { type: Boolean, default: false },
-    // consentToPhotography: { type: Boolean, default: false },
-    // emergencyContact: {
-    //   name: { type: String, default: "" },
-    //   phone: { type: String, default: "" },
-    //   relationship: { type: String, default: "" }
-    // },
-    submittedAt: { type: Date, default: Date.now }
-  },
+consentForm: {
+  healthConditions: { type: String, default: "" },
+  allergies: { type: String, default: "" },
+  consentToTreatment: { type: Boolean, default: false }, // Changed from required: false
+  submittedAt: { type: Date, default: Date.now }
+},
 
   // Professional Notes
   serviceProviderNotes: {
