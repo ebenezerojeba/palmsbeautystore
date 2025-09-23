@@ -65,21 +65,6 @@ export default function SuccessPage() {
         status: appointment.status,
       };
 
-      emailjs
-        .send(
-          "service_zjrxg1k", // from EmailJS
-          "template_4zpkil9",
-          templateParams,
-          "eqHzO2GNucYkGcSLo", // from EmailJS
-        )
-        .then(
-          (response) => {
-            console.log("✅ Email sent successfully!", response.status, response.text);
-          },
-          (err) => {
-            console.error("❌ Failed to send email:", err);
-          }
-        );
     }
   }, [appointment]);
 

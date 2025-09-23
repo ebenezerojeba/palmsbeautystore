@@ -9,6 +9,7 @@ import { assets } from "../assets/assets";
 const MyProfile = () => {
   const { userData, setUserData, token, backendUrl } = useContext(AppContext);
 
+  // const backendUrl = 'http://localhost:3000'
   const [isEdit, setIsEdit] = useState(false);
   const [image, setImage] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -24,42 +25,54 @@ const MyProfile = () => {
     };
   }, [imagePreview]);
 
+// / Frontend function - updateUserProfileData
+const updateUserProfileData = async () => {
+  if (!userData._id) {
+    toast.error("User session invalid. Please login again.");
+    return;
+  }
 
-  const updateUserProfileData = async () => {
   setIsUpdating(true);
-  setIsLoading(true)
+  setIsLoading(true);
+
   try {
     const formData = new FormData();
-
-    // Ensure userId is present
     formData.append("userId", userData._id);
 
-    // Convert fields safely to string before trimming
-    const name = typeof userData.name === "string" ? userData.name.trim() : "";
-    const phone = typeof userData.phone === "string" || typeof userData.phone === "number"
-      ? String(userData.phone).trim()
-      : "";
-    const gender = typeof userData.gender === "string" ? userData.gender.trim() : "";
-    const dob = typeof userData.dob === "string" ? userData.dob.trim() : "";
+    // Helper function to check if a value is meaningful
+    const hasValue = (value) => {
+      return value !== undefined && 
+             value !== null && 
+             String(value).trim() !== '';
+    };
 
-    if (name) formData.append("name", name);
-    if (phone) formData.append("phone", phone);
-    if (gender) formData.append("gender", gender);
-    if (dob) formData.append("dob", dob);
-
-    if (
-      userData.address &&
-      (userData.address.line1?.trim?.() || userData.address.line2?.trim?.())
-    ) {
-      formData.append(
-        "address",
-        JSON.stringify({
-          line1: userData.address.line1?.trim?.() || "",
-          line2: userData.address.line2?.trim?.() || "",
-        })
-      );
+    // Only append fields that have actual values
+    if (hasValue(userData.name)) {
+      formData.append("name", String(userData.name).trim());
+    }
+    
+    if (hasValue(userData.phone)) {
+      formData.append("phone", String(userData.phone).trim());
+    }
+    
+    if (hasValue(userData.gender)) {
+      formData.append("gender", String(userData.gender).trim());
+    }
+    
+    if (hasValue(userData.dob)) {
+      formData.append("dob", String(userData.dob).trim());
     }
 
+    // Handle address - only append if at least one line has content
+    if (userData.address && 
+        (hasValue(userData.address.line1) || hasValue(userData.address.line2))) {
+      formData.append("address", JSON.stringify({
+        line1: userData.address.line1?.trim() || "",
+        line2: userData.address.line2?.trim() || "",
+      }));
+    }
+
+    // Handle image upload
     if (image) {
       formData.append("image", image);
     }
@@ -72,34 +85,51 @@ const MyProfile = () => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
+        timeout: 30000, // 30 second timeout
       }
     );
 
     if (data.success) {
       setUserData({
         ...data.user,
-        dob: data.user.dob ? data.user.dob.split("T")[0] : "",
+        dob: data.user.dob || "",
       });
-      toast.success("Profile updated successfully");
+      
+      const updatedFieldsText = data.updatedFields?.length > 0 
+        ? ` (${data.updatedFields.join(', ')})` 
+        : '';
+      
+      toast.success(`Profile updated successfully${updatedFieldsText}`);
       setIsEdit(false);
       setImage(null);
       setImagePreview(null);
     } else {
       toast.error(data.message || "Update failed");
     }
+
   } catch (error) {
-    const errorMsg =
-      error.response?.data?.message ||
-      error.message ||
-      "Failed to update profile";
-    toast.error(errorMsg);
     console.error("Update error:", error);
+
+    // Handle different error scenarios
+    if (error.code === 'ECONNABORTED') {
+      toast.error("Request timeout. Please check your connection.");
+    } else if (error.response?.status === 429) {
+      toast.error("Too many requests. Please wait and try again.");
+    } else if (error.response?.status === 413) {
+      toast.error("File too large. Please choose a smaller image.");
+    } else if (error.response?.data?.details) {
+      toast.error(`Validation error: ${error.response.data.details.join(', ')}`);
+    } else {
+      const errorMsg = error.response?.data?.message || 
+                     error.message || 
+                     "Failed to update profile";
+      toast.error(errorMsg);
+    }
   } finally {
     setIsUpdating(false);
-    setIsLoading(false)
+    setIsLoading(false);
   }
 };
-
 
  const handleImageChange = (e) => {
     const file = e.target.files[0];
