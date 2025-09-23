@@ -109,12 +109,15 @@ const AddProviderModal = ({
 
       payload.append("workingHours", JSON.stringify(formData.workingHours));
 
-      if (formData.profileImage) {
-        payload.append("profileImage", formData.profileImage);
-      }
-
+      // if (formData.profileImage) {
+      //   payload.append("profileImage", formData.profileImage);
+      // }
+    // Append image only if it exists and is a File object
+    if (formData.profileImage && formData.profileImage instanceof File) {
+      payload.append("profileImage", formData.profileImage);
+    }
       await onAdd(payload);
-      setView
+      setView('grid')
     } catch (error) {
       console.error('Error adding provider:', error);
     } finally {

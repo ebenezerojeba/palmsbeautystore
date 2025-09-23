@@ -61,8 +61,8 @@ const Provider = () => {
   const currentProviderRef = useRef(null);
   // const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  // const backendUrl = "https://palmsbeautystore-backend.onrender.com"
-  const backendUrl = "http://localhost:3000"
+  const backendUrl = "https://palmsbeautystore-backend.onrender.com"
+  // const backendUrl = "http://localhost:3000"
 
   useEffect(() => {
     loadProviders();
@@ -531,77 +531,6 @@ const updateProvider = async (providerId, data) => {
       </div>
     );
   };
-
-
-
-  // const AppointmentStatsCards = ({ stats, loading }) => {
-  //   if (loading) {
-  //     return (
-  //       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-  //         {[1, 2, 3, 4].map(i => (
-  //           <div key={i} className="bg-white rounded-lg p-4 border border-gray-200">
-  //             <div className="animate-pulse">
-  //               <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-  //               <div className="h-6 bg-gray-200 rounded w-1/3"></div>
-  //             </div>
-  //           </div>
-  //         ))}
-  //       </div>
-  //     );
-  //   }
-
-  //   if (!stats) return null;
-
-  //   const statCards = [
-  //     {
-  //       title: 'Total Appointments',
-  //       value: stats.total || 0,
-  //       icon: Calendar,
-  //       color: 'text-gray-600',
-  //       bgColor: 'bg-gray-50'
-  //     },
-  //     {
-  //       title: 'Today\'s Appointments',
-  //       value: stats.today || 0,
-  //       icon: Clock,
-  //       color: 'text-green-600',
-  //       bgColor: 'bg-green-50'
-  //     },
-  //     {
-  //       title: 'Upcoming',
-  //       value: stats.upcoming || 0,
-  //       icon: Clock4,
-  //       color: 'text-yellow-600',
-  //       bgColor: 'bg-yellow-50'
-  //     },
-  //     {
-  //       title: 'Completed',
-  //       value: stats.completed || 0,
-  //       icon: CheckCircle,
-  //       color: 'text-purple-600',
-  //       bgColor: 'bg-purple-50'
-  //     }
-  //   ];
-
-  //   return (
-  //     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-  //       {statCards.map((stat, index) => (
-  //         <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
-  //           <div className="flex items-center justify-between">
-  //             <div>
-  //               <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-  //               <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-  //             </div>
-  //             <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-  //               <stat.icon className={`w-6 h-6 ${stat.color}`} />
-  //             </div>
-  //           </div>
-  //         </div>
-  //       ))}
-  //     </div>
-  //   );
-  // };
-
 
 
  const AppointmentsSection = React.memo(({

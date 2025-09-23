@@ -915,12 +915,6 @@ const getStatusStats = () => {
                   )}
                 </div>
                 
-                <button
-                  onClick={() => navigate('/appointments')}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  View All
-                </button>
               </div>
               
               <div className="flex flex-col gap-2">
