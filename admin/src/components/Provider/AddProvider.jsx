@@ -116,8 +116,7 @@ const AddProviderModal = ({
     if (formData.profileImage && formData.profileImage instanceof File) {
       payload.append("profileImage", formData.profileImage);
     }
-      await onAdd(payload);
-      setView('grid')
+      await onAdd(payload, setView);
     } catch (error) {
       console.error('Error adding provider:', error);
     } finally {

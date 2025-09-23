@@ -191,55 +191,209 @@ const Provider = () => {
     }
   };
 
-  // FIXED FRONTEND CODE:
-  const addServiceToProvider = async (providerId, serviceId) => {
-    try {
-      console.log('Adding service to provider:', { providerId, serviceId }); // Debug log
+//   // FIXED FRONTEND CODE:
+//   const addServiceToProvider = async (providerId, serviceId) => {
+//     try {
+//       console.log('Adding service to provider:', { providerId, serviceId }); // Debug log
 
-      const response = await fetch(
-        `${backendUrl}/api/admin/service/${serviceId}/provider/${providerId}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+//       const response = await fetch(
+//         `${backendUrl}/api/admin/service/${serviceId}/provider/${providerId}`,
+//         {
+//           method: 'POST',
+//           headers: {
+//             'Content-Type': 'application/json',
 
-          },
-          // Add empty body since your backend doesn't expect body data
-          body: JSON.stringify({})
-        }
-      );
+//           },
+//           // Add empty body since your backend doesn't expect body data
+//           body: JSON.stringify({})
+//         }
+//       );
 
-      console.log('Response status:', response.status); // Debug log
+//       console.log('Response status:', response.status); // Debug log
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+//       if (!response.ok) {
+//         const errorText = await response.text();
+//         console.error('Error response:', errorText);
+//         throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+//       }
+
+//       const result = await response.json();
+//       console.log('Success result:', result); // Debug log
+
+//       if (result.success) {
+//         showMessage('success', 'Service added successfully!');
+//         await Promise.all([loadProviders(), loadServices()]);
+
+//         // Update selected provider if it's the one being modified
+//         if (selectedProvider && selectedProvider._id === providerId) {
+//           const updatedProvider = providers.find(p => p._id === providerId);
+//           if (updatedProvider) {
+//             setSelectedProvider(updatedProvider);
+//           }
+//         }
+//       } else {
+//         throw new Error(result.message || 'Failed to add service');
+//       }
+//     } catch (error) {
+//       console.error('Failed to add service:', error);
+//       showMessage('error', 'Failed to add service: ' + error.message);
+//       throw error; // Re-throw so the modal can handle it
+//     }
+//   };
+
+
+// const addServicesToProvider = async (providerId, serviceIds) => {
+//   try {
+//     console.log('Adding multiple services:', { providerId, serviceIds }); // Debug log
+
+//     // Ensure serviceIds is an array (handle both single and multiple)
+//     const servicesArray = Array.isArray(serviceIds) ? serviceIds : [serviceIds];
+
+//     const response = await fetch(
+//       `${backendUrl}/api/admin/services/provider/${providerId}`,
+//       {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify({ serviceIds: servicesArray })
+//       }
+//     );
+
+//     console.log('Response status:', response.status); // Debug log
+
+//     if (!response.ok) {
+//       const errorText = await response.text();
+//       console.error('Error response:', errorText);
+//       throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+//     }
+
+//     const result = await response.json();
+//     console.log('Success result:', result); // Debug log
+
+//     if (result.success) {
+//       showMessage('success', `Successfully added ${servicesArray.length} service(s)!`);
+//       await Promise.all([loadProviders(), loadServices()]);
+
+//       // Update selected provider if it's the one being modified
+//       if (selectedProvider && selectedProvider._id === providerId) {
+//         const updatedProvider = providers.find(p => p._id === providerId);
+//         if (updatedProvider) {
+//           setSelectedProvider(updatedProvider);
+//         }
+//       }
+//     } else {
+//       throw new Error(result.message || 'Failed to add services');
+//     }
+//   } catch (error) {
+//     console.error('Failed to add services:', error);
+//     showMessage('error', 'Failed to add services: ' + error.message);
+//     throw error; // Re-throw so the modal can handle it
+//   }
+// };
+
+
+
+
+const addServicesToProvider = async (providerId, serviceIds) => {
+  try {
+    console.log('Adding multiple services:', { providerId, serviceIds });
+
+    const servicesArray = Array.isArray(serviceIds) ? serviceIds : [serviceIds];
+
+    const response = await fetch(
+      `${backendUrl}/api/admin/services/provider/${providerId}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ serviceIds: servicesArray })
       }
+    );
 
-      const result = await response.json();
-      console.log('Success result:', result); // Debug log
-
-      if (result.success) {
-        showMessage('success', 'Service added successfully!');
-        await Promise.all([loadProviders(), loadServices()]);
-
-        // Update selected provider if it's the one being modified
-        if (selectedProvider && selectedProvider._id === providerId) {
-          const updatedProvider = providers.find(p => p._id === providerId);
-          if (updatedProvider) {
-            setSelectedProvider(updatedProvider);
-          }
-        }
-      } else {
-        throw new Error(result.message || 'Failed to add service');
-      }
-    } catch (error) {
-      console.error('Failed to add service:', error);
-      showMessage('error', 'Failed to add service: ' + error.message);
-      throw error; // Re-throw so the modal can handle it
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
     }
-  };
+
+    const result = await response.json();
+    console.log('Success result:', result);
+
+    if (result.success) {
+      // ✅ IMMEDIATELY UPDATE LOCAL STATE
+      await updateProviderServicesLocally(providerId, servicesArray);
+      
+      showMessage('success', `Successfully added ${servicesArray.length} service(s)!`);
+      
+      // Optional: Refresh data in background
+      setTimeout(() => {
+        loadProviders().catch(console.error);
+        loadServices().catch(console.error);
+      }, 1000);
+      
+    } else {
+      throw new Error(result.message || 'Failed to add services');
+    }
+  } catch (error) {
+    console.error('Failed to add services:', error);
+    showMessage('error', 'Failed to add services: ' + error.message);
+    throw error;
+  }
+};
+
+// ✅ NEW FUNCTION: Update provider services locally
+const updateProviderServicesLocally = async (providerId, newServiceIds) => {
+  try {
+    // Fetch the complete service details for the new service IDs
+    const servicesResponse = await fetch(`${backendUrl}/api/admin/services`);
+    const servicesData = await servicesResponse.json();
+    
+    const newServices = servicesData.filter(service => 
+      newServiceIds.includes(service._id)
+    );
+
+    // Update selectedProvider state
+    if (selectedProvider && selectedProvider._id === providerId) {
+      setSelectedProvider(prevProvider => ({
+        ...prevProvider,
+        services: [...(prevProvider.services || []), ...newServices]
+      }));
+    }
+
+    // Update providers list
+    setProviders(prevProviders => 
+      prevProviders.map(provider => 
+        provider._id === providerId 
+          ? {
+              ...provider,
+              services: [...(provider.services || []), ...newServices]
+            }
+          : provider
+      )
+    );
+  } catch (error) {
+    console.error('Error updating local state:', error);
+    // Fallback: Force reload
+    await Promise.all([loadProviders(), loadServices()]);
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   const removeServiceFromProvider = async (providerId, serviceId) => {
     if (!window.confirm('Are you sure you want to remove this service from the provider?')) {
@@ -781,23 +935,6 @@ const updateProvider = async (providerId, data) => {
 
 
   const ProviderDetail = ({ provider }) => {
-      // Replace with a safer version if needed
-  // useEffect(() => {
-  //   if (provider?.services) {
-  //     // Only log once on mount, not on every render
-  //     console.log('Provider services loaded:', provider.services.length);
-  //   }
-  // }, []);
-    // useEffect(() => {
-    //   if (selectedProvider && selectedProvider.services) {
-    //     console.log('Provider services structure:', selectedProvider.services);
-    //     selectedProvider.services.forEach((service, index) => {
-    //       console.log(`Service ${index}:`, service);
-    //     });
-    //   }
-    // }, [selectedProvider]);
-    // if (!provider) return null;
-
     const [expanded, setExpanded] = useState(false);
     const [showAllServices, setShowAllServices] = useState(false);
     const [showAllAvailable, setShowAllAvailable] = useState(false);
@@ -1008,75 +1145,6 @@ const updateProvider = async (providerId, data) => {
               </div>
             </div>
 
-            {/* <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Available Services</h3>
-              </div>
-              <div className="space-y-3">
-                {services.filter(service => {
-                  const serviceId = service._id;
-                  return !provider.services?.some(ps => {
-                    const assignedServiceId = ps._id || ps.serviceId;
-                    return assignedServiceId === serviceId;
-                  });
-                }).length > 0 ? (
-                  <>
-                    {services
-                      .filter(service => {
-                        const serviceId = service._id;
-                        return !provider.services?.some(ps => {
-                          const assignedServiceId = ps._id || ps.serviceId;
-                          return assignedServiceId === serviceId;
-                        });
-                      })
-                      .slice(0, showAllAvailable ? undefined : maxVisibleAvailable) // <= only show 3 unless expanded
-                      .map((service) => (
-                        <div
-                          key={service._id}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                        >
-                          <div>
-                            <h4 className="font-medium text-gray-900">{service.title || service.name}</h4>
-                          </div>
-                          <button
-                            onClick={() => addServiceToProvider(provider._id, service._id)}
-                            className="text-green-600 hover:text-green-700 p-1 rounded hover:bg-green-50 transition-colors"
-                            title="Add service"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-
-                    {services.filter(service => {
-                      const serviceId = service._id;
-                      return !provider.services?.some(ps => {
-                        const assignedServiceId = ps._id || ps.serviceId;
-                        return assignedServiceId === serviceId;
-                      });
-                    }).length > maxVisibleAvailable && (
-                        <div className='flex justify-end mt-2'>
-                          <button
-                            onClick={() => setShowAllAvailable(!showAllAvailable)}
-                            className=" text-green-600 text-sm font-medium hover:underline mt-2"
-                          >
-                            {showAllAvailable ? "See less" : `See all available services`}
-                          </button>
-                        </div>
-                      )}
-                  </>
-                ) : (
-                  <div className="text-center py-4">
-                    <p className="text-gray-500 italic">
-                      All services are already assigned to this provider
-                    </p>
-                  </div>
-                )}
-
-              </div>
-            </div>
- */}
-
             <div>
               <div className="flex items-center justify-between mb-4">
                 {/* Header with toggle */}
@@ -1189,108 +1257,249 @@ const updateProvider = async (providerId, data) => {
             provider={provider}
             services={services}
             onClose={() => setShowAddServiceModal(false)}
-            onAdd={addServiceToProvider}
+            onAdd={addServicesToProvider}
           />
         )}
       </div>
     );
   };
 
-  const AddServiceModal = ({ provider, services, onClose, onAdd }) => {
-    const [selectedService, setSelectedService] = useState('');
-    const [isAdding, setIsAdding] = useState(false);
+  // const AddServiceModal = ({ provider, services, onClose, onAdd }) => {
+  //   const [selectedService, setSelectedService] = useState('');
+  //   const [isAdding, setIsAdding] = useState(false);
 
-    const availableServices = services.filter(service =>
-      !provider.services?.some(ps => ps._id === service._id)
-    );
+  //   const availableServices = services.filter(service =>
+  //     !provider.services?.some(ps => ps._id === service._id)
+  //   );
 
-    const handleAdd = async () => {
-      if (selectedService && !isAdding) {
-        setIsAdding(true);
-        try {
-          await onAdd(provider._id, selectedService);
-          onClose();
-        } catch (error) {
-          console.error('Error adding service:', error);
-        } finally {
-          setIsAdding(false);
-        }
+  //   const handleAdd = async () => {
+  //     if (selectedService && !isAdding) {
+  //       setIsAdding(true);
+  //       try {
+  //         await onAdd(provider._id, selectedService);
+  //         onClose();
+  //       } catch (error) {
+  //         console.error('Error adding service:', error);
+  //       } finally {
+  //         setIsAdding(false);
+  //       }
+  //     }
+  //   };
+
+  //   return (
+  //     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  //       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+  //         <div className="flex items-center justify-between mb-4">
+  //           <h3 className="text-lg font-semibold text-gray-900">
+  //             Add Service to {provider.name}
+  //           </h3>
+  //           <button
+  //             onClick={onClose}
+  //             className="text-gray-400 hover:text-gray-600 transition-colors"
+  //             disabled={isAdding}
+  //           >
+  //             <X className="w-5 h-5" />
+  //           </button>
+  //         </div>
+
+  //         <div className="mb-4">
+  //           <label className="block text-sm font-medium text-gray-700 mb-2">
+  //             Select Service
+  //           </label>
+  //           {availableServices.length > 0 ? (
+  //             <select
+  //               value={selectedService}
+  //               onChange={(e) => setSelectedService(e.target.value)}
+  //               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+  //               disabled={isAdding}
+  //             >
+  //               <option value="">Choose a service...</option>
+  //               {availableServices.map(service => (
+  //                 <option key={service._id} value={service._id}>
+  //                   {service.title})
+  //                 </option>
+  //               ))}
+  //             </select>
+  //           ) : (
+  //             <div className="text-center py-4">
+  //               <p className="text-gray-500 italic">
+  //                 All available services have been assigned to this provider
+  //               </p>
+  //             </div>
+  //           )}
+  //         </div>
+
+  //         <div className="flex space-x-3">
+  //           <button
+  //             onClick={onClose}
+  //             className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+  //             disabled={isAdding}
+  //           >
+  //             Cancel
+  //           </button>
+  //           {availableServices.length > 0 && (
+  //             <button
+  //               onClick={handleAdd}
+  //               disabled={!selectedService || isAdding}
+  //               className="flex-1 px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+  //             >
+  //               {isAdding ? (
+  //                 <>
+  //                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+  //                   Adding...
+  //                 </>
+  //               ) : (
+  //                 'Add Service'
+  //               )}
+  //             </button>
+  //           )}
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
+  // };
+const AddServiceModal = ({ provider, services, onClose, onAdd }) => {
+  const [selectedServices, setSelectedServices] = useState([]);
+  const [isAdding, setIsAdding] = useState(false);
+
+  const availableServices = services.filter(service =>
+    !provider.services?.some(ps => ps._id === service._id)
+  );
+
+  const toggleServiceSelection = (serviceId) => {
+    setSelectedServices(prev => {
+      if (prev.includes(serviceId)) {
+        return prev.filter(id => id !== serviceId);
+      } else {
+        return [...prev, serviceId];
       }
-    };
+    });
+  };
 
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-          <div className="flex items-center justify-between mb-4">
+  const selectAllServices = () => {
+    if (selectedServices.length === availableServices.length) {
+      // If all are selected, deselect all
+      setSelectedServices([]);
+    } else {
+      // Select all available services
+      setSelectedServices(availableServices.map(service => service._id));
+    }
+  };
+
+  const handleAdd = async () => {
+  if (selectedServices.length > 0 && !isAdding) {
+    setIsAdding(true);
+    try {
+      // Use the batch function to add all services at once
+      await addServicesToProvider(provider._id, selectedServices);
+      setView("grid")
+      onClose();
+    } catch (error) {
+      console.error('Error adding services:', error);
+    } finally {
+      setIsAdding(false);
+    }
+  }
+};
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] overflow-hidden">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">
-              Add Service to {provider.name}
+              Add Services to {provider.name}
             </h3>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-              disabled={isAdding}
+              className="text-gray-400 hover:text-gray-600"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
+        </div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Service
-            </label>
-            {availableServices.length > 0 ? (
-              <select
-                value={selectedService}
-                onChange={(e) => setSelectedService(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                disabled={isAdding}
+        <div className="p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <span className="text-sm text-gray-600">
+              {selectedServices.length} of {availableServices.length} selected
+            </span>
+            {availableServices.length > 0 && (
+              <button
+                onClick={selectAllServices}
+                className="text-sm text-green-600 hover:text-green-700 font-medium"
               >
-                <option value="">Choose a service...</option>
-                {availableServices.map(service => (
-                  <option key={service._id} value={service._id}>
-                    {service.title})
-                  </option>
+                {selectedServices.length === availableServices.length ? 
+                  "Deselect All" : "Select All"}
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg">
+            {availableServices.length > 0 ? (
+              <div className="divide-y divide-gray-200">
+                {availableServices.map((service) => (
+                  <div
+                    key={service._id}
+                    className="flex items-center p-3 hover:bg-gray-50 cursor-pointer"
+                    onClick={() => toggleServiceSelection(service._id)}
+                  >
+                    <div className={`flex items-center justify-center w-5 h-5 border-2 rounded mr-3 ${
+                      selectedServices.includes(service._id)
+                        ? 'bg-green-500 border-green-500'
+                        : 'border-gray-300'
+                    }`}>
+                      {selectedServices.includes(service._id) && (
+                        <Check className="w-3 h-3 text-white" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">
+                        {service.title || service.name || 'Unnamed Service'}
+                      </h4>
+                      <p className="text-sm text-gray-500">ID: {service._id}</p>
+                    </div>
+                  </div>
                 ))}
-              </select>
+              </div>
             ) : (
-              <div className="text-center py-4">
-                <p className="text-gray-500 italic">
-                  All available services have been assigned to this provider
+              <div className="text-center py-8">
+                <p className="text-gray-500">No services available to add</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  All services are already assigned to this provider
                 </p>
               </div>
             )}
           </div>
+        </div>
 
-          <div className="flex space-x-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              disabled={isAdding}
-            >
-              Cancel
-            </button>
-            {availableServices.length > 0 && (
-              <button
-                onClick={handleAdd}
-                disabled={!selectedService || isAdding}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-              >
-                {isAdding ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Adding...
-                  </>
-                ) : (
-                  'Add Service'
-                )}
-              </button>
+        <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            disabled={isAdding}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleAdd}
+            disabled={selectedServices.length === 0 || isAdding}
+            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isAdding ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Adding...
+              </>
+            ) : (
+              `Add ${selectedServices.length} Service${selectedServices.length !== 1 ? 's' : ''}`
             )}
-          </div>
+          </button>
         </div>
       </div>
-    );
-  };
-
+    </div>
+  );
+};
     // FIXED: AppointmentsView component with proper loading and error handling
   const AppointmentsView = ({ provider }) => {
     if (!provider) return null;
@@ -1543,7 +1752,7 @@ const updateProvider = async (providerId, data) => {
     provider={selectedProvider}
     services={services}
     onBack={() => setView('grid')}
-    onAddService={addServiceToProvider}
+    onAddService={addServicesToProvider}
     onRemoveService={removeServiceFromProvider}
     onViewSchedule={(provider) => {
       loadProviderSchedule(provider._id);
