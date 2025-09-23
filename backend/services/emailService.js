@@ -17,6 +17,21 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// const transporter = nodemailer.createTransport({
+//   host: "smtp.gmail.com",
+//   port: 587,
+//   secure: false, // true for port 465, false for 587
+//   auth: {
+//     user: 'Stylebyesther@palmsbeautystore.com',
+//     pass: 'mvzlbqwbmumar',
+//   },
+//   tls: {
+//     rejectUnauthorized: false,
+//   },
+// });
+
+
+
 await transporter.verify();
 console.log("✅ Nodemailer transporter is ready to send messages");
 console.log(`📧 Using service: ${process.env.EMAIL_SERVICE || "gmail"}`);

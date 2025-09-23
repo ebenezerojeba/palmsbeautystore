@@ -353,6 +353,76 @@ export const addProviderToService = async (req, res) => {
   }
 };
 
+// New backend endpoint for batch adding services
+export const addMultipleProvidersToService = async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const { serviceIds } = req.body;
+    
+    if (!Array.isArray(serviceIds) || serviceIds.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Service IDs array is required" 
+      });
+    }
+
+    const provider = await providerModel.findById(providerId);
+    if (!provider) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Provider not found" 
+      });
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      for (const serviceId of serviceIds) {
+        if (!serviceId.match(/^[0-9a-fA-F]{24}$/)) continue;
+
+        const service = await serviceModel.findById(serviceId);
+        if (!service) continue;
+
+        // Check if already associated
+        const isServiceAlreadyAdded = provider.services.some(s => s.toString() === serviceId);
+        const isProviderAlreadyAdded = service.providers && service.providers.some(p => p.toString() === providerId);
+
+        if (!isServiceAlreadyAdded) {
+          provider.services.push(serviceId);
+        }
+
+        if (!isProviderAlreadyAdded) {
+          if (!service.providers) service.providers = [];
+          service.providers.push(providerId);
+          await service.save({ session });
+        }
+      }
+
+      await provider.save({ session });
+      await session.commitTransaction();
+      
+      res.json({ 
+        success: true, 
+        message: `Successfully added ${serviceIds.length} services to provider`,
+        data: { addedCount: serviceIds.length }
+      });
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
+  } catch (error) {
+    console.error("Error adding multiple services to provider:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to add services to provider",
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+};
+
 
 // Remove provider from a service
 export const removeProviderFromService = async (req, res) => {
