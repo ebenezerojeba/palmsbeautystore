@@ -9,7 +9,6 @@ import dotenv from "dotenv";
 import { sendBookingEmails } from "../services/emailService.js";
 dotenv.config();
 
-
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -732,12 +731,6 @@ const bookMultipleAppointment = async (req, res) => {
       }
     });
 
-        // Send confirmation emails (non-blocking)
-    sendBookingEmails(newAppointment.toObject()).catch(err => {
-      console.error('Failed to send booking emails:', err);
-      // Don't fail the request if email sending fails
-    });
-
     console.log("✅ Appointment created successfully");
 
 
@@ -1033,9 +1026,16 @@ const verifyAppointmentPayment = async (req, res) => {
     console.log("✅ Appointment updated successfully");
 
         // Send confirmation emails after payment verification
-    sendBookingEmails(appointment.toObject()).catch(err => {
-      console.error('Failed to send confirmation emails:', err);
-    });
+  // / ✅ NOW SEND CONFIRMATION EMAILS - Only after successful payment
+    console.log("📧 Sending confirmation emails after successful payment...");
+    try {
+      await sendBookingEmails(appointment.toObject());
+      console.log("✅ Confirmation emails sent successfully");
+    } catch (emailError) {
+      console.error("❌ Failed to send confirmation emails:", emailError);
+      // Don't fail the entire request if email sending fails
+      // The payment was successful, so the appointment is still valid
+    }
 
     return res.json({
       success: true,

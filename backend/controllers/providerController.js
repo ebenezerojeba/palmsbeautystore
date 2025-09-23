@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import appointmentModel from "../models/appointment.js";
 import providerModel from "../models/providerModel.js";
 import serviceModel from "../models/serviceModel.js";
+import { v2 as cloudinary } from 'cloudinary';
+import streamifier from 'streamifier'
 
 // Get all providers
 export const getProviders = async (req, res) => {
@@ -409,6 +411,340 @@ export const removeProviderFromService = async (req, res) => {
   }
 };
 
+
+// Helper function to upload buffer to Cloudinary
+const uploadToCloudinary = (buffer, options = {}) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "image",
+        folder: "providers", // Organize in providers folder
+        transformation: [
+          { width: 400, height: 400, crop: "fill", gravity: "face" },
+          { quality: "auto:best" },
+          { fetch_format: "auto" }
+        ],
+        ...options
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result);
+        }
+      }
+    );
+    
+    streamifier.createReadStream(buffer).pipe(uploadStream);
+  });
+};
+
+// Helper function to delete image from Cloudinary
+const deleteFromCloudinary = async (imageUrl) => {
+  try {
+    if (imageUrl) {
+      // Extract public_id from the URL
+      const urlParts = imageUrl.split('/');
+      const fileWithExtension = urlParts[urlParts.length - 1];
+      const publicId = `providers/${fileWithExtension.split('.')[0]}`;
+      
+      await cloudinary.uploader.destroy(publicId);
+      console.log(`Deleted old image: ${publicId}`);
+    }
+  } catch (error) {
+    console.warn('Could not delete old image from Cloudinary:', error.message);
+  }
+};
+
+
+
+
+
+// export const createProvider = async (req, res) => {
+//   try {
+//     const {
+//       name,
+//       email,
+//       phone,
+//       bio,
+//       bookingBuffer
+//     } = req.body;
+
+//     // Validate required fields
+//     if (!name || !email) {
+//       return res.status(400).json({ 
+//         success: false, 
+//         message: "Name and email are required" 
+//       });
+//     }
+
+//     // Handle services array from FormData
+//     let services = [];
+//     if (req.body.services) {
+//       try {
+//         services = typeof req.body.services === 'string' 
+//           ? JSON.parse(req.body.services)
+//           : Array.isArray(req.body.services) 
+//             ? req.body.services 
+//             : [req.body.services];
+//       } catch (error) {
+//         console.warn('Services parsing error:', error.message);
+//         services = [];
+//       }
+//     } else if (req.body['services[]']) {
+//       services = Array.isArray(req.body['services[]']) 
+//         ? req.body['services[]'] 
+//         : [req.body['services[]']];
+//     }
+    
+//     // Handle working hours
+//     let workingHours = [];
+//     if (req.body.workingHours) {
+//       try {
+//         workingHours = typeof req.body.workingHours === 'string'
+//           ? JSON.parse(req.body.workingHours)
+//           : req.body.workingHours;
+//       } catch (error) {
+//         console.warn('Working hours parsing error:', error.message);
+//         workingHours = [];
+//       }
+//     }
+
+//     // Check if provider already exists
+//     const existingProvider = await providerModel.findOne({ 
+//       email: email.toLowerCase() 
+//     });
+    
+//     if (existingProvider) {
+//       return res.status(400).json({ 
+//         success: false, 
+//         message: "Provider with this email already exists" 
+//       });
+//     }
+
+//     // Handle image upload to Cloudinary
+//   let profileImageUrl = null;
+//     if (req.file) {
+//       try {
+//         console.log('Uploading image to Cloudinary...');
+//         const uploadResult = await uploadToCloudinary(req.file.buffer, {
+//           folder: 'providers',
+//           public_id: `provider_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+//           resource_type: 'image'
+//         });
+//         profileImageUrl = uploadResult.secure_url;
+//         console.log('Image uploaded successfully:', profileImageUrl);
+//       } catch (uploadError) {
+//         console.error('Cloudinary upload error:', uploadError);
+//         return res.status(400).json({
+//           success: false,
+//           message: "Failed to upload image. Please try again.",
+//           error: uploadError.message
+//         });
+//       }
+//     } else {
+//       console.log('No image provided, continuing without profile image');
+//     }
+
+
+//     // Set default working hours if not provided
+//     const defaultWorkingHours = workingHours.length > 0 ? workingHours : [
+//       { dayOfWeek: 0, isWorking: false, startTime: "09:00", endTime: "17:00" },
+//       { dayOfWeek: 1, isWorking: true, startTime: "09:00", endTime: "17:00" },
+//       { dayOfWeek: 2, isWorking: true, startTime: "09:00", endTime: "17:00" },
+//       { dayOfWeek: 3, isWorking: true, startTime: "09:00", endTime: "17:00" },
+//       { dayOfWeek: 4, isWorking: true, startTime: "09:00", endTime: "17:00" },
+//       { dayOfWeek: 5, isWorking: true, startTime: "09:00", endTime: "17:00" },
+//       { dayOfWeek: 6, isWorking: false, startTime: "09:00", endTime: "17:00" }
+//     ];
+
+//     // Create new provider
+//     const newProvider = new providerModel({
+//       name: name.trim(),
+//       email: email.toLowerCase().trim(),
+//       phone: phone?.trim(),
+//       bio: bio?.trim(),
+//       profileImage: profileImageUrl,
+//       services: services.filter(service => service), // Remove empty services
+//       workingHours: defaultWorkingHours,
+//       bookingBuffer: parseInt(bookingBuffer) || 15,
+//       isActive: true,
+//       createdAt: new Date()
+//     });
+
+//     const savedProvider = await newProvider.save();
+    
+//     // Populate services with details
+//     await savedProvider.populate("services", "title duration price");
+
+//     res.status(201).json({ 
+//       success: true, 
+//       message: "Provider created successfully", 
+//       provider: savedProvider 
+//     });
+
+//   } catch (error) {
+//     console.error("Error creating provider:", error);
+    
+//     // Handle specific MongoDB errors
+//     if (error.code === 11000) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Provider with this email already exists"
+//       });
+//     }
+    
+//     if (error.name === 'ValidationError') {
+//       const validationErrors = Object.values(error.errors).map(err => err.message);
+//       return res.status(400).json({
+//         success: false,
+//         message: "Validation failed",
+//         errors: validationErrors
+//       });
+//     }
+
+//     res.status(500).json({ 
+//       success: false, 
+//       message: "Failed to create provider", 
+//       ...(process.env.NODE_ENV === 'development' && { error: error.message })
+//     });
+//   }
+// };
+
+// export const updateProvider = async (req, res) => {
+//   try {
+//     const providerId = req.params.providerId;
+    
+//     if (!providerId) {
+//       return res.status(400).json({ 
+//         success: false, 
+//         message: "Provider ID is required" 
+//       });
+//     }
+
+//     // Find existing provider
+//     const existingProvider = await providerModel.findById(providerId);
+//     if (!existingProvider) {
+//       return res.status(404).json({ 
+//         success: false, 
+//         message: "Provider not found" 
+//       });
+//     }
+
+//     let updates = { ...req.body };
+
+//     // Parse JSON fields from FormData
+//     const jsonFields = ['services', 'workingHours', 'breaks', 'vacationDays'];
+//     jsonFields.forEach(field => {
+//       if (updates[field]) {
+//         try {
+//           updates[field] = typeof updates[field] === 'string' 
+//             ? JSON.parse(updates[field]) 
+//             : updates[field];
+//         } catch (error) {
+//           console.warn(`${field} parsing error:`, error.message);
+//           delete updates[field]; // Remove invalid field
+//         }
+//       }
+//     });
+
+//     // Handle image upload to Cloudinary
+//     if (req.file && req.file.buffer) {
+//       try {
+//         // Delete old image from Cloudinary if it exists
+//         if (existingProvider.profileImage) {
+//           await deleteFromCloudinary(existingProvider.profileImage);
+//         }
+
+//         // Upload new image
+//         const uploadResult = await uploadToCloudinary(req.file.buffer, {
+//           public_id: `provider_${providerId}_${Date.now()}`
+//         });
+//         updates.profileImage = uploadResult.secure_url;
+//       } catch (uploadError) {
+//         console.error('Cloudinary upload error:', uploadError);
+//         return res.status(400).json({
+//           success: false,
+//           message: "Failed to upload image. Please try again."
+//         });
+//       }
+//     }
+
+//     // Clean up updates object
+//     Object.keys(updates).forEach(key => {
+//       if (updates[key] === undefined || updates[key] === null || updates[key] === '') {
+//         delete updates[key];
+//       }
+//     });
+
+//     // Check if there are any updates to make
+//     if (Object.keys(updates).length === 0) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "No valid fields provided for update"
+//       });
+//     }
+
+//     // Add update timestamp
+//     updates.updatedAt = new Date();
+
+//     // Update provider
+//     const updatedProvider = await providerModel.findByIdAndUpdate(
+//       providerId,
+//       { $set: updates },
+//       { 
+//         new: true, 
+//         runValidators: true 
+//       }
+//     ).populate("services", "title duration price");
+
+//     if (!updatedProvider) {
+//       return res.status(404).json({ 
+//         success: false, 
+//         message: "Provider not found" 
+//       });
+//     }
+
+//     res.json({ 
+//       success: true, 
+//       message: "Provider updated successfully",
+//       provider: updatedProvider,
+//       updatedFields: Object.keys(updates).filter(key => key !== 'updatedAt')
+//     });
+
+//   } catch (error) {
+//     console.error("Error updating provider:", error);
+    
+//     // Handle specific errors
+//     if (error.code === 11000) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Duplicate data found. Email might already exist."
+//       });
+//     }
+    
+//     if (error.name === 'ValidationError') {
+//       const validationErrors = Object.values(error.errors).map(err => err.message);
+//       return res.status(400).json({
+//         success: false,
+//         message: "Validation failed",
+//         errors: validationErrors
+//       });
+//     }
+
+//     res.status(500).json({ 
+//       success: false, 
+//       message: "Failed to update provider", 
+//       ...(process.env.NODE_ENV === 'development' && { error: error.message })
+//     });
+//   }
+// };
+
+
+
+
+
+
 export const createProvider = async (req, res) => {
   try {
     const {
@@ -419,8 +755,7 @@ export const createProvider = async (req, res) => {
       bookingBuffer
     } = req.body;
 
-    // Parse JSON fields if they come as strings from FormData
-    // Fix: Handle services array properly
+  
     let services = [];
     if (req.body.services) {
       // If services are sent as array of ObjectIds

@@ -26,7 +26,6 @@ const listAppointment = async (req, res) => {
 };
 
 
-
 // Fixed registerUser function
 const registerUser = async (req, res) => {
   try {
@@ -147,7 +146,6 @@ const adminLogin = async (req, res) => {
 }
 
 
-// API to update user profile - supports partial updates
 const updateProfile = async (req, res) => {
   try {
     const { userId, name, phone, address, dob, gender } = req.body;
@@ -164,68 +162,102 @@ const updateProfile = async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Build update data only with provided fields
+    // Build update data only with provided fields that have actual values
     const updateData = {};
 
-    // Only add fields that are provided in the request
-    if (name !== undefined) updateData.name = name;
-    if (phone !== undefined) updateData.phone = phone;
-    if (gender !== undefined) updateData.gender = gender;
+    // Only add fields that are provided and not empty
+    if (name !== undefined && name !== null && String(name).trim() !== '') {
+      updateData.name = String(name).trim();
+    }
+    if (phone !== undefined && phone !== null && String(phone).trim() !== '') {
+      updateData.phone = String(phone).trim();
+    }
+    if (gender !== undefined && gender !== null && String(gender).trim() !== '') {
+      updateData.gender = String(gender).trim();
+    }
     
     // Handle DOB with proper date conversion
-    if (dob !== undefined) {
-      updateData.dob = new Date(dob);
-    }
-
-    // Handle address if provided
-    if (address !== undefined) {
-      try {
-        updateData.address = typeof address === 'string' ? JSON.parse(address) : address;
-        // Ensure address has consistent structure
-        updateData.address = {
-          line1: updateData.address.line1 || '',
-          line2: updateData.address.line2 || ''
-        };
-      } catch (err) {
-        console.error("Address parsing error:", err);
-        updateData.address = { line1: '', line2: '' };
+    if (dob !== undefined && dob !== null && String(dob).trim() !== '') {
+      const dateValue = new Date(dob);
+      if (!isNaN(dateValue.getTime())) {
+        updateData.dob = dateValue;
       }
     }
 
-    // Update user data only if there are fields to update
+    // Handle address if provided
+    if (address !== undefined && address !== null) {
+      try {
+        const addressData = typeof address === 'string' ? JSON.parse(address) : address;
+        // Only update address if at least one line has content
+        if (addressData && (addressData.line1?.trim() || addressData.line2?.trim())) {
+          updateData.address = {
+            line1: addressData.line1?.trim() || '',
+            line2: addressData.line2?.trim() || ''
+          };
+        }
+      } catch (err) {
+        console.error("Address parsing error:", err);
+        // Don't fail the entire request for address parsing issues
+      }
+    }
+
+    // Check if any meaningful update is provided
+    const hasDataUpdates = Object.keys(updateData).length > 0;
+    const hasImageUpdate = !!imageFile;
+
+    if (!hasDataUpdates && !hasImageUpdate) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "No valid fields provided for update" 
+      });
+    }
+
     let updatedUser = existingUser;
-    if (Object.keys(updateData).length > 0) {
+
+    // Update user data if there are fields to update
+    if (hasDataUpdates) {
       updatedUser = await userModel.findByIdAndUpdate(
         userId, 
-        updateData, 
-        { new: true } // Return the updated document
+        { $set: updateData }, 
+        { new: true, runValidators: true }
       );
     }
 
     // Handle image upload if present
     if (imageFile) {
-      const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
-        resource_type: "image",
-        folder: "user-profiles"
-      });
-      updatedUser = await userModel.findByIdAndUpdate(
-        userId, 
-        { image: imageUpload.secure_url },
-        { new: true }
-      );
+      try {
+        const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+          resource_type: "image",
+          folder: "user-profiles",
+          transformation: [
+            { width: 400, height: 400, crop: "fill" },
+            { quality: "auto:best" }
+          ]
+        });
+        
+        updatedUser = await userModel.findByIdAndUpdate(
+          userId, 
+          { $set: { image: imageUpload.secure_url } },
+          { new: true }
+        );
+
+        // Clean up temporary file
+        const fs = require('fs');
+        if (fs.existsSync(imageFile.path)) {
+          fs.unlinkSync(imageFile.path);
+        }
+      } catch (imageError) {
+        console.error("Image upload error:", imageError);
+        return res.status(400).json({
+          success: false,
+          message: "Failed to upload image. Please try again."
+        });
+      }
     }
 
-    // Check if any update was actually made
-    if (Object.keys(updateData).length === 0 && !imageFile) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "No fields provided for update" 
-      });
-    }
-
-    // Format the response data with safe date handling
+    // Format the response data
     const responseData = {
-      ...updatedUser._doc
+      ...updatedUser.toObject()
     };
 
     // Format DOB for response if it exists
@@ -235,22 +267,43 @@ const updateProfile = async (req, res) => {
         : new Date(responseData.dob).toISOString().split('T')[0];
     }
 
+    // Remove sensitive fields
+    delete responseData.password;
+    delete responseData.__v;
+
     res.json({ 
       success: true, 
       message: "Profile updated successfully", 
-      user: responseData 
+      user: responseData,
+      updatedFields: [...Object.keys(updateData), ...(hasImageUpdate ? ['image'] : [])]
     });
 
   } catch (error) {
     console.error("Profile update error:", error);
+    
+    // Handle specific MongoDB errors
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "Duplicate data found. Please check your input."
+      });
+    }
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid data format",
+        details: Object.values(error.errors).map(err => err.message)
+      });
+    }
+
     res.status(500).json({ 
       success: false, 
       message: "Internal server error",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      ...(process.env.NODE_ENV === 'development' && { error: error.message })
     });
   }
 };
-
 // API to get userData if it's verified or not
 const getUserData = async (req, res) => {
   try {
