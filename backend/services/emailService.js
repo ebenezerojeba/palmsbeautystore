@@ -21,7 +21,7 @@ await transporter.verify();
 console.log("✅ Nodemailer transporter is ready to send messages");
 console.log(`📧 Using service: ${process.env.EMAIL_SERVICE || "gmail"}`);
 console.log(`📧 From address: ${process.env.EMAIL_FROM_NAME}`);
-console.log(`📧 Admin MAIL: ${process.env.ADMIN_EMAIL}`);
+console.log(`📧 Admin MAIL: ${process.env.ADMIN_NOTIFICATION_EMAIL}`);
 
 // Send email function
 const sendEmail = async (to, subject, html) => {
@@ -69,10 +69,10 @@ export const sendBookingEmails = async (appointmentData) => {
     }
 
     // Send to admin
-    if (process.env.ADMIN_EMAIL) {
+    if (process.env.ADMIN_NOTIFICATION_EMAIL) {
       const adminTemplate = emailTemplates.adminNewBooking(appointmentData);
       await sendEmail(
-        process.env.ADMIN_EMAIL,
+        process.env.ADMIN_NOTIFICATION_EMAIL,
         adminTemplate.subject,
         adminTemplate.html
       );
@@ -99,10 +99,10 @@ export const sendOrderEmails = async (orderData) => {
     );
 
     // Send notification to admin
-    if (process.env.ADMIN_EMAIL) {
+    if (process.env.ADMIN_NOTIFICATION_EMAIL) {
       const adminTemplate = emailTemplates.adminOrderNotification(orderData);
       await sendEmail(
-        process.env.ADMIN_EMAIL,
+        process.env.ADMIN_NOTIFICATION_EMAIL,
         adminTemplate.subject,
         adminTemplate.html
       );
