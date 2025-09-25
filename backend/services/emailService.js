@@ -22,7 +22,7 @@ const transporter = nodemailer.createTransport({
 //   port: 587,
 //   secure: false, // true for port 465, false for 587
 //   auth: {
-//     user: 'Stylebyesther@palmsbeautystore.com',
+//     user: 'stylebyesther@palmsbeautystore.com',
 //     pass: 'mvzlbqwbmumar',
 //   },
 //   tls: {
