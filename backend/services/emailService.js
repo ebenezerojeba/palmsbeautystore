@@ -5,8 +5,23 @@ import { emailTemplates } from "./emailTemplates.js";
 dotenv.config();
 
 // Create transporter
+// const transporter = nodemailer.createTransport({
+//   service: "gmail", 
+//   auth: {
+//     user: process.env.EMAIL_USER,
+//     pass: process.env.EMAIL_PASSWORD,
+//   },
+//   tls: {
+//     rejectUnauthorized: false,
+//   },
+// });
+
+
 const transporter = nodemailer.createTransport({
-  service: "gmail", 
+  service: "gmail",
+  host: "smtp.gmail.com", // Explicitly set host
+  port: 587, // Use port 587 for TLS
+  secure: false, // Use STARTTLS
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD,
@@ -14,7 +29,12 @@ const transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false,
   },
+  // Add connection timeout and retry settings
+  connectionTimeout: 60000, // 60 seconds
+  greetingTimeout: 30000,   // 30 seconds
+  socketTimeout: 60000,     // 60 seconds
 });
+
 
 await transporter.verify();
 console.log("✅ Nodemailer transporter is ready to send messages");
