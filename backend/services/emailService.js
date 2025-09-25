@@ -5,7 +5,6 @@ import { emailTemplates } from "./emailTemplates.js";
 dotenv.config();
 
 // Create transporter
-
 const transporter = nodemailer.createTransport({
   service: "gmail", // or your email service
   auth: {
@@ -16,21 +15,6 @@ const transporter = nodemailer.createTransport({
     rejectUnauthorized: false,
   },
 });
-
-// const transporter = nodemailer.createTransport({
-//   host: "smtp.gmail.com",
-//   port: 587,
-//   secure: false, // true for port 465, false for 587
-//   auth: {
-//     user: 'stylebyesther@palmsbeautystore.com',
-//     pass: 'mvzlbqwbmumar',
-//   },
-//   tls: {
-//     rejectUnauthorized: false,
-//   },
-// });
-
-
 
 await transporter.verify();
 console.log("✅ Nodemailer transporter is ready to send messages");
