@@ -36,7 +36,26 @@ const transporter = nodemailer.createTransport({
 });
 
 
-await transporter.verify();
+
+// Non-blocking verification - don't crash app if email fails
+const verifyEmailService = async () => {
+  try {
+    await transporter.verify();
+    console.log("✅ Nodemailer transporter is ready to send messages");
+    console.log(`📧 Using service: ${process.env.EMAIL_SERVICE || "gmail"}`);
+    console.log(`📧 From address: ${process.env.EMAIL_FROM_NAME}`);
+    console.log(`📧 Admin MAIL: ${process.env.ADMIN_NOTIFICATION_EMAIL}`);
+    return true;
+  } catch (error) {
+    console.warn("⚠️ Email service verification failed:", error.message);
+    console.warn("📧 App will continue running, but emails may not work");
+    return false;
+  }
+};
+
+// Call verification without blocking app startup
+verifyEmailService();
+
 console.log("✅ Nodemailer transporter is ready to send messages");
 console.log(`📧 Using service: ${process.env.EMAIL_SERVICE || "gmail"}`);
 console.log(`📧 From address: ${process.env.EMAIL_FROM_NAME}`);
