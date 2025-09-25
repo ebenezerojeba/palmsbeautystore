@@ -49,21 +49,29 @@ app.use(express.json());
 //     'https://palmsbeautystore-red.vercel.app'
 //   ],
 //   credentials: true,
-//   allowedHeaders: [
-//     'Content-Type',
-//     'Authorization',
-//     'x-requested-with',
-//     'Accept',
-//     'token'   // ← ADD THIS
-//   ],
-//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+  // allowedHeaders: [
+  //   'Content-Type',
+  //   'Authorization',
+  //   'x-requested-with',
+  //   'Accept',
+  //   'token'   // ← ADD THIS
+  // ],
+  // methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 // }));
 
 
 // Temporary development CORS setup
 app.use(cors({
   origin: true, // Allow all origins
-  credentials: true
+  credentials: true,
+   allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'x-requested-with',
+    'Accept',
+    'token'   // ← ADD THIS
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
 app.options('*', cors());
