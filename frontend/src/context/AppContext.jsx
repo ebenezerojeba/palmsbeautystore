@@ -6,7 +6,8 @@ export const AppContext = createContext()
 
 const AppContextProvider = (props) => {
 
-const backendUrl = "https://palmsbeautystore-backend.onrender.com"
+// const backendUrl = "https://palmsbeautystore-backend.onrender.com"
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
       const [userData, setUserData] = useState(false)
     const [isLoggedIn, setIsLoggedin] = useState(false)

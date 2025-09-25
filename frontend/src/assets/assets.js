@@ -14,8 +14,11 @@ import crotchet from './crotchet.jpeg'
 import stitches from './stitches.jpeg'
 import twist from './twist.jpeg'
 import Corn from './Corn.jpg'
+import Corn2 from './corn2.jpeg'
 import lash1 from './lash1.jpg'
 import lash2 from './lash2.jpg'
+import lash5 from './lash5.jpg'
+import lash6 from './lash6.jpg'
 import knotless from './knotless.jpg'
 import cro from './cro.jpg'
 import cro2 from './cro2.jpg'
@@ -30,10 +33,35 @@ import mastercard from './mastercard.png'
 import palmslogo from './palmslogo.jpg'
 import plogo from './plogo.jpg'
 import plog from './plog.png'
-
-
+import heroImage from './hero-hair.jpg'
+import hairStylignImage from './hair-styling.jpg'
+import naturalHairImage from './natural-hair.jpg'
+import lashExtensionsImage from './lash-extension.jpg'
+import beauty1 from './Beauty1.jpg'
+import braids1 from './braid1.jpg'
+import braids2 from './braids2.jpg'
+import headshot1 from './headshot1.jpeg'
+import headshot2 from './headshot2.jpeg'
+import headshot3 from './headshot3.jpeg'
+import before1 from './before1.png'
+import naturalafter from './naturalafter.png'
+import beforelash from './beforelash.png'
 
 export const assets = {
+  beforelash,
+  before1,
+  naturalafter,
+  headshot1,
+  headshot2,
+  headshot3,
+  beauty1,
+  Corn2,
+  braids1,
+  braids2,
+  heroImage,
+  hairStylignImage,
+  naturalHairImage,
+  lashExtensionsImage,
   plog,
   plogo,
   palmslogo,
@@ -53,6 +81,8 @@ export const assets = {
   hair1,
   lash1,
   lash2,
+  lash5,
+  lash6,
   makeup1,
   bg,
   bg_video,

@@ -5,7 +5,8 @@ import React, { createContext, useEffect, useState } from "react";
 
 export const ShopContext = createContext();
 
-const backendUrl = "https://palmsbeautystore-backend.onrender.com"
+// const backendUrl = "https://palmsbeautystore-backend.onrender.com"
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 
 const ShopContextProvider = (props) => {

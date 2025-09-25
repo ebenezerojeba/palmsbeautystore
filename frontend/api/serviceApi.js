@@ -1,16 +1,14 @@
-// api/serviceApi.js (or add to your existing API file
 
-const API_BASE_URL = 'https://palmsbeautystore-backend.onrender.com' // Adjust based on your setup
-
-// Existing service functions (keep your current ones)
-// ... your existing API functions ...
+// const backendUrl = 'https://palmsbeautystore-backend.onrender.com' // Adjust based on your setup
+const backendUrl = import.meta.env.VITE_BACKEND_URL
 
 // New variant-related functions
 export const serviceVariantApi = {
   // Get all main services (categories)
   getMainServices: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/services/main`);
+      const response = await fetch(`${backendUrl}/services/main`);
+      console.log(backendUrl);
       const data = await response.json();
       return data;
     } catch (error) {
@@ -22,7 +20,7 @@ export const serviceVariantApi = {
   // Get service with its variants
   getServiceWithVariants: async (serviceId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/services/${serviceId}/variants`);
+      const response = await fetch(`${backendUrl}/services/${serviceId}/variants`);
       const data = await response.json();
       return data;
     } catch (error) {
@@ -38,7 +36,7 @@ export const serviceVariantApi = {
     if (params.variantId) queryParams.append('variantId', params.variantId);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/services/${serviceId}/providers?${queryParams}`);
+      const response = await fetch(`${backendUrl}/services/${serviceId}/providers?${queryParams}`);
       const data = await response.json();
       return data;
     } catch (error) {
@@ -50,7 +48,7 @@ export const serviceVariantApi = {
   // Migration endpoint (for development/admin)
   runMigration: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/migrate/services-to-variants`, {
+      const response = await fetch(`${backendUrl}/migrate/services-to-variants`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
