@@ -55,12 +55,6 @@ const verifyEmailService = async () => {
 
 // Call verification without blocking app startup
 verifyEmailService();
-
-console.log("✅ Nodemailer transporter is ready to send messages");
-console.log(`📧 Using service: ${process.env.EMAIL_SERVICE || "gmail"}`);
-console.log(`📧 From address: ${process.env.EMAIL_FROM_NAME}`);
-console.log(`📧 Admin MAIL: ${process.env.ADMIN_NOTIFICATION_EMAIL}`);
-
 // Send email function
 const sendEmail = async (to, subject, html) => {
   try {
