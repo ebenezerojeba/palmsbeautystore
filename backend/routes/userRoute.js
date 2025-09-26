@@ -11,7 +11,7 @@ userRouter.post('/login',loginUser)
 // userRouter.post('/book-appointment',authUser,bookAppointment)
 userRouter.get('/appointments',authUser,listAppointment)
 // userRouter.post('/update-profile',upload.single('image'),authUser,updateProfile)
-userRouter.put('/update-profile', authUser, upload.single('image'), updateProfile);
+userRouter.put('/update-profile',authUser, upload.single('image'), updateProfile);
 
 userRouter.get('/get-data',authUser,getUserData)
 userRouter.get('/get-profile',authUser,getProfile)

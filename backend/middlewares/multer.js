@@ -32,9 +32,6 @@ const storage = multer.diskStorage({
   },
 });
 
-// Use memory storage instead of disk storage
-// const storage = multer.memoryStorage();
-
 // Multer upload config
 const upload = multer({
   storage,

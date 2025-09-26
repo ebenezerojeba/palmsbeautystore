@@ -146,6 +146,7 @@ const adminLogin = async (req, res) => {
 }
 
 
+// API to update user profile - supports partial updates
 const updateProfile = async (req, res) => {
   try {
     const { userId, name, phone, address, dob, gender } = req.body;
@@ -162,102 +163,68 @@ const updateProfile = async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Build update data only with provided fields that have actual values
+    // Build update data only with provided fields
     const updateData = {};
 
-    // Only add fields that are provided and not empty
-    if (name !== undefined && name !== null && String(name).trim() !== '') {
-      updateData.name = String(name).trim();
-    }
-    if (phone !== undefined && phone !== null && String(phone).trim() !== '') {
-      updateData.phone = String(phone).trim();
-    }
-    if (gender !== undefined && gender !== null && String(gender).trim() !== '') {
-      updateData.gender = String(gender).trim();
-    }
+    // Only add fields that are provided in the request
+    if (name !== undefined) updateData.name = name;
+    if (phone !== undefined) updateData.phone = phone;
+    if (gender !== undefined) updateData.gender = gender;
     
     // Handle DOB with proper date conversion
-    if (dob !== undefined && dob !== null && String(dob).trim() !== '') {
-      const dateValue = new Date(dob);
-      if (!isNaN(dateValue.getTime())) {
-        updateData.dob = dateValue;
-      }
+    if (dob !== undefined) {
+      updateData.dob = new Date(dob);
     }
 
     // Handle address if provided
-    if (address !== undefined && address !== null) {
+    if (address !== undefined) {
       try {
-        const addressData = typeof address === 'string' ? JSON.parse(address) : address;
-        // Only update address if at least one line has content
-        if (addressData && (addressData.line1?.trim() || addressData.line2?.trim())) {
-          updateData.address = {
-            line1: addressData.line1?.trim() || '',
-            line2: addressData.line2?.trim() || ''
-          };
-        }
+        updateData.address = typeof address === 'string' ? JSON.parse(address) : address;
+        // Ensure address has consistent structure
+        updateData.address = {
+          line1: updateData.address.line1 || '',
+          line2: updateData.address.line2 || ''
+        };
       } catch (err) {
         console.error("Address parsing error:", err);
-        // Don't fail the entire request for address parsing issues
+        updateData.address = { line1: '', line2: '' };
       }
     }
 
-    // Check if any meaningful update is provided
-    const hasDataUpdates = Object.keys(updateData).length > 0;
-    const hasImageUpdate = !!imageFile;
-
-    if (!hasDataUpdates && !hasImageUpdate) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "No valid fields provided for update" 
-      });
-    }
-
+    // Update user data only if there are fields to update
     let updatedUser = existingUser;
-
-    // Update user data if there are fields to update
-    if (hasDataUpdates) {
+    if (Object.keys(updateData).length > 0) {
       updatedUser = await userModel.findByIdAndUpdate(
         userId, 
-        { $set: updateData }, 
-        { new: true, runValidators: true }
+        updateData, 
+        { new: true } // Return the updated document
       );
     }
 
     // Handle image upload if present
     if (imageFile) {
-      try {
-        const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
-          resource_type: "image",
-          folder: "user-profiles",
-          transformation: [
-            { width: 400, height: 400, crop: "fill" },
-            { quality: "auto:best" }
-          ]
-        });
-        
-        updatedUser = await userModel.findByIdAndUpdate(
-          userId, 
-          { $set: { image: imageUpload.secure_url } },
-          { new: true }
-        );
-
-        // Clean up temporary file
-        const fs = require('fs');
-        if (fs.existsSync(imageFile.path)) {
-          fs.unlinkSync(imageFile.path);
-        }
-      } catch (imageError) {
-        console.error("Image upload error:", imageError);
-        return res.status(400).json({
-          success: false,
-          message: "Failed to upload image. Please try again."
-        });
-      }
+      const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+        resource_type: "image",
+        folder: "user-profiles"
+      });
+      updatedUser = await userModel.findByIdAndUpdate(
+        userId, 
+        { image: imageUpload.secure_url },
+        { new: true }
+      );
     }
 
-    // Format the response data
+    // Check if any update was actually made
+    if (Object.keys(updateData).length === 0 && !imageFile) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "No fields provided for update" 
+      });
+    }
+
+    // Format the response data with safe date handling
     const responseData = {
-      ...updatedUser.toObject()
+      ...updatedUser._doc
     };
 
     // Format DOB for response if it exists
@@ -267,44 +234,23 @@ const updateProfile = async (req, res) => {
         : new Date(responseData.dob).toISOString().split('T')[0];
     }
 
-    // Remove sensitive fields
-    delete responseData.password;
-    delete responseData.__v;
-
     res.json({ 
       success: true, 
       message: "Profile updated successfully", 
-      user: responseData,
-      updatedFields: [...Object.keys(updateData), ...(hasImageUpdate ? ['image'] : [])]
+      user: responseData 
     });
 
   } catch (error) {
     console.error("Profile update error:", error);
-    
-    // Handle specific MongoDB errors
-    if (error.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: "Duplicate data found. Please check your input."
-      });
-    }
-    
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid data format",
-        details: Object.values(error.errors).map(err => err.message)
-      });
-    }
-
     res.status(500).json({ 
       success: false, 
       message: "Internal server error",
-      ...(process.env.NODE_ENV === 'development' && { error: error.message })
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
-// API to get userData if it's verified or not
+
+
 const getUserData = async (req, res) => {
   try {
     const { userId } = req.body;
