@@ -190,7 +190,7 @@ const MyAppointments = () => {
      
 
       {/* Search + Filter */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border mb-6 flex flex-col md:flex-row gap-4">
+      {/* <div className="bg-white p-4 rounded-lg shadow-sm border mb-6 flex flex-col md:flex-row gap-4">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
@@ -216,7 +216,7 @@ const MyAppointments = () => {
             <option value="cancelled">Cancelled</option>
           </select>
         </div>
-      </div>
+      </div> */}
 
       {/* Appointment List */}
       {filteredAppointments.length === 0 ? (

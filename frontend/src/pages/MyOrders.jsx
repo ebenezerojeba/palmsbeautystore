@@ -182,8 +182,8 @@ const Orders = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-2">No orders yet</h3>
             <p className="text-gray-600 mb-6">Start shopping to see your orders here</p>
             <button
-              onClick={() => window.location.href = '/collection'}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              onClick={() => window.location.href = '/collections'}
+              className="bg-pink-900 text-white px-6 py-2 rounded-lg hover:bg-pink-700 transition-colors"
             >
               Start Shopping
             </button>
