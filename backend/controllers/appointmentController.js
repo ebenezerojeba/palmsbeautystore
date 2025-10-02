@@ -79,13 +79,37 @@ const getUserAppointments = async (req, res) => {
 // Cancel appointment
 const cancelAppointment = async (req, res) => {
   try {
-    const { appointmentId, reason, cancelledBy } = req.body;
+    const { appointmentId, reason, cancelledBy = "admin" } = req.body;
 
     // Validate input
-    if (!appointmentId || !reason) {
+    if (!appointmentId) {
       return res.status(400).json({
         success: false,
-        message: "Appointment ID and reason are required"
+        message: "Appointment ID is required"
+      });
+    }
+
+    if (!reason || reason.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Cancellation reason is required"
+      });
+    }
+
+    // Check if user is authenticated and is admin
+    // This assumes you have auth middleware that sets req.user
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required"
+      });
+    }
+
+    // Validate ObjectId format
+    if (!appointmentId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid appointment ID format"
       });
     }
 
@@ -100,27 +124,19 @@ const cancelAppointment = async (req, res) => {
       });
     }
 
-    // Check if appointment has a userId
-    if (!appointment.userId) {
-      return res.status(400).json({
-        success: false,
-        message: "Appointment is missing user ID"
-      });
-    }
-
-    // Confirm user is authorized to cancel the appointment
-    if (appointment.userId.toString() !== req.userId) {
-      return res.status(403).json({
-        success: false,
-        message: "Unauthorized to cancel this appointment"
-      });
-    }
-
     // Prevent duplicate cancellations
     if (appointment.status === 'cancelled') {
       return res.status(400).json({
         success: false,
         message: "Appointment is already cancelled"
+      });
+    }
+
+    // Prevent cancelling completed appointments
+    if (appointment.status === 'completed') {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot cancel completed appointments"
       });
     }
 
@@ -136,7 +152,7 @@ const cancelAppointment = async (req, res) => {
     appointment.status = 'cancelled';
     appointment.cancellation = {
       cancelledBy,
-      reason,
+      reason: reason.trim(),
       refundEligible,
       cancellationFee: refundEligible ? 0 : Math.floor(appointment.payment?.amount * 0.1) || 0
     };
@@ -146,15 +162,22 @@ const cancelAppointment = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Appointment cancelled successfully",
-      appointment
+      message: refundEligible 
+        ? "Appointment cancelled successfully. Full refund will be processed."
+        : `Appointment cancelled. A cancellation fee of $${appointment.cancellation.cancellationFee} may apply.`,
+      appointment: {
+        _id: appointment._id,
+        status: appointment.status,
+        cancelledAt: appointment.cancelledAt,
+        cancellation: appointment.cancellation
+      }
     });
 
   } catch (error) {
     console.error("Error cancelling appointment:", error);
     return res.status(500).json({
       success: false,
-      message: "Failed to cancel appointment"
+      message: "Failed to cancel appointment. Please try again."
     });
   }
 };

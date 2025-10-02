@@ -33,7 +33,7 @@ if (!fs.existsSync(uploadsDir)) {
 // App Config
 const app = express();
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8000;
 job.start();
 connectDB();
 connectCloudinary();
@@ -101,9 +101,9 @@ app.use('/api/provider', providerRouter)
 
 // Serve .ics files for download
 
-// app.get("/", (req, res) => {
-//   res.send("API Working Perfctly");
-// });
+app.get("/", (req, res) => {
+  res.send("API Working Perfctly");
+});
 
 app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, 'frontend', 'build', 'index.html'));

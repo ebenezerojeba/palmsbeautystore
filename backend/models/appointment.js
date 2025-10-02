@@ -115,7 +115,7 @@ consentForm: {
   
   // Cancellation Details
   cancellation: {
-    cancelledBy: { type: String, enum: ['client', 'provider'] },
+    cancelledBy: { type: String, enum: ['client', 'provider', 'admin'] },
     reason: { type: String },
     refundEligible: { type: Boolean, default: false },
     cancellationFee: { type: Number, default: 0 }

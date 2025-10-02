@@ -492,7 +492,7 @@ const Collection = () => {
         />
         <div className="absolute inset-0 bg-black/30" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-          <h1 className="text-4xl md:text-7xl font-light text-white tracking-wider mb-4 leading-tight">
+          <h1 className="text-5xl md:text-7xl font-light text-white tracking-wider mb-4 leading-tight">
             NEW
             <br />
             ARRIVALS

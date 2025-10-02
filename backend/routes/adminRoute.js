@@ -1,16 +1,17 @@
 import express from 'express'
-import { cancelAppointment } from '../controllers/appointmentController.js'
-import { addCategory, addService, adminDashboard, allServices, completeAppointment, confirmAppointment, deleteCategory, deleteService, deleteServiceImage, getAllAppointment, getAllAppointments, getAppointmentsByStatus, getCompletedAppointments, markNoShow, toggleServiceStatus, updateCategory, updatePaymentStatus, updateService } from '../controllers/adminController.js'
+// import { cancelAppointment } from '../controllers/appointmentController.js'
+import { addCategory, addService, adminDashboard, allServices, cancelAppointment, completeAppointment, confirmAppointment, deleteCategory, deleteService, deleteServiceImage, getAllAppointment, getAllAppointments, getAppointmentsByStatus, getCompletedAppointments, markNoShow, toggleServiceStatus, updateCategory, updatePaymentStatus, updateService } from '../controllers/adminController.js'
 import upload from '../middlewares/multer.js'
 import { createStaff, deleteStaff, toggleStaffStatus, updateStaff } from '../controllers/staffController.js'
 import { addMultipleProvidersToService, addProviderToService, createProvider, removeProviderFromService, ServicesWithProvider, updateProvider } from '../controllers/providerController.js'
+import adminAuth from '../middlewares/adminAuth.js'
 // import { bookAppointment } from '../controllers/appointmentController.js'
 
 const adminRouter = express.Router()
 
 // Appointment
 adminRouter.get('/admin' )
-adminRouter.post('/cancel-appointment', cancelAppointment)
+adminRouter.post('/cancel-appointment', adminAuth, cancelAppointment)
 adminRouter.post('/complete-appointment', completeAppointment)
 adminRouter.post('/completed', getCompletedAppointments)
 adminRouter.get('/all-appointments', getAllAppointments)
