@@ -4,10 +4,11 @@ import {toast} from "react-toastify"
 
 export const AppContext = createContext()
 
-const AppContextProvider = (props) => {
 
-// const backendUrl = "https://palmsbeautystore-backend.onrender.com"
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
+const AppContextProvider = (props) => {
+ const backendUrl = import.meta.env.VITE_BACKEND_URL;
+console.log('BACKEND URL:', import.meta.env.VITE_BACKEND_URL);
+
 
       const [userData, setUserData] = useState(false)
     const [isLoggedIn, setIsLoggedin] = useState(false)
@@ -28,7 +29,6 @@ const loadUserProfileData = async () => {
     });
 
     if (data.success) {
-      console.log("User data loaded:", data.userData);
       setUserData(data.userData);
     } else {
       toast.error(data.message);

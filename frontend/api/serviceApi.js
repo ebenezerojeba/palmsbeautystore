@@ -1,5 +1,5 @@
 
-// const backendUrl = 'https://palmsbeautystore-backend.onrender.com' // Adjust based on your setup
+
 const backendUrl = import.meta.env.VITE_BACKEND_URL
 
 // New variant-related functions

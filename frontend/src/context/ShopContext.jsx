@@ -5,11 +5,10 @@ import React, { createContext, useEffect, useState } from "react";
 
 export const ShopContext = createContext();
 
-// const backendUrl = "https://palmsbeautystore-backend.onrender.com"
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
-
 const ShopContextProvider = (props) => {
+  
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  console.log('BACKEND URL:', backendUrl);
   const [products, setProducts] = useState([]);
   const [cartItems, setCartItems] = useState({});
   const [loading, setLoading] = useState(false);
@@ -23,7 +22,6 @@ const formatNaira = (amount) => {
     minimumFractionDigits: 0,
   }).format(amount);
 };
-
 
   // Fetch products from backend
   const getProducts = async () => {

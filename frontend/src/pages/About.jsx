@@ -84,10 +84,7 @@ const AboutPage = () => {
       title: "Hair Replacement",
       description: "Professional hair replacement solutions with natural-looking results. Our discrete, personalized services help restore your confidence and style."
     },
-    {
-      title: "Makeup Services",
-      description: "From natural day looks to glamorous evening styles, our makeup artists create flawless looks for any occasion using high-quality, long-lasting products."
-    }
+
   ];
 
   return (

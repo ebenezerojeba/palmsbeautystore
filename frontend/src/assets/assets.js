@@ -1,7 +1,7 @@
 import palm_logo from "./palm_logo.png";
 import palm_logo2 from "./palm_logo2.png";
 import bg from "./bg.jpg";
-import bg_video from "./bg-video.mp4";
+import hero from "./hero.png";
 import palm from "./palm.jpg";
 import braid1 from "./braid1.jpg";
 import hair1 from "./hair1.jpg";
@@ -48,6 +48,7 @@ import naturalafter from './naturalafter.png'
 import beforelash from './beforelash.png'
 
 export const assets = {
+  hero,
   beforelash,
   before1,
   naturalafter,
@@ -85,7 +86,6 @@ export const assets = {
   lash6,
   makeup1,
   bg,
-  bg_video,
   palm,
   palm_logo,
   palm_logo2,
