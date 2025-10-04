@@ -8,10 +8,10 @@ import ImageGallery from '../components/ImageGallery';
 const SEO = () => (
   <Helmet>
     <title>About Us - PalmsBeautyStore | Beauty Salon in St. John's, NL</title>
-    <meta name="description" content="PalmsBeautyStore in St. John's, NL specializes in hair styling, natural hair care, hair replacement, and makeup services. Visit us for a transformative beauty experience." />
-    <meta name="keywords" content="beauty salon, hair salon, makeup services, St. John's, Newfoundland and Labrador, natural hair care, hair replacement" />
+    <meta name="description" content="PalmsBeautyStore in St. John's, NL specializes in hair styling, natural hair care, hair replacement. Visit us for a transformative beauty experience." />
+    <meta name="keywords" content="beauty salon, hair salon, St. John's, Newfoundland and Labrador, natural hair care, hair replacement" />
     <meta property="og:title" content="About PalmsBeautyStore - Your Premier Beauty Destination" />
-    <meta property="og:description" content="Discover exceptional beauty services at PalmsBeautyStore in St. John's, NL. Specializing in hair styling, natural hair care, and makeup." />
+    <meta property="og:description" content="Discover exceptional beauty services at PalmsBeautyStore in St. John's, NL. Specializing in hair styling, natural hair care." />
     <meta property="og:type" content="website" />
     <link rel="canonical" href="/about" />
   </Helmet>

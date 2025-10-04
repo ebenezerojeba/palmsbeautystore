@@ -7,7 +7,7 @@ export const AppContext = createContext()
 
 const AppContextProvider = (props) => {
  const backendUrl = import.meta.env.VITE_BACKEND_URL;
-console.log('BACKEND URL:', import.meta.env.VITE_BACKEND_URL);
+
 
 
       const [userData, setUserData] = useState(false)
