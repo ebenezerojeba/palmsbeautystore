@@ -701,10 +701,10 @@ const saveProductChanges = async (productId) => {
         </div>
       ))}
     </div>
-    <div className="mt-2 text-xs text-gray-600">
+    {/* <div className="mt-2 text-xs text-gray-600">
       Total Stock: {calculateTotalStock(editForm.variations)} | 
       Price Range: ${calculatePriceRange(editForm.variations)?.min?.toFixed(2) || '0.00'} - ${calculatePriceRange(editForm.variations)?.max?.toFixed(2) || '0.00'}
-    </div>
+    </div> */}
   </div>
 )}
 
