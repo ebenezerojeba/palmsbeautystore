@@ -135,7 +135,7 @@ const Orders = ({ token }) => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Order Management</h1>
-          <p className="text-gray-600">Manage and track all customer orders with detailed product variations</p>
+          {/* <p className="text-gray-600">Manage and track all customer orders with detailed product variations</p> */}
         </div>
 
         {/* Filters */}
@@ -171,56 +171,6 @@ const Orders = ({ token }) => {
             </div>
           </div>
         </div>
-
-        {/* Orders Summary */}
-        {/* {filteredOrders.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-lg shadow-sm border">
-              <div className="flex items-center">
-                <Package className="h-8 w-8 text-blue-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">{filteredOrders.length}</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border">
-              <div className="flex items-center">
-                <CreditCard className="h-8 w-8 text-green-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    ${filteredOrders.reduce((sum, order) => sum + order.amount, 0).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border">
-              <div className="flex items-center">
-                <Package className="h-8 w-8 text-purple-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600">Total Items</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {filteredOrders.reduce((sum, order) => 
-                      sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border">
-              <div className="flex items-center">
-                <Star className="h-8 w-8 text-yellow-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600">Avg Order Value</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    ${(filteredOrders.reduce((sum, order) => sum + order.amount, 0) / filteredOrders.length).toFixed(2)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )} */}
 
         {/* Orders List */}
         <div className="space-y-4">

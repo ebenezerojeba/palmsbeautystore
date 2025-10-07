@@ -357,7 +357,7 @@ const saveProductChanges = async (productId) => {
     return (
       <div className="flex items-center justify-center min-h-64">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-blue-600" />
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-gray-600" />
           <p className="text-gray-600">Loading products...</p>
         </div>
       </div>
@@ -397,7 +397,7 @@ const saveProductChanges = async (productId) => {
             </span>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 px-3 py-1 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+              className="flex items-center gap-2 px-3 py-1 text-sm bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
             >
               <Filter className="w-4 h-4" />
               Filters
@@ -420,7 +420,7 @@ const saveProductChanges = async (productId) => {
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
                   placeholder="Search products..."
-                  className="pl-10 pr-3 py-2 w-full text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="pl-10 pr-3 py-2 w-full text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
                 />
               </div>
             </div>
@@ -431,7 +431,7 @@ const saveProductChanges = async (productId) => {
               <select
                 value={filters.category}
                 onChange={(e) => handleFilterChange('category', e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
                 <option value="">All Categories</option>
                 {Object.keys(categories).map(cat => (
@@ -446,7 +446,7 @@ const saveProductChanges = async (productId) => {
               <select
                 value={filters.subCategory}
                 onChange={(e) => handleFilterChange('subCategory', e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
                 disabled={!filters.category}
               >
                 <option value="">All Subcategories</option>
@@ -467,7 +467,7 @@ const saveProductChanges = async (productId) => {
                   placeholder="Min"
                   min="0"
                   step="0.01"
-                  className="w-full text-sm border border-gray-300 rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full text-sm border border-gray-300 rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
                 />
                 <input
                   type="number"
@@ -476,7 +476,7 @@ const saveProductChanges = async (productId) => {
                   placeholder="Max"
                   min="0"
                   step="0.01"
-                  className="w-full text-sm border border-gray-300 rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full text-sm border border-gray-300 rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
                 />
               </div>
             </div>
@@ -487,7 +487,7 @@ const saveProductChanges = async (productId) => {
               <select
                 value={filters.inStock}
                 onChange={(e) => handleFilterChange('inStock', e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
                 <option value="">All Products</option>
                 <option value="true">In Stock</option>
@@ -502,7 +502,7 @@ const saveProductChanges = async (productId) => {
                 <select
                   value={filters.sortBy}
                   onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                  className="flex-1 text-sm border border-gray-300 rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 text-sm border border-gray-300 rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
                 >
                   <option value="date">Date</option>
                   <option value="name">Name</option>
@@ -512,7 +512,7 @@ const saveProductChanges = async (productId) => {
                 <select
                   value={filters.sortOrder}
                   onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
-                  className="w-20 text-sm border border-gray-300 rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-20 text-sm border border-gray-300 rounded-md px-2 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
                 >
                   <option value="desc">↓</option>
                   <option value="asc">↑</option>
@@ -536,7 +536,7 @@ const saveProductChanges = async (productId) => {
       <div className="p-6">
         {loading && list.length > 0 && (
           <div className="flex justify-center mb-4">
-            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+            <Loader2 className="w-6 h-6 animate-spin text-gray-600" />
           </div>
         )}
 
@@ -740,7 +740,7 @@ const saveProductChanges = async (productId) => {
                                   {item.totalStock > 0 ? `${item.totalStock} in stock` : 'Out of stock'}
                                 </span>
                                 <span className={`px-2 py-1 text-xs rounded-md ${item.status === 'active'
-                                    ? "bg-blue-100 text-blue-800"
+                                    ? "bg-gray-100 text-gray-800"
                                     : "bg-gray-100 text-gray-800"
                                   }`}>
                                   {item.status}
@@ -776,7 +776,7 @@ const saveProductChanges = async (productId) => {
                             <>
                               <button
                                 onClick={() => handleEditClick(item)}
-                                className="flex items-center justify-center w-8 h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors"
+                                className="flex items-center justify-center w-8 h-8 text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-full transition-colors"
                                 title="Edit product"
                               >
                                 <Edit className="w-4 h-4" />
@@ -900,7 +900,7 @@ const saveProductChanges = async (productId) => {
                   variationsSection.classList.toggle('hidden');
                 }
               }}
-              className="text-blue-500 hover:text-blue-700 mt-1"
+              className="text-gray-500 hover:text-gray-700 mt-1"
             >
               Edit Variations
             </button>
@@ -928,7 +928,7 @@ const saveProductChanges = async (productId) => {
                           </select>
                         ) : (
                           <span className={`px-2 py-1 text-xs rounded-md ${item.status === 'active'
-                              ? "bg-blue-100 text-blue-800"
+                              ? "bg-gray-100 text-gray-800"
                               : "bg-gray-100 text-gray-800"
                             }`}>
                             {item.status}
@@ -1049,7 +1049,7 @@ const saveProductChanges = async (productId) => {
                           <>
                             <button
                               onClick={() => handleEditClick(item)}
-                              className="flex items-center justify-center w-8 h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors"
+                              className="flex items-center justify-center w-8 h-8 text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-full transition-colors"
                               title="Edit product"
                             >
                               <Edit className="w-4 h-4" />
@@ -1100,7 +1100,7 @@ const saveProductChanges = async (productId) => {
                         disabled={loading}
                         className={`px-3 py-1 text-sm border border-gray-300 rounded-md transition-colors ${
                           pagination.currentPage === page
-                            ? 'bg-blue-500 text-white border-blue-500'
+                            ? 'bg-gray-500 text-white border-gray-500'
                             : 'hover:bg-gray-50'
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
@@ -1133,7 +1133,7 @@ const saveProductChanges = async (productId) => {
                           disabled={loading}
                           className={`px-3 py-1 text-sm border border-gray-300 rounded-md transition-colors ${
                             pagination.currentPage === page
-                              ? 'bg-blue-500 text-white border-blue-500'
+                              ? 'bg-gray-500 text-white border-gray-500'
                               : 'hover:bg-gray-50'
                           } disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
