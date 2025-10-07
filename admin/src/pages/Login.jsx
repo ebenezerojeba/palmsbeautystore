@@ -3,10 +3,7 @@ import React, { useState } from 'react'
 import { toast } from 'react-toastify'
 import { Loader2 } from "lucide-react";
 
-// const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
-const backendUrl = "https://palmsbeautystore-backend.onrender.com"
-
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const Login = ({ setToken }) => {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")

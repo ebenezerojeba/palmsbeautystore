@@ -16,13 +16,9 @@ const AdminContextsProvider = (props) => {
   const [loadingId, setLoadingId] = useState(null);
 
   
-  const backendUrl = "https://palmsbeautystore-backend.onrender.com"
-  // const backendUrl = "http://localhost:3000"
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
   
-  // const backendUrl = import.meta.env.VITE_BACKEND_URL;
-  
-// const backendUrl = "https://palmsbeautystore-backend.onrender.com"
-  
+
   const months = [
     "",
     "Jan",
@@ -51,35 +47,56 @@ const AdminContextsProvider = (props) => {
 
   }
 
-  // Updated Admin Context Functions
+  // Updated Admin Context Funct
 
- 
-  // Fixed API for admin cancelling appointment
-const cancelAppointment = async (appointmentId, reason = "Cancelled by admin", cancelledBy = "provider") => {
+
+  const cancelAppointment = async (appointmentId, reason = "Cancelled by admin", cancelledBy = "provider") => {
   setLoadingId(appointmentId);
+  
   try {
-    // Get admin auth token (adjust this based on your auth implementation)
+    // Better token retrieval with validation
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     
+    if (!token) {
+      toast.error("Authentication required. Please log in again.");
+      setLoadingId(null);
+      return;
+    }
+
+    // Add validation
+    if (!appointmentId) {
+      toast.error("Invalid appointment ID");
+      setLoadingId(null);
+      return;
+    }
+
     const response = await fetch(`${backendUrl}/api/admin/cancel-appointment`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
-        ...(token && { "Authorization": `Bearer ${token}` }) // Add admin auth header
+        "token": token
+        // "Authorization": `Bearer ${token}` // Always include token for admin routes
       },
       body: JSON.stringify({ 
         appointmentId, 
-        reason, 
+        reason: reason.trim(), // Ensure reason is trimmed
         cancelledBy 
       }),
     });
-    
-    const data = await response.json();
+
+    // Handle different response types
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      console.error("Failed to parse response:", parseError);
+      throw new Error("Invalid server response");
+    }
 
     if (response.ok) {
       toast.success(data.message);
 
-      // Update dashboard data with new status-based logic
+      // Update dashboard data
       setDashData((prevData) => {
         if (!prevData) return null;
         return {
@@ -92,7 +109,7 @@ const cancelAppointment = async (appointmentId, reason = "Cancelled by admin", c
                 ? { 
                     ...appointment, 
                     status: 'cancelled', 
-                    cancelledAt: new Date(),
+                    cancelledAt: new Date().toISOString(),
                     cancellation: {
                       cancelledBy,
                       reason,
@@ -105,14 +122,14 @@ const cancelAppointment = async (appointmentId, reason = "Cancelled by admin", c
         };
       });
 
-      // Update appointments list with complete cancellation data
+      // Update appointments list
       setAppointments((prevAppointments) =>
         prevAppointments.map((appointment) =>
           appointment._id === appointmentId
             ? { 
                 ...appointment, 
                 status: 'cancelled', 
-                cancelledAt: new Date(),
+                cancelledAt: new Date().toISOString(),
                 cancellation: {
                   cancelledBy,
                   reason,
@@ -124,11 +141,26 @@ const cancelAppointment = async (appointmentId, reason = "Cancelled by admin", c
         )
       );
     } else {
-      toast.error(data.message || "Failed to cancel appointment");
+      // Handle specific error codes
+      if (response.status === 403) {
+        toast.error("You don't have permission to cancel this appointment");
+      } else if (response.status === 401) {
+        toast.error("Authentication expired. Please log in again.");
+      } else if (response.status === 404) {
+        toast.error("Appointment not found");
+      } else {
+        toast.error(data.message || "Failed to cancel appointment");
+      }
     }
   } catch (error) {
     console.error("Cancel appointment error:", error);
-    toast.error("Failed to cancel appointment. Please try again.");
+    
+    // Handle network errors
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      toast.error("Network error. Please check your connection.");
+    } else {
+      toast.error("Failed to cancel appointment. Please try again.");
+    }
   } finally {
     setLoadingId(null);
   }

@@ -3,9 +3,9 @@ import { useCallback } from "react";
 import { useState } from "react";
 import axios from "axios";
 
-const backendUrl = "https://palmsbeautystore-backend.onrender.com"
+// const backendUrl = "https://palmsbeautystore-backend.onrender.com"
 
-
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const CONFIG = {
   backendUrl: backendUrl,
   maxImageSize: 5 * 1024 * 1024, // 5MB

@@ -59,11 +59,8 @@ const Provider = () => {
 // Add refs to prevent race conditions
   const appointmentsAbortRef = useRef(null);
   const currentProviderRef = useRef(null);
-  // const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
-  const backendUrl = "https://palmsbeautystore-backend.onrender.com"
-  // const backendUrl = "http://localhost:3000"
-
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+ 
   useEffect(() => {
     loadProviders();
     loadServices();

@@ -72,11 +72,8 @@ const Add = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errors, setErrors] = useState({});
-
-// const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
-const backendUrl = "https://palmsbeautystore-backend.onrender.com"
-
+  
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
   // Update subcategories when category changes
   useEffect(() => {
     if (formData.category && SUB_CATEGORY_OPTIONS[formData.category]) {
