@@ -279,7 +279,7 @@ const addProduct = async (req, res) => {
 
 const updateProduct = async (req, res) => {
   try {
-    const { id, totalStock, basePrice, variations, ...otherUpdates } = req.body;
+    const { id, ...updates } = req.body;
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -287,31 +287,8 @@ const updateProduct = async (req, res) => {
         message: "Valid product ID is required",
       });
     }
-    const organizeUploadedFiles = (files) => {
-      if (!files || !Array.isArray(files)) return {};
-      const organized = {};
-      files.forEach((file) => {
-        if (!organized[file.fieldname]) {
-          organized[file.fieldname] = [];
-        }
-        organized[file.fieldname].push(file);
-      });
-      return organized;
-    };
 
-    const organizedFiles = organizeUploadedFiles(req.files || []);
-
-    // NOW handle main product images
-    const imageFiles = [
-      organizedFiles.image1?.[0],
-      organizedFiles.image2?.[0],
-      organizedFiles.image3?.[0],
-      organizedFiles.image4?.[0],
-    ].filter(Boolean);
-
-    let updates = { ...otherUpdates };
-
-    // Get the existing product to work with variations
+    // Get existing product
     const existingProduct = await productModel.findById(id);
     if (!existingProduct) {
       return res.status(404).json({
@@ -320,72 +297,21 @@ const updateProduct = async (req, res) => {
       });
     }
 
-    let updatedVariations = [...existingProduct.variations];
-
-    // PRIORITY 1: Handle direct variations update (from frontend editing)
-    if (variations && Array.isArray(variations)) {
-      // Use the variations sent from frontend directly
-      updatedVariations = variations.map((v) => ({
-        ...v,
-        // Ensure numeric fields are properly converted
-        price: parseFloat(v.price) || 0,
-        salePrice: v.salePrice ? parseFloat(v.salePrice) : undefined,
-        stock: parseInt(v.stock) || 0,
-        isActive: v.isActive !== false, // Default to true unless explicitly false
-      }));
-
-      updates.variations = updatedVariations;
-    }
-    // PRIORITY 2: Handle totalStock update - distribute across variations (legacy support)
-    else if (totalStock !== undefined) {
-      if (updatedVariations && updatedVariations.length > 0) {
-        const activeVariations = updatedVariations.filter(
-          (v) => v.isActive !== false
-        );
-        if (activeVariations.length > 0) {
-          const stockPerVariation = Math.floor(
-            totalStock / activeVariations.length
-          );
-          const remainder = totalStock % activeVariations.length;
-
-          let activeIndex = 0;
-          updatedVariations = updatedVariations.map((variation) => {
-            if (variation.isActive !== false) {
-              const newStock =
-                stockPerVariation + (activeIndex < remainder ? 1 : 0);
-              activeIndex++;
-              return { ...variation, stock: newStock };
-            }
-            return variation;
-          });
-
-          updates.variations = updatedVariations;
-        }
-      }
-    }
-
-    // Handle basePrice update - sync with variations if no direct variations update
-    if (basePrice !== undefined) {
-      updates.basePrice = parseFloat(basePrice);
-
-      // Only update variation prices if variations weren't directly provided
-      if (!variations && updatedVariations && updatedVariations.length > 0) {
-        updatedVariations = updatedVariations.map((variation) => ({
-          ...variation,
-          price: parseFloat(basePrice),
-          // Keep salePrice if it exists and is lower than basePrice
-          salePrice:
-            variation.salePrice && variation.salePrice < basePrice
-              ? variation.salePrice
-              : undefined,
-        }));
-        updates.variations = updatedVariations;
-      }
-    }
-
-    // Handle image uploads if present
+    // Handle file uploads if present
     if (req.files && Object.keys(req.files).length > 0) {
-      // Handle main product images
+      const organizeUploadedFiles = (files) => {
+        if (!files || !Array.isArray(files)) return {};
+        const organized = {};
+        files.forEach((file) => {
+          if (!organized[file.fieldname]) {
+            organized[file.fieldname] = [];
+          }
+          organized[file.fieldname].push(file);
+        });
+        return organized;
+      };
+
+      const organizedFiles = organizeUploadedFiles(req.files);
       const imageFiles = [
         organizedFiles.image1?.[0],
         organizedFiles.image2?.[0],
@@ -411,11 +337,11 @@ const updateProduct = async (req, res) => {
       }
     }
 
-    // Parse JSON fields if they exist (for form-data requests)
+    // Parse JSON fields if they exist in form-data
     if (updates.variations && typeof updates.variations === "string") {
       try {
         updates.variations = JSON.parse(updates.variations);
-      } catch {
+      } catch (error) {
         return res.status(400).json({
           success: false,
           message: "Invalid variations format",
@@ -423,8 +349,9 @@ const updateProduct = async (req, res) => {
       }
     }
 
-    // Validate variations before saving
-    if (updates.variations) {
+    // Validate and process variations if provided
+    if (updates.variations && Array.isArray(updates.variations)) {
+      // Validate each variation
       const invalidVariations = updates.variations.filter(
         (v) =>
           !v.color ||
@@ -441,10 +368,61 @@ const updateProduct = async (req, res) => {
             "Invalid variation data: each variation must have color, valid price, and stock",
         });
       }
+
+      // Ensure numeric fields are properly converted
+      updates.variations = updates.variations.map((v) => ({
+        ...v,
+        price: parseFloat(v.price) || 0,
+        salePrice: v.salePrice ? parseFloat(v.salePrice) : undefined,
+        stock: parseInt(v.stock) || 0,
+        isActive: v.isActive !== false,
+      }));
     }
 
-    console.log("Updating product with:", JSON.stringify(updates, null, 2)); // Debug log
+    // Handle basePrice updates (only if variations weren't directly provided)
+    if (updates.basePrice !== undefined && (!updates.variations || !Array.isArray(updates.variations))) {
+      updates.basePrice = parseFloat(updates.basePrice);
+      
+      // Update all variations with the new basePrice
+      if (existingProduct.variations && existingProduct.variations.length > 0) {
+        updates.variations = existingProduct.variations.map((variation) => ({
+          ...variation,
+          price: parseFloat(updates.basePrice),
+          salePrice: variation.salePrice && variation.salePrice < updates.basePrice
+            ? variation.salePrice
+            : undefined,
+        }));
+      }
+    }
 
+    // Handle totalStock updates (only if variations weren't directly provided)
+    if (updates.totalStock !== undefined && (!updates.variations || !Array.isArray(updates.variations))) {
+      const totalStock = parseInt(updates.totalStock);
+      if (existingProduct.variations && existingProduct.variations.length > 0) {
+        const activeVariations = existingProduct.variations.filter(
+          (v) => v.isActive !== false
+        );
+        
+        if (activeVariations.length > 0) {
+          const stockPerVariation = Math.floor(totalStock / activeVariations.length);
+          const remainder = totalStock % activeVariations.length;
+
+          let activeIndex = 0;
+          updates.variations = existingProduct.variations.map((variation) => {
+            if (variation.isActive !== false) {
+              const newStock = stockPerVariation + (activeIndex < remainder ? 1 : 0);
+              activeIndex++;
+              return { ...variation, stock: newStock };
+            }
+            return variation;
+          });
+        }
+      }
+    }
+
+    console.log("Final updates:", JSON.stringify(updates, null, 2));
+
+    // Update the product
     const product = await productModel.findByIdAndUpdate(
       id,
       { ...updates, updatedAt: new Date() },
@@ -454,22 +432,18 @@ const updateProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Product not found",
+        message: "Product not found after update",
       });
     }
 
-    // Calculate the enhanced product data to return
+    // Calculate enhanced product data
     const enhancedProduct = {
       ...product.toObject(),
       priceRange:
         product.variations && product.variations.length > 0
           ? {
-              min: Math.min(
-                ...product.variations.map((v) => v.salePrice || v.price)
-              ),
-              max: Math.max(
-                ...product.variations.map((v) => v.salePrice || v.price)
-              ),
+              min: Math.min(...product.variations.map((v) => v.salePrice || v.price)),
+              max: Math.max(...product.variations.map((v) => v.salePrice || v.price)),
             }
           : null,
       totalStock: product.variations
@@ -479,11 +453,6 @@ const updateProduct = async (req, res) => {
         ? product.variations.filter((v) => v.isActive && v.stock > 0).length
         : 0,
     };
-
-    console.log(
-      "Returning enhanced product:",
-      JSON.stringify(enhancedProduct, null, 2)
-    ); // Debug log
 
     res.json({
       success: true,
@@ -498,6 +467,228 @@ const updateProduct = async (req, res) => {
     });
   }
 };
+
+// const updateProduct = async (req, res) => {
+//   try {
+//     const { id, totalStock, basePrice, variations, ...otherUpdates } = req.body;
+
+//     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Valid product ID is required",
+//       });
+//     }
+//     const organizeUploadedFiles = (files) => {
+//       if (!files || !Array.isArray(files)) return {};
+//       const organized = {};
+//       files.forEach((file) => {
+//         if (!organized[file.fieldname]) {
+//           organized[file.fieldname] = [];
+//         }
+//         organized[file.fieldname].push(file);
+//       });
+//       return organized;
+//     };
+
+//     const organizedFiles = organizeUploadedFiles(req.files || []);
+
+//     // NOW handle main product images
+//     const imageFiles = [
+//       organizedFiles.image1?.[0],
+//       organizedFiles.image2?.[0],
+//       organizedFiles.image3?.[0],
+//       organizedFiles.image4?.[0],
+//     ].filter(Boolean);
+
+//     let updates = { ...otherUpdates };
+
+//     // Get the existing product to work with variations
+//     const existingProduct = await productModel.findById(id);
+//     if (!existingProduct) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Product not found",
+//       });
+//     }
+
+//     let updatedVariations = [...existingProduct.variations];
+
+//     // PRIORITY 1: Handle direct variations update (from frontend editing)
+//     if (variations && Array.isArray(variations)) {
+//       // Use the variations sent from frontend directly
+//       updatedVariations = variations.map((v) => ({
+//         ...v,
+//         // Ensure numeric fields are properly converted
+//         price: parseFloat(v.price) || 0,
+//         salePrice: v.salePrice ? parseFloat(v.salePrice) : undefined,
+//         stock: parseInt(v.stock) || 0,
+//         isActive: v.isActive !== false, // Default to true unless explicitly false
+//       }));
+
+//       updates.variations = updatedVariations;
+//     }
+//     // PRIORITY 2: Handle totalStock update - distribute across variations (legacy support)
+//     else if (totalStock !== undefined) {
+//       if (updatedVariations && updatedVariations.length > 0) {
+//         const activeVariations = updatedVariations.filter(
+//           (v) => v.isActive !== false
+//         );
+//         if (activeVariations.length > 0) {
+//           const stockPerVariation = Math.floor(
+//             totalStock / activeVariations.length
+//           );
+//           const remainder = totalStock % activeVariations.length;
+
+//           let activeIndex = 0;
+//           updatedVariations = updatedVariations.map((variation) => {
+//             if (variation.isActive !== false) {
+//               const newStock =
+//                 stockPerVariation + (activeIndex < remainder ? 1 : 0);
+//               activeIndex++;
+//               return { ...variation, stock: newStock };
+//             }
+//             return variation;
+//           });
+
+//           updates.variations = updatedVariations;
+//         }
+//       }
+//     }
+
+//     // Handle basePrice update - sync with variations if no direct variations update
+//     if (basePrice !== undefined) {
+//       updates.basePrice = parseFloat(basePrice);
+
+//       // Only update variation prices if variations weren't directly provided
+//       if (!variations && updatedVariations && updatedVariations.length > 0) {
+//         updatedVariations = updatedVariations.map((variation) => ({
+//           ...variation,
+//           price: parseFloat(basePrice),
+//           // Keep salePrice if it exists and is lower than basePrice
+//           salePrice:
+//             variation.salePrice && variation.salePrice < basePrice
+//               ? variation.salePrice
+//               : undefined,
+//         }));
+//         updates.variations = updatedVariations;
+//       }
+//     }
+
+//     // Handle image uploads if present
+//     if (req.files && Object.keys(req.files).length > 0) {
+//       // Handle main product images
+//       const imageFiles = [
+//         organizedFiles.image1?.[0],
+//         organizedFiles.image2?.[0],
+//         organizedFiles.image3?.[0],
+//         organizedFiles.image4?.[0],
+//       ].filter(Boolean);
+
+//       if (imageFiles.length > 0) {
+//         const newImages = await Promise.all(
+//           imageFiles.map(async (item) => {
+//             const result = await cloudinary.uploader.upload(item.path, {
+//               resource_type: "image",
+//               folder: "hair-products/main",
+//               transformation: [
+//                 { width: 800, height: 800, crop: "fill", quality: "auto" },
+//                 { format: "webp" },
+//               ],
+//             });
+//             return result.secure_url;
+//           })
+//         );
+//         updates.images = newImages;
+//       }
+//     }
+
+//     // Parse JSON fields if they exist (for form-data requests)
+//     if (updates.variations && typeof updates.variations === "string") {
+//       try {
+//         updates.variations = JSON.parse(updates.variations);
+//       } catch {
+//         return res.status(400).json({
+//           success: false,
+//           message: "Invalid variations format",
+//         });
+//       }
+//     }
+
+//     // Validate variations before saving
+//     if (updates.variations) {
+//       const invalidVariations = updates.variations.filter(
+//         (v) =>
+//           !v.color ||
+//           typeof v.price !== "number" ||
+//           v.price < 0 ||
+//           typeof v.stock !== "number" ||
+//           v.stock < 0
+//       );
+
+//       if (invalidVariations.length > 0) {
+//         return res.status(400).json({
+//           success: false,
+//           message:
+//             "Invalid variation data: each variation must have color, valid price, and stock",
+//         });
+//       }
+//     }
+
+//     console.log("Updating product with:", JSON.stringify(updates, null, 2)); // Debug log
+
+//     const product = await productModel.findByIdAndUpdate(
+//       id,
+//       { ...updates, updatedAt: new Date() },
+//       { new: true, runValidators: true }
+//     );
+
+//     if (!product) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Product not found",
+//       });
+//     }
+
+//     // Calculate the enhanced product data to return
+//     const enhancedProduct = {
+//       ...product.toObject(),
+//       priceRange:
+//         product.variations && product.variations.length > 0
+//           ? {
+//               min: Math.min(
+//                 ...product.variations.map((v) => v.salePrice || v.price)
+//               ),
+//               max: Math.max(
+//                 ...product.variations.map((v) => v.salePrice || v.price)
+//               ),
+//             }
+//           : null,
+//       totalStock: product.variations
+//         ? product.variations.reduce((sum, v) => sum + (v.stock || 0), 0)
+//         : 0,
+//       activeVariations: product.variations
+//         ? product.variations.filter((v) => v.isActive && v.stock > 0).length
+//         : 0,
+//     };
+
+//     console.log(
+//       "Returning enhanced product:",
+//       JSON.stringify(enhancedProduct, null, 2)
+//     ); // Debug log
+
+//     res.json({
+//       success: true,
+//       message: "Product updated successfully",
+//       data: enhancedProduct,
+//     });
+//   } catch (error) {
+//     console.error("Update Product Error:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: error.message || "Failed to update product",
+//     });
+//   }
+// };
 
 // Enhanced listProducts with filtering and pagination
 const listProducts = async (req, res) => {

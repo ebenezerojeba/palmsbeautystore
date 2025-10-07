@@ -40,27 +40,6 @@ connectCloudinary();
 app.use(express.static(path.join(__dirname, 'frontend', 'build')));
 app.use(express.json());
 
-// app.use(cors({
-//   origin: [
-//     'https://palmsbeautystore-c6wn.vercel.app',
-//     'http://localhost:3000',
-//     'http://localhost:5173',
-//     'http://localhost:5174',
-//     'https://palmsbeautystore-red.vercel.app'
-//   ],
-//   credentials: true,
-  // allowedHeaders: [
-  //   'Content-Type',
-  //   'Authorization',
-  //   'x-requested-with',
-  //   'Accept',
-  //   'token'   // ← ADD THIS
-  // ],
-  // methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
-// }));
-
-
-// Temporary development CORS setup
 app.use(cors({
   origin: true, // Allow all origins
   credentials: true,
@@ -76,10 +55,6 @@ app.use(cors({
 
 app.options('*', cors());
 
-
-// Handle preflight requests
-// app.options("*", cors());
-// app.use('/uploads', express.static('uploads'));
 
 // Serve uploads folder publicly
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
