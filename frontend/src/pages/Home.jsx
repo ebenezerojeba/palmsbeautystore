@@ -457,6 +457,120 @@
 
 // export default Home;
 
+// import React, { useContext, useEffect, useState } from "react";
+// import { assets } from "../assets/assets";
+// import { ShopContext } from "../context/ShopContext";
+// import ProductItem from "../components/ProductItem";
+
+// const Collection = () => {
+//   const { products } = useContext(ShopContext);
+//   const [displayProducts, setDisplayProducts] = useState([]);
+
+//   useEffect(() => {
+//     if (!products || products.length === 0) {
+//       setDisplayProducts([]);
+//       return;
+//     }
+
+//     // Filter out products with no available stock and take first 4
+//     const filtered = products.filter(item => {
+//       if (!item.variations || item.variations.length === 0) return true;
+//       return item.variations.some(v => v.isActive && v.stock > 0);
+//     }).slice(0, 4);
+
+//     setDisplayProducts(filtered);
+//   }, [products]);
+
+//   return (
+//     <div className="min-h-screen bg-white">
+//       {/* Hero Banner */}
+//       <section className="relative h-[400px] md:h-[500px] bg-neutral-100 overflow-hidden">
+//         <img 
+//           src={assets.hero || "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1200"}
+//           alt="New Arrivals"
+//           className="absolute inset-0 w-full h-full object-cover"
+//         />
+//         <div className="absolute inset-0 bg-black/30" />
+//         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+//           <h1 className="text-5xl md:text-7xl font-light text-white tracking-wider mb-4 leading-tight">
+//             NEW
+//             <br />
+//             ARRIVALS
+//           </h1>
+//           <p className="text-white text-base md:text-lg font-light max-w-md">
+//             New looks. New Energy. Shop the latest bundle now.
+//           </p>
+//         </div>
+//       </section>
+
+//       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+//         {/* Product Grid */}
+//         {displayProducts.length === 0 ? (
+//           <div className="text-center py-16">
+//             <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+//               <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+//               </svg>
+//             </div>
+//             <h3 className="text-lg font-medium text-gray-900 mb-2">No products available</h3>
+//             <p className="text-gray-600">Check back soon for new arrivals</p>
+//           </div>
+//         ) : (
+//           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+//             {displayProducts.map((item) => {
+//               const calculatePriceRange = (variations) => {
+//                 if (!variations || variations.length === 0) return null;
+                
+//                 const prices = variations
+//                   .filter(v => v.isActive && v.stock > 0)
+//                   .map(v => v.salePrice || v.price);
+                
+//                 if (prices.length === 0) return null;
+                
+//                 return {
+//                   min: Math.min(...prices),
+//                   max: Math.max(...prices)
+//                 };
+//               };
+
+//               const calculateTotalStock = (variations) => {
+//                 if (!variations || variations.length === 0) return 0;
+                
+//                 return variations
+//                   .filter(v => v.isActive)
+//                   .reduce((total, v) => total + (v.stock || 0), 0);
+//               };
+
+//               const priceRange = calculatePriceRange(item.variations);
+//               const totalStock = calculateTotalStock(item.variations);
+
+//               return (
+//                 <ProductItem
+//                   key={item._id}
+//                   name={item.name}
+//                   id={item._id}
+//                   image={item.images || item.image}
+//                   variations={item.variations}
+//                   basePrice={item.basePrice || item.price}
+//                   priceRange={priceRange}
+//                   bestSeller={item.bestSeller}
+//                   isFeatured={item.isFeatured}
+//                   totalStock={totalStock}
+//                   averageRating={item.averageRating}
+//                   totalReviews={item.totalReviews}
+//                   category={item.category}
+//                   subCategory={item.subCategory}
+//                 />
+//               );
+//             })}
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default Collection;
 import React, { useContext, useEffect, useState } from "react";
 import { assets } from "../assets/assets";
 import { ShopContext } from "../context/ShopContext";
@@ -465,28 +579,44 @@ import ProductItem from "../components/ProductItem";
 const Collection = () => {
   const { products } = useContext(ShopContext);
   const [displayProducts, setDisplayProducts] = useState([]);
+  const [loading, setLoading] = useState(true); // loading state
 
   useEffect(() => {
-    if (!products || products.length === 0) {
-      setDisplayProducts([]);
-      return;
-    }
+    // Start loading
+    setLoading(true);
 
-    // Filter out products with no available stock and take first 4
-    const filtered = products.filter(item => {
-      if (!item.variations || item.variations.length === 0) return true;
-      return item.variations.some(v => v.isActive && v.stock > 0);
-    }).slice(0, 4);
+    // Simulate async data update if products come from context
+    const timer = setTimeout(() => {
+      if (!products || products.length === 0) {
+        setDisplayProducts([]);
+        setLoading(false);
+        return;
+      }
 
-    setDisplayProducts(filtered);
+      // Filter out products with no available stock and take first 4
+      const filtered = products
+        .filter(item => {
+          if (!item.variations || item.variations.length === 0) return true;
+          return item.variations.some(v => v.isActive && v.stock > 0);
+        })
+        .slice(0, 4);
+
+      setDisplayProducts(filtered);
+      setLoading(false);
+    }, 400); // short delay to smooth UI transition
+
+    return () => clearTimeout(timer);
   }, [products]);
 
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Banner */}
       <section className="relative h-[400px] md:h-[500px] bg-neutral-100 overflow-hidden">
-        <img 
-          src={assets.hero || "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1200"}
+        <img
+          src={
+            assets.hero ||
+            "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1200"
+          }
           alt="New Arrivals"
           className="absolute inset-0 w-full h-full object-cover"
         />
@@ -504,38 +634,54 @@ const Collection = () => {
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-        {/* Product Grid */}
-        {displayProducts.length === 0 ? (
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="w-10 h-10 border-4 border-gray-300 border-t-gray-700 rounded-full animate-spin"></div>
+          </div>
+        ) : displayProducts.length === 0 ? (
           <div className="text-center py-16">
             <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <svg
+                className="w-12 h-12 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No products available</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No products available
+            </h3>
             <p className="text-gray-600">Check back soon for new arrivals</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-            {displayProducts.map((item) => {
-              const calculatePriceRange = (variations) => {
+            {displayProducts.map(item => {
+              const calculatePriceRange = variations => {
                 if (!variations || variations.length === 0) return null;
-                
+
                 const prices = variations
                   .filter(v => v.isActive && v.stock > 0)
                   .map(v => v.salePrice || v.price);
-                
+
                 if (prices.length === 0) return null;
-                
+
                 return {
                   min: Math.min(...prices),
                   max: Math.max(...prices)
                 };
               };
 
-              const calculateTotalStock = (variations) => {
+              const calculateTotalStock = variations => {
                 if (!variations || variations.length === 0) return 0;
-                
+
                 return variations
                   .filter(v => v.isActive)
                   .reduce((total, v) => total + (v.stock || 0), 0);

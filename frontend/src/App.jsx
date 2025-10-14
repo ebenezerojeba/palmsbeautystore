@@ -22,6 +22,7 @@ import VerifyAppointment from './pages/VerifyAppointment';
 import SuccessPage from './pages/SuccessPage';
 import MyAppointmentsWithErrorBoundary from './pages/MyAppointment';
 import Success from './pages/SuccessOrder';
+import ScrollToTop from './components/ScrollToTop';
 
 const App = () => {
   return (
@@ -32,6 +33,7 @@ const App = () => {
       {/* Main content wrapper */}
       <main className="flex-grow">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <ScrollToTop />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />

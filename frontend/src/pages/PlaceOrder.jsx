@@ -177,12 +177,11 @@ const navigate = useNavigate()
     return Object.keys(errors).length === 0;
   };
 
-// / Fixed Frontend Code
+
 const processStripePayment = async (orderData) => {
   try {
     console.log("Sending order data:", orderData);
     
-    // ❌ ISSUE: Missing 'const response =' before axios.post
     // ✅ FIXED: Properly capture the response
     const response = await axios.post(
       `${backendUrl}/api/order/place`,
