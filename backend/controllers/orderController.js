@@ -2,6 +2,7 @@
 import userModel from "../models/userModel.js";
 import dotenv from "dotenv";
 import Stripe from 'stripe';
+import { sendOrderEmails } from "../services/emailService.js";
 dotenv.config()
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)

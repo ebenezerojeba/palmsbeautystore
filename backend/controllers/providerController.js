@@ -23,7 +23,7 @@ export const getProviders = async (req, res) => {
       .populate('services', 'title duration price description')
       .sort({ name: 1 });
     
-    // If date is provided, check availability for each provider
+    // If the date is provided, check availability for each provider
     if (date) {
       const availabilityPromises = providers.map(async (provider) => {
         const available = await checkProviderAvailability(provider._id, date);
@@ -1215,7 +1215,7 @@ export const getProviderAppointmentStats = async (req, res) => {
       formattedStats.totalRevenue += stat.totalRevenue;
     });
 
-    // Get today's appointment count
+    // Get appointment count for todya
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);

@@ -458,18 +458,6 @@ export const emailTemplates = {
               </div>
             </div>
             
-            <!-- Important Notes -->
-            <div style="background-color: #fef3c7; border-radius: 8px; padding: 20px; margin: 32px 0; border-left: 4px solid #f59e0b;">
-              <h3 style="color: #92400e; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">
-                📝 What's Next?
-              </h3>
-              <ul style="color: #92400e; margin: 0; padding-left: 16px; font-size: 14px; line-height: 1.6;">
-                <li>We'll send you a shipping confirmation with tracking information once your order ships</li>
-                <li>Expected delivery: 3-5 business days</li>
-                <li>If you have any questions, please contact our customer service team</li>
-              </ul>
-            </div>
-            
             <!-- Contact Section -->
             <div style="text-align: center; padding: 24px 0; border-top: 2px solid #e5e7eb; margin-top: 40px;">
               <p style="color: #6b7280; font-size: 14px; margin: 0 0 8px 0;">
@@ -479,7 +467,7 @@ export const emailTemplates = {
                 Palms Beauty Store Team
               </p>
               <p style="color: #6b7280; font-size: 14px; margin: 8px 0 0 0;">
-                Email: ${process.env.EMAIL_USER} | Phone: (709) 123-4567
+                Email: ${process.env.EMAIL_USER} | Phone: (709) 697-7837
               </p>
 
               <div style="margin-top: 16px;">
