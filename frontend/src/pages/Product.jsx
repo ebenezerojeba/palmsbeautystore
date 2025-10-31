@@ -380,7 +380,7 @@ const getColorHex = (colorCode) => {
           </div>
 
           {/* Product Specifications */}
-          {productData?.specifications && (
+          {/* {productData?.specifications && (
             <div className="bg-gray-50 rounded-lg p-4">
               <h3 className="font-medium text-gray-900 mb-3">Specifications</h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
@@ -398,7 +398,7 @@ const getColorHex = (colorCode) => {
                 )}
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Variation Options */}
           <div className="space-y-4">
