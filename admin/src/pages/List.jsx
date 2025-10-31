@@ -811,7 +811,7 @@ const saveProductChanges = async (productId) => {
                           }}
                         />
                       </div>
-                      
+
                       <div className="min-w-0">
                         {editingProduct === item._id ? (
                           <div className="space-y-2">

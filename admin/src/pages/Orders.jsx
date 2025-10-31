@@ -139,7 +139,7 @@ const Orders = ({ token }) => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
+        {/* <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
@@ -170,7 +170,7 @@ const Orders = ({ token }) => {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Orders List */}
         <div className="space-y-4">
