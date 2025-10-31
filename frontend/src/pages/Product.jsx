@@ -237,7 +237,7 @@ const getColorHex = (colorCode) => {
   };
 
   return productData ? (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 mb-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 mb-4 overflow-hidden">
 
       {/* Breadcrumb */}
     <nav className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mb-8">
@@ -278,7 +278,7 @@ const getColorHex = (colorCode) => {
           </div>
 
           {/* Thumbnail Images */}
-          <div className="flex space-x-2 overflow-x-auto pb-2 max-w-full">
+<div className="flex gap-2 overflow-x-auto pb-2 w-full no-scrollbar">
 
             {productData.images.map((item, index) => (
               <button
@@ -306,17 +306,17 @@ const getColorHex = (colorCode) => {
         {/* Product Info */}
         <div className="space-y-6">
           {/* Color Option - Moved up for mobile */}
-<div className="lg:hidden mt-6">
+{/* <div className="lg:hidden mt-6">
   {renderOptionSelector('color', 'Color')}
-</div>
+</div> */}
 
 {/* // Then in the "Variation Options" section, hide the color selector on mobile: */}
 <div className="space-y-4">
   {renderOptionSelector('size', 'Size')}
   {renderOptionSelector('length', 'Length')}
-  <div className="hidden lg:block">
-    {renderOptionSelector('color', 'Color')}
-  </div>
+  {/* <div className="hidden lg:block"> */}
+    {/* {renderOptionSelector('color', 'Color')} */}
+  {/* </div> */}
   {renderOptionSelector('texture', 'Texture')}
   {renderOptionSelector('weight', 'Weight')}
   
@@ -404,10 +404,9 @@ const getColorHex = (colorCode) => {
           <div className="space-y-4">
             {renderOptionSelector('size', 'Size')}
             {renderOptionSelector('length', 'Length')}
-<div className="hidden lg:block">
 
             {renderOptionSelector('color', 'Color')}
-</div>
+
 
             {renderOptionSelector('texture', 'Texture')}
             {renderOptionSelector('weight', 'Weight')}

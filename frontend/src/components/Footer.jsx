@@ -28,8 +28,7 @@ const Footer = () => {
             />
             <p className="text-sm leading-relaxed mb-4 sm:mb-6">
               Your premier destination for beauty services in St. John's, 
-              Newfoundland and Labrador. Specializing in hair styling, 
-              natural hair care, and professional makeup services.
+              Newfoundland and Labrador
             </p>
             <div className="flex space-x-4">
               <a 
@@ -134,16 +133,8 @@ const Footer = () => {
                   href="mailto:info@palmsbeauty.com" 
                   className="hover:text-white transition-colors duration-200 text-sm break-all"
                 >
-                  info@palmsbeauty.com
+                  Styledbyesther@palmsbeauty.com
                 </a>
-              </li>
-              <li className="flex items-start gap-3">
-                <Clock size={18} className="mt-0.5 flex-shrink-0" />
-                <div className="text-sm">
-                  <p>Mon-Fri: 9:00 AM - 7:00 PM</p>
-                  <p>Sat: 10:00 AM - 6:00 PM</p>
-                  <p>Sun: Closed</p>
-                </div>
               </li>
             </ul>
           </div>

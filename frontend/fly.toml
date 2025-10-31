@@ -3,10 +3,10 @@ primary_region = "yyz"
 
 [build]
   [build.args]
-    VITE_BACKEND_URL = "https://palmsbackend.fly.dev"
+    VITE_BACKEND_URL = "https://api.palmsbeautystore.com"
 
 [env]
-  VITE_BACKEND_URL = "https://palmsbackend.fly.dev"
+  VITE_BACKEND_URL = "https://api.palmsbeautystore.com"
 
 [http_service]
   internal_port = 80

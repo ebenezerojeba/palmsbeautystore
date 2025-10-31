@@ -575,6 +575,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { assets } from "../assets/assets";
 import { ShopContext } from "../context/ShopContext";
 import ProductItem from "../components/ProductItem";
+import { Loader2 } from "lucide-react";
 
 const Collection = () => {
   const { products } = useContext(ShopContext);
@@ -638,8 +639,9 @@ const Collection = () => {
         {loading ? (
           <div className="flex justify-center items-center py-20">
             <div className="w-10 h-10 border-4 border-gray-300 border-t-gray-700 rounded-full animate-spin"></div>
-          </div>
+          </div> 
         ) : displayProducts.length === 0 ? (
+         
           <div className="text-center py-16">
             <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <svg
@@ -661,7 +663,8 @@ const Collection = () => {
             </h3>
             <p className="text-gray-600">Check back soon for new arrivals</p>
           </div>
-        ) : (
+        )
+         : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {displayProducts.map(item => {
               const calculatePriceRange = variations => {
