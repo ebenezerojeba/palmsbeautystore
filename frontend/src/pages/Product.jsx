@@ -305,18 +305,12 @@ const getColorHex = (colorCode) => {
 
         {/* Product Info */}
         <div className="space-y-6">
-          {/* Color Option - Moved up for mobile */}
-{/* <div className="lg:hidden mt-6">
-  {renderOptionSelector('color', 'Color')}
-</div> */}
 
-{/* // Then in the "Variation Options" section, hide the color selector on mobile: */}
+
 <div className="space-y-4">
   {renderOptionSelector('size', 'Size')}
   {renderOptionSelector('length', 'Length')}
-  {/* <div className="hidden lg:block"> */}
-    {/* {renderOptionSelector('color', 'Color')} */}
-  {/* </div> */}
+
   {renderOptionSelector('texture', 'Texture')}
   {renderOptionSelector('weight', 'Weight')}
   
@@ -380,25 +374,6 @@ const getColorHex = (colorCode) => {
           </div>
 
           {/* Product Specifications */}
-          {/* {productData?.specifications && (
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-medium text-gray-900 mb-3">Specifications</h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                {productData.specifications.material && (
-                  <div><span className="text-gray-600">Material:</span> <span className="font-medium">{productData?.specifications?.material}</span></div>
-                )}
-                {productData.specifications.origin && (
-                  <div><span className="text-gray-600">Origin:</span> <span className="font-medium">{productData?.specifications?.origin}</span></div>
-                )}
-                {productData.specifications.hairGrade && (
-                  <div><span className="text-gray-600">Grade:</span> <span className="font-medium">{productData.specifications.hairGrade}</span></div>
-                )}
-                {productData.specifications.density && (
-                  <div><span className="text-gray-600">Density:</span> <span className="font-medium">{productData.specifications.density}</span></div>
-                )}
-              </div>
-            </div>
-          )} */}
 
           {/* Variation Options */}
           <div className="space-y-4">
@@ -537,16 +512,7 @@ const getColorHex = (colorCode) => {
               <p className="text-gray-700 leading-relaxed mb-4">
                 {productData.description}
               </p>
-              {productData.features && (
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Key Features:</h4>
-                  <ul className="list-disc list-inside space-y-1 text-gray-700">
-                    {productData.features.map((feature, index) => (
-                      <li key={index}>{feature}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+
             </div>
           )}
 
@@ -667,15 +633,7 @@ const getColorHex = (colorCode) => {
                   <li></li>
                 </ul>
               </div>
-              {/* <div>
-                <h3 className="font-medium text-gray-900 mb-3">Return Policy</h3>
-                <ul className="space-y-2 text-gray-700">
-                  <li>• 30-day return window</li>
-                  <li>• Items must be unused and in original packaging</li>
-                  <li>• Free returns on defective items</li>
-                  <li>• Refund processed within 5-7 business days</li>
-                </ul>
-              </div> */}
+      
             </div>
           )}
         </div>
