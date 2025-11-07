@@ -369,9 +369,7 @@ const getColorHex = (colorCode) => {
           </div>
 
           {/* Description */}
-          <div>
-            <p className="text-gray-700 leading-relaxed">{productData.description}</p>
-          </div>
+       
 
           {/* Product Specifications */}
 
