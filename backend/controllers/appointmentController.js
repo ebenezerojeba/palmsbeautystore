@@ -182,10 +182,9 @@ const cancelAppointment = async (req, res) => {
   }
 };
 
-
 const getAvailableSlots = async (req, res) => {
   try {
-    const { serviceId, providerId, startDate, endDate, selectedServices } = req.query;
+    const { serviceId, providerId, startDate, endDate, selectedServices, timezone } = req.query;
 
     // Validate serviceId
     if (!serviceId || serviceId === 'undefined' || serviceId === 'null') {
@@ -235,18 +234,29 @@ const getAvailableSlots = async (req, res) => {
       }).populate('services');
     }
 
-    
-
     if (availableProviders.length === 0) {
       return res.status(404).json({ message: "No providers available for this service" });
     }
+
+    // 👇 Get current time in user's timezone
+    const userTimezone = timezone || 'UTC';
+    const now = new Date();
+    
+    // Convert server time to user's timezone
+    const userNowString = now.toLocaleString('en-US', { timeZone: userTimezone });
+    const userNow = new Date(userNowString);
+    
+    console.log('🌍 User timezone:', userTimezone);
+    console.log('🕐 Server time:', now);
+    console.log('🕐 User time:', userNow);
 
     // Generate UNIQUE available slots (NO DUPLICATES)
     const uniqueSlots = await generateUniqueAvailableSlots(
       start,
       end,
       totalServiceDuration,
-      availableProviders
+      availableProviders,
+      userNow  // 👈 Pass user's current time
     );
 
     res.status(200).json({ 
@@ -258,7 +268,8 @@ const getAvailableSlots = async (req, res) => {
         profileImage: p.profileImage,
         rating: p.rating
       })),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      userTimezone: userTimezone  // Send back for confirmation
     });
     
   } catch (error) {
@@ -270,12 +281,14 @@ const getAvailableSlots = async (req, res) => {
   }
 };
 
-//  Generate unique slots with parallel processing
-const generateUniqueAvailableSlots = async (start, end, totalDuration, providers) => {
-  const now = new Date();
+
+// Generate unique available slots across providers
+const generateUniqueAvailableSlots = async (start, end, totalDuration, providers, userNow) => {
+  const now = userNow || new Date();  // Use userNow if provided
   const dateRange = [];
   
-  // Generate date range array first
+  // ... rest of the code stays the same
+  
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     dateRange.push(new Date(d));
   }
@@ -287,7 +300,7 @@ const generateUniqueAvailableSlots = async (start, end, totalDuration, providers
   for (let i = 0; i < dateRange.length; i += batchSize) {
     const batch = dateRange.slice(i, i + batchSize);
     const batchPromises = batch.map(date => 
-      processDate(date, totalDuration, providers, now)
+      processDate(date, totalDuration, providers, now)  // 👈 Pass user's now
     );
     
     const batchResults = await Promise.all(batchPromises);
@@ -296,6 +309,8 @@ const generateUniqueAvailableSlots = async (start, end, totalDuration, providers
 
   return allSlots.sort((a, b) => new Date(a.date) - new Date(b.date));
 };
+
+
 
 // Helper function to process individual date
 const processDate = async (date, totalDuration, providers, currentTime) => {

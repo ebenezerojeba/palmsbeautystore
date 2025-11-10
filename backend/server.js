@@ -11,9 +11,9 @@ import orderRouter from "./routes/orderRoute.js";
 import subscribeRouter from "./routes/subscribeRoute.js";
 import connectCloudinary from "./config/cloudinary.js";
 import serviceRouter from "./routes/serviceRoute.js";
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
 import businessRouter from "./routes/businessRoute.js";
 import staffRouter from "./routes/staffRoute.js";
 import providerRouter from "./routes/providerRoute.js";
@@ -26,7 +26,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Ensure uploads folder exists
-const uploadsDir = path.join(__dirname, 'uploads');
+const uploadsDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
 }
@@ -37,42 +37,40 @@ const port = process.env.PORT || 8000;
 job.start();
 connectDB();
 connectCloudinary();
-app.use(express.static(path.join(__dirname, 'frontend', 'build')));
+app.use(express.static(path.join(__dirname, "frontend", "build")));
 app.use(express.json());
-
-app.use(cors({
-  origin: true, // Allow all origins
-  credentials: true,
-   allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'x-requested-with',
-    'Accept',
-    'token'   // ← ADD THIS
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
-}));
-
-app.options('*', cors());
+app.use(
+  cors({
+    origin: [
+      "https://admin.palmsbeautystore.com",
+      "https://palmsfrontend.fly.dev",
+      "https://palmsadmin.fly.dev",
+      "https://palmsbeautystore.com",
+      "https://www.palmsbeautystore.com",
+      'http://localhost:5174' ,
+      'http://localhost:5173'
+    ],
+    credentials: true,
+  })
+);
 
 
 // Serve uploads folder publicly
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/appointment", appointmentRouter);
 app.use("/api/admin", adminRouter);
 
 // API Endpoints
-app.use('/api/user', userRouter)
-app.use('/api/product', productRouter)
-app.use('/api/cart', cartRouter)
-app.use('/api/order', orderRouter)
-app.use('/api/subscribe', subscribeRouter)
-app.use('/api/services', serviceRouter)
-app.use('/api/business', businessRouter)
-app.use('/api/staff', staffRouter)
-app.use('/api/provider', providerRouter)
-
+app.use("/api/user", userRouter);
+app.use("/api/product", productRouter);
+app.use("/api/cart", cartRouter);
+app.use("/api/order", orderRouter);
+app.use("/api/subscribe", subscribeRouter);
+app.use("/api/services", serviceRouter);
+app.use("/api/business", businessRouter);
+app.use("/api/staff", staffRouter);
+app.use("/api/provider", providerRouter);
 
 // Serve .ics files for download
 
@@ -80,8 +78,8 @@ app.get("/", (req, res) => {
   res.send("API Working Perfctly");
 });
 
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, 'frontend', 'build', 'index.html'));
+app.get("*", (req, res) => {
+  res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
 });
 
 app.listen(port, () => {
