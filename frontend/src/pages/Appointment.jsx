@@ -148,59 +148,64 @@ const Appointment = () => {
     }, 0);
     return total;
   };
-  // Fetching available slots
+
   useEffect(() => {
-    const fetchAvailableSlots = async () => {
-      if (selectedServices.length === 0) return;
+  const fetchAvailableSlots = async () => {
+    if (selectedServices.length === 0) return;
 
-      setIsLoading(true);
-      try {
-        const startDate = new Date().toISOString().split('T')[0];
-        const endDate = new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    setIsLoading(true);
+    try {
+      const startDate = new Date().toISOString().split('T')[0];
+      const endDate = new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-        // Preparing services data with better structure
-        const servicesForSlots = selectedServices.map(service => ({
-          _id: service._id,
-          title: service.title,
-          duration: service.duration || 90,
-          price: service.price
-        }));
+      const servicesForSlots = selectedServices.map(service => ({
+        _id: service._id,
+        title: service.title,
+        duration: service.duration || 90,
+        price: service.price
+      }));
 
-        // Preparing query parameters
-        const queryParams = new URLSearchParams({
-          serviceId: id,
-          startDate,
-          endDate,
-          selectedServices: JSON.stringify(servicesForSlots)
-        });
+      // 👇 Automatically detect user's timezone
+      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      
+      console.log('🌍 Detected user timezone:', userTimezone);
 
+      const queryParams = new URLSearchParams({
+        serviceId: id,
+        startDate,
+        endDate,
+        selectedServices: JSON.stringify(servicesForSlots),
+        timezone: userTimezone  // 👈 Automatically send timezone
+      });
 
-        const res = await fetch(
-          `${backendUrl}/api/appointment/available-slots?${queryParams.toString()}`
-        );
+      const res = await fetch(
+        `${backendUrl}/api/appointment/available-slots?${queryParams.toString()}`
+      );
 
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-
-        const data = await res.json();
-
-        if (data.availableSlots) {
-          setAvailableSlots(data.availableSlots);
-        } else {
-          setAvailableSlots([]);
-        }
-      } catch (err) {
-        console.error('Error fetching slots:', err);
-        toast.error("Failed to fetch available slots");
-        setAvailableSlots([]);
-      } finally {
-        setIsLoading(false);
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
       }
-    };
 
-    fetchAvailableSlots();
-  }, [selectedServices, id, backendUrl]);
+      const data = await res.json();
+      
+      console.log('✅ Received slots for timezone:', data.userTimezone);
+
+      if (data.availableSlots) {
+        setAvailableSlots(data.availableSlots);
+      } else {
+        setAvailableSlots([]);
+      }
+    } catch (err) {
+      console.error('Error fetching slots:', err);
+      toast.error("Failed to fetch available slots");
+      setAvailableSlots([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchAvailableSlots();
+}, [selectedServices, id, backendUrl]);
 
   const addService = (service) => {
     const isAlreadySelected = selectedServices.some(s => s._id === service._id);
