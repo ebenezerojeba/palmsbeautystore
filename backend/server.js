@@ -18,6 +18,7 @@ import businessRouter from "./routes/businessRoute.js";
 import staffRouter from "./routes/staffRoute.js";
 import providerRouter from "./routes/providerRoute.js";
 import job from "./config/cronjob.js";
+import compression from "compression";
 
 dotenv.config();
 
@@ -39,6 +40,7 @@ connectDB();
 connectCloudinary();
 app.use(express.static(path.join(__dirname, "frontend", "build")));
 app.use(express.json());
+app.use(compression())
 app.use(
   cors({
     origin: [

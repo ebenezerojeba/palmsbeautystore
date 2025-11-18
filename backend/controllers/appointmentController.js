@@ -39,152 +39,10 @@ const checkProviderAvailabilityQuick = async (providerId, date, time, duration, 
   return checkProviderAvailabilityInstant(provider, date, time, duration, appointmentsMap);
 };
 
-// Get user appointments
-const getUserAppointments = async (req, res) => {
-  try {
-    // Verify the requested userId matches the authenticated user
-    if (req.params.userId !== req.userId) {
-      return res.status(403).json({ 
-        success: false,
-        message: "Unauthorized access to appointments" 
-      });
-    }
-    
-    const appointments = await appointmentModel.find({ userId: req.params.userId })
-      .sort({ date: 1, time: 1 })  // Sort by upcoming first
-      .lean();
-
-    if (!appointments.length) {
-      return res.status(200).json({ 
-        success: true,
-        message: "No appointments found",
-        appointments: []
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      appointments
-    });
-
-  } catch (error) {
-    console.error("Error fetching appointments:", error);
-    res.status(500).json({ 
-      success: false,
-      message: "Failed to fetch appointments" 
-    });
-  }
-};
-
-// Cancel appointment
-const cancelAppointment = async (req, res) => {
-  try {
-    const { appointmentId, reason, cancelledBy = "admin" } = req.body;
-
-    // Validate input
-    if (!appointmentId) {
-      return res.status(400).json({
-        success: false,
-        message: "Appointment ID is required"
-      });
-    }
-
-    if (!reason || reason.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Cancellation reason is required"
-      });
-    }
-
-    // Check if user is authenticated and is admin
-    // This assumes you have auth middleware that sets req.user
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required"
-      });
-    }
-
-    // Validate ObjectId format
-    if (!appointmentId.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid appointment ID format"
-      });
-    }
-
-    // Fetch the appointment
-    const appointment = await appointmentModel.findById(appointmentId);
-
-    // Check if appointment exists
-    if (!appointment) {
-      return res.status(404).json({
-        success: false,
-        message: "Appointment not found"
-      });
-    }
-
-    // Prevent duplicate cancellations
-    if (appointment.status === 'cancelled') {
-      return res.status(400).json({
-        success: false,
-        message: "Appointment is already cancelled"
-      });
-    }
-
-    // Prevent cancelling completed appointments
-    if (appointment.status === 'completed') {
-      return res.status(400).json({
-        success: false,
-        message: "Cannot cancel completed appointments"
-      });
-    }
-
-    // Calculate refund eligibility
-    const appointmentDate = new Date(appointment.date);
-    const [hours, minutes] = appointment.time.split(':').map(Number);
-    appointmentDate.setHours(hours, minutes, 0, 0);
-
-    const hoursUntilAppointment = (appointmentDate - new Date()) / (1000 * 60 * 60);
-    const refundEligible = hoursUntilAppointment > 24;
-
-    // Update appointment
-    appointment.status = 'cancelled';
-    appointment.cancellation = {
-      cancelledBy,
-      reason: reason.trim(),
-      refundEligible,
-      cancellationFee: refundEligible ? 0 : Math.floor(appointment.payment?.amount * 0.1) || 0
-    };
-    appointment.cancelledAt = new Date();
-
-    await appointment.save();
-
-    return res.status(200).json({
-      success: true,
-      message: refundEligible 
-        ? "Appointment cancelled successfully. Full refund will be processed."
-        : `Appointment cancelled. A cancellation fee of $${appointment.cancellation.cancellationFee} may apply.`,
-      appointment: {
-        _id: appointment._id,
-        status: appointment.status,
-        cancelledAt: appointment.cancelledAt,
-        cancellation: appointment.cancellation
-      }
-    });
-
-  } catch (error) {
-    console.error("Error cancelling appointment:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to cancel appointment. Please try again."
-    });
-  }
-};
 
 const getAvailableSlots = async (req, res) => {
   try {
-    const { serviceId, providerId, startDate, endDate, selectedServices, timezone } = req.query;
+    const { serviceId, providerId, startDate, endDate, selectedServices } = req.query;
 
     // Validate serviceId
     if (!serviceId || serviceId === 'undefined' || serviceId === 'null') {
@@ -234,29 +92,18 @@ const getAvailableSlots = async (req, res) => {
       }).populate('services');
     }
 
+    
+
     if (availableProviders.length === 0) {
       return res.status(404).json({ message: "No providers available for this service" });
     }
-
-    // 👇 Get current time in user's timezone
-    const userTimezone = timezone || 'UTC';
-    const now = new Date();
-    
-    // Convert server time to user's timezone
-    const userNowString = now.toLocaleString('en-US', { timeZone: userTimezone });
-    const userNow = new Date(userNowString);
-    
-    console.log('🌍 User timezone:', userTimezone);
-    console.log('🕐 Server time:', now);
-    console.log('🕐 User time:', userNow);
 
     // Generate UNIQUE available slots (NO DUPLICATES)
     const uniqueSlots = await generateUniqueAvailableSlots(
       start,
       end,
       totalServiceDuration,
-      availableProviders,
-      userNow  // 👈 Pass user's current time
+      availableProviders
     );
 
     res.status(200).json({ 
@@ -268,8 +115,7 @@ const getAvailableSlots = async (req, res) => {
         profileImage: p.profileImage,
         rating: p.rating
       })),
-      timestamp: new Date().toISOString(),
-      userTimezone: userTimezone  // Send back for confirmation
+      timestamp: new Date().toISOString()
     });
     
   } catch (error) {
@@ -281,14 +127,12 @@ const getAvailableSlots = async (req, res) => {
   }
 };
 
-
-// Generate unique available slots across providers
-const generateUniqueAvailableSlots = async (start, end, totalDuration, providers, userNow) => {
-  const now = userNow || new Date();  // Use userNow if provided
+//  Generate unique slots with parallel processing
+const generateUniqueAvailableSlots = async (start, end, totalDuration, providers) => {
+  const now = new Date();
   const dateRange = [];
   
-  // ... rest of the code stays the same
-  
+  // Generate date range array first
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     dateRange.push(new Date(d));
   }
@@ -299,9 +143,14 @@ const generateUniqueAvailableSlots = async (start, end, totalDuration, providers
 
   for (let i = 0; i < dateRange.length; i += batchSize) {
     const batch = dateRange.slice(i, i + batchSize);
-    const batchPromises = batch.map(date => 
-      processDate(date, totalDuration, providers, now)  // 👈 Pass user's now
-    );
+const batchPromises = batch.map(date => {
+  // ✅ Calculate isToday once per date in UTC
+  const dateStr = date.toISOString().split('T')[0];
+  const todayStr = now.toISOString().split('T')[0];
+  const isToday = dateStr === todayStr;
+  
+  return processDate(date, totalDuration, providers, now, isToday);
+});
     
     const batchResults = await Promise.all(batchPromises);
     allSlots.push(...batchResults.filter(result => result !== null));
@@ -310,10 +159,8 @@ const generateUniqueAvailableSlots = async (start, end, totalDuration, providers
   return allSlots.sort((a, b) => new Date(a.date) - new Date(b.date));
 };
 
-
-
 // Helper function to process individual date
-const processDate = async (date, totalDuration, providers, currentTime) => {
+const processDate = async (date, totalDuration, providers, currentTime, isToday) => {
   const dateStr = date.toISOString().split('T')[0];
   const dayOfWeek = date.getDay();
   const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek];
@@ -328,17 +175,18 @@ const processDate = async (date, totalDuration, providers, currentTime) => {
     return null;
   }
 
-  console.log(`📅 Processing date: ${dateStr} (${dayName})`);
+  
 
   const bestSlotsForDate = await findBestAvailableSlotsForDate(
     date, 
     totalDuration, 
     providers, 
-    currentTime
+    currentTime,
+    isToday
   );
 
   if (bestSlotsForDate.length > 0) {
-    console.log(`✅ Added ${bestSlotsForDate.length} slots for ${dateStr}`);
+
     return {
       date: dateStr,
       dayOfWeek: dayName,
@@ -347,21 +195,20 @@ const processDate = async (date, totalDuration, providers, currentTime) => {
       isLongDuration: totalDuration > 480
     };
   } else {
-    console.log(`❌ No valid slots for ${dateStr}`);
+
     return null;
   }
 };
 
-//Find best slots with massive performance improvements
-const findBestAvailableSlotsForDate = async (date, totalDuration, providers, currentTime) => {
+
+const findBestAvailableSlotsForDate = async (date, totalDuration, providers, currentTime, isToday) => {
   const dateStr = date.toISOString().split('T')[0];
   const dayOfWeek = date.getDay();
   
-  console.log(`🔍 Finding slots for ${dateStr}, Duration: ${totalDuration}min`);
 
   // Handle very long services (10+ hours) - Multi-day scheduling
   if (totalDuration >= 600) {
-    console.log("🕰️ Handling very long service (10+ hours)");
+ 
     return await handleMultiDayService(date, totalDuration, providers);
   }
 
@@ -372,7 +219,7 @@ const findBestAvailableSlotsForDate = async (date, totalDuration, providers, cur
   });
 
   if (workingProviders.length === 0) {
-    console.log(`❌ No providers work on this day (${dayOfWeek})`);
+   
     return [];
   }
 
@@ -384,7 +231,7 @@ const findBestAvailableSlotsForDate = async (date, totalDuration, providers, cur
     status: { $in: ['pending', 'confirmed'] }
   }).select('providerId time totalDuration duration').lean();
 
-  console.log(`📅 Found ${existingAppointments.length} existing appointments for ${dateStr}`);
+  
 
   // Group appointments by provider for fast lookup
   const appointmentsByProvider = {};
@@ -396,17 +243,17 @@ const findBestAvailableSlotsForDate = async (date, totalDuration, providers, cur
   });
 
   // Generate time slots only for working hours
-  const isToday = date.toDateString() === currentTime.toDateString();
+ 
   const potentialTimeSlots = generateOptimizedTimeSlots(date, totalDuration, workingProviders, isToday, currentTime);
   
   if (potentialTimeSlots.length === 0) {
-    console.log(`⏩ No valid time slots for ${dateStr}`);
+    
     return [];
   }
 
-  console.log(`⏰ Generated ${potentialTimeSlots.length} optimized time slots`);
 
-  // Process time slots in parallel batches
+
+  // 🚨 CRITICAL FIX: Filter to ONLY actually available slots
   const availableSlots = [];
   const batchSize = 10;
 
@@ -417,14 +264,16 @@ const findBestAvailableSlotsForDate = async (date, totalDuration, providers, cur
     );
 
     const batchResults = await Promise.all(batchPromises);
-    availableSlots.push(...batchResults.filter(slot => slot !== null));
+    
+    // 🚨 ONLY include slots that are actually available
+    const actuallyAvailableSlots = batchResults.filter(slot => slot !== null && slot.available === true);
+    availableSlots.push(...actuallyAvailableSlots);
   }
 
-  console.log(`🎯 Found ${availableSlots.length} available slots for ${dateStr}`);
   return availableSlots;
 };
 
-// OPTIMIZED: Generate time slots based on provider working hours
+// Generate time slots based on provider working hours
 const generateOptimizedTimeSlots = (date, duration, providers, isToday, currentTime) => {
   const dayOfWeek = date.getDay();
   const slots = [];
@@ -444,10 +293,11 @@ const generateOptimizedTimeSlots = (date, duration, providers, isToday, currentT
     }
   });
 
-  // Adjust for today's current time
+  
   if (isToday) {
     const currentHour = currentTime.getHours();
-    earliestStart = Math.max(earliestStart, currentHour + 1);
+    const currentMinute = currentTime.getMinutes();
+    earliestStart = Math.max(earliestStart, currentHour + (currentMinute > 30 ? 2 : 1));
   }
 
   // Generate slots within common working hours
@@ -475,7 +325,6 @@ const generateOptimizedTimeSlots = (date, duration, providers, isToday, currentT
   return slots;
 };
 
-// Find available provider for a single time slot
 const findAvailableProviderForSlot = async (providers, date, timeSlot, duration, appointmentsByProvider) => {
   for (const provider of providers) {
     const isAvailable = checkProviderAvailabilityInstant(
@@ -489,7 +338,7 @@ const findAvailableProviderForSlot = async (providers, date, timeSlot, duration,
     if (isAvailable) {
       return {
         time: timeSlot.time,
-        available: true,
+        available: true, // 🚨 Explicitly mark as available
         duration: duration,
         providerId: provider._id,
         providerName: provider.name,
@@ -504,15 +353,21 @@ const findAvailableProviderForSlot = async (providers, date, timeSlot, duration,
       };
     }
   }
+  
+ 
   return null;
 };
 
-// Check provider availability without async calls
+
+
 const checkProviderAvailabilityInstant = (provider, date, time, duration, providerAppointments) => {
   const dayOfWeek = date.getDay();
   const providerDay = provider.workingHours.find(wh => wh.dayOfWeek === dayOfWeek && wh.isWorking);
 
-  if (!providerDay) return false;
+  if (!providerDay) {
+  
+    return false;
+  }
 
   // Parse requested time
   const [requestHour, requestMinute] = time.split(':').map(Number);
@@ -531,12 +386,14 @@ const checkProviderAvailabilityInstant = (provider, date, time, duration, provid
 
   // Check if requested time is within working hours
   if (requestDateTime < workStart || requestDateTime > workEnd) {
+   
     return false;
   }
 
   // Calculate service end time
   const serviceEnd = new Date(requestDateTime.getTime() + duration * 60000);
   if (serviceEnd > workEnd) {
+    
     return false;
   }
 
@@ -564,16 +421,19 @@ const checkProviderAvailabilityInstant = (provider, date, time, duration, provid
     );
 
     if (hasOverlap) {
+      
       return false;
     }
   }
 
+  
   return true;
 };
 
+
 // Handle multi-day services (10+ hours)
 const handleMultiDayService = async (startDate, totalDuration, providers) => {
-  console.log(`🗓️ Handling multi-day service: ${totalDuration} minutes`);
+
   
   const slots = [];
   const maxDailyHours = 8 * 60; // 8 hours per day
@@ -613,7 +473,6 @@ const handleMultiDayService = async (startDate, totalDuration, providers) => {
         }
       });
 
-      console.log(`✅ Multi-day slot created for ${provider.name}`);
       break; // Only need one provider for multi-day
     }
   }
@@ -623,7 +482,7 @@ const handleMultiDayService = async (startDate, totalDuration, providers) => {
 
 // Check consecutive days availability for multi-day services
 const checkConsecutiveDaysAvailability = async (providerId, startDate, daysNeeded, workingHours) => {
-  console.log(`🔍 Checking ${daysNeeded} consecutive days for provider ${providerId}`);
+  
 
   for (let i = 0; i < daysNeeded; i++) {
     const checkDate = new Date(startDate);
@@ -633,7 +492,7 @@ const checkConsecutiveDaysAvailability = async (providerId, startDate, daysNeede
     const providerDay = workingHours.find(wh => wh.dayOfWeek === dayOfWeek && wh.isWorking);
 
     if (!providerDay) {
-      console.log(`❌ Provider doesn't work on day ${i + 1}`);
+     
       return false;
     }
 
@@ -646,12 +505,12 @@ const checkConsecutiveDaysAvailability = async (providerId, startDate, daysNeede
     });
 
     if (existingAppointments.length > 0) {
-      console.log(`❌ Provider has appointments on day ${i + 1}`);
+     
       return false;
     }
   }
 
-  console.log(`✅ Provider available for all ${daysNeeded} consecutive days`);
+ 
   return true;
 };
 
@@ -663,7 +522,6 @@ const bookMultipleAppointment = async (req, res) => {
     let { providerId } = req.body;
     const userId = req.userId;
 
-    console.log("📝 Booking request:", { services, date, time, providerId, userId });
 
     // Validation
     if (!services || !Array.isArray(services) || services.length === 0) {
@@ -708,22 +566,38 @@ const bookMultipleAppointment = async (req, res) => {
         status: { $in: ['pending', 'confirmed'] }
       }).select('time totalDuration duration').lean();
 
-      const isStillAvailable = checkProviderAvailabilityInstant(
-        provider,
-        dateObj,
-        time,
-        calculatedDuration,
-        existingAppointments.reduce((acc, apt) => {
-          acc[apt.time] = apt;
-          return acc;
-        }, {})
-      );
+       // FINAL SAFETY CHECK (should rarely fail now)
+    const isStillAvailable = await checkProviderAvailabilityQuick(
+      providerId,
+      new Date(date),
+      time,
+      calculatedDuration,
+      provider.workingHours
+    );
 
-      if (!isStillAvailable) {
-        return res.status(409).json({ 
-          message: "This time slot is no longer available. Please select a different time." 
-        });
-      }
+ if (!isStillAvailable) {
+  return res.status(409).json({ 
+    message: "This time slot was just booked by another user. Please select a different time."
+  });
+}
+
+
+      // const isStillAvailable = checkProviderAvailabilityInstant(
+      //   provider,
+      //   dateObj,
+      //   time,
+      //   calculatedDuration,
+      //   existingAppointments.reduce((acc, apt) => {
+      //     acc[apt.time] = apt;
+      //     return acc;
+      //   }, {})
+      // );
+
+      // if (!isStillAvailable) {
+      //   return res.status(409).json({ 
+      //     message: "This time slot is no longer available. Please select a different time." 
+      //   });
+      // }
     } else {
       return res.status(400).json({ message: "Provider ID is required" });
     }
@@ -780,10 +654,10 @@ const bookMultipleAppointment = async (req, res) => {
         price_data: {
           currency: 'cad',
           product_data: {
-            name: `${services.length > 1 ? 'Multiple Services' : services[0].serviceTitle}`,
+           name: `${services.length > 1 ? 'Multiple Services' : services[0].serviceTitle} (50% Deposit)`,
             // description: `Appointment with ${providerData.name} on ${date} at ${time}`,
           },
-          unit_amount: Math.round(calculatedAmount * 100), // Convert to cents
+         unit_amount: Math.round(calculatedAmount * 0.5 * 100), // Convert to cents
         },
         quantity: 1,
       }],
@@ -798,8 +672,7 @@ const bookMultipleAppointment = async (req, res) => {
       customer_email: userData.email,
     });
 
-    console.log("💳 Stripe session created:", session.id);
-    console.log("💳 Payment URL:", session.url);
+   
     
     res.status(201).json({
       message: "Appointment created successfully. Please complete payment.",
@@ -914,9 +787,9 @@ const bookAppointment = async (req, res) => {
         price_data: {
           currency: 'cad',
           product_data: {
-            name: serviceTitle
+           name: `${serviceTitle} (50% Deposit)`
           },
-          unit_amount: amount * 100,
+         unit_amount: Math.round(amount * 0.5 * 100), // 50% deposit in cents
         },
         quantity: 1
       }],
@@ -964,43 +837,38 @@ const handleStripeRedirect = async (req, res) => {
 
 const verifyAppointmentPayment = async (req, res) => {
   try {
-    console.log("🔍 Starting payment verification...");
-    console.log("Request body:", req.body);
-    console.log("User ID from token:", req.userId);
+   
     
     const { sessionId, appointmentId } = req.body;
 
     // Validate required fields
     if (!sessionId || !appointmentId) {
-      console.log("❌ Missing required fields");
+     ;
       return res.status(400).json({ 
         success: false,
         message: "Session ID and Appointment ID are required" 
       });
     }
 
-    // Find appointment with FIXED field name - use userId instead of user
-    console.log("🔍 Looking for appointment:", appointmentId, "for user:", req.userId);
+
     const appointment = await appointmentModel.findOne({
       _id: appointmentId,
       userId: req.userId // FIXED: Changed from 'user' to 'userId'
     });
 
     if (!appointment) {
-      console.log("❌ Appointment not found or doesn't belong to user");
+ 
       return res.status(404).json({ 
         success: false,
         message: "Appointment not found or access denied" 
       });
     }
 
-    console.log("✅ Appointment found:", appointment._id);
-    console.log("Current appointment status:", appointment.status);
-    console.log("Current payment status:", appointment.payment?.status);
+
 
     // Check if already verified
     if (appointment.payment?.status === 'paid') {
-      console.log("⚠️ Payment already verified");
+   
       return res.json({
         success: true,
         message: "Payment already verified",
@@ -1009,15 +877,12 @@ const verifyAppointmentPayment = async (req, res) => {
     }
 
     // Retrieve Stripe session
-    console.log("🔍 Retrieving Stripe session:", sessionId);
     let session;
     try {
       session = await stripe.checkout.sessions.retrieve(sessionId, {
         expand: ['payment_intent']
       });
-      console.log("✅ Stripe session retrieved successfully");
-      console.log("Session payment_status:", session.payment_status);
-      console.log("Session status:", session.status);
+
     } catch (stripeError) {
       console.error("❌ Stripe session retrieval failed:", stripeError.message);
       return res.status(400).json({
@@ -1029,7 +894,7 @@ const verifyAppointmentPayment = async (req, res) => {
 
     // Handle different payment statuses
     if (session.payment_status === 'unpaid') {
-      console.log("⏳ Payment still unpaid");
+
       return res.status(200).json({
         success: false,
         status: 'processing',
@@ -1039,7 +904,7 @@ const verifyAppointmentPayment = async (req, res) => {
     }
 
     if (session.payment_status !== 'paid') {
-      console.log("❌ Payment not completed, status:", session.payment_status);
+
       return res.status(200).json({
         success: false,
         message: `Payment ${session.payment_status}. Please try again or contact support.`,
@@ -1048,8 +913,7 @@ const verifyAppointmentPayment = async (req, res) => {
       });
     }
 
-    // Payment is successful, update appointment
-    console.log("✅ Payment confirmed, updating appointment...");
+
     
     appointment.payment = {
       status: 'paid',
@@ -1061,7 +925,7 @@ const verifyAppointmentPayment = async (req, res) => {
     appointment.confirmedAt = new Date();
 
     await appointment.save();
-    console.log("✅ Appointment updated successfully");
+
 
         // Send confirmation emails after payment verification
   // / ✅ NOW SEND CONFIRMATION EMAILS - Only after successful payment
@@ -1293,6 +1157,149 @@ const getSingleAppointment = async (req, res) => {
     });
   }
 }
+
+// Get user appointments
+const getUserAppointments = async (req, res) => {
+  try {
+    // Verify the requested userId matches the authenticated user
+    if (req.params.userId !== req.userId) {
+      return res.status(403).json({ 
+        success: false,
+        message: "Unauthorized access to appointments" 
+      });
+    }
+    
+    const appointments = await appointmentModel.find({ userId: req.params.userId })
+      .sort({ date: 1, time: 1 })  // Sort by upcoming first
+      .lean();
+
+    if (!appointments.length) {
+      return res.status(200).json({ 
+        success: true,
+        message: "No appointments found",
+        appointments: []
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      appointments
+    });
+
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Failed to fetch appointments" 
+    });
+  }
+};
+
+// Cancel appointment
+const cancelAppointment = async (req, res) => {
+  try {
+    const { appointmentId, reason, cancelledBy = "admin" } = req.body;
+
+    // Validate input
+    if (!appointmentId) {
+      return res.status(400).json({
+        success: false,
+        message: "Appointment ID is required"
+      });
+    }
+
+    if (!reason || reason.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Cancellation reason is required"
+      });
+    }
+
+    // Check if user is authenticated and is admin
+    // This assumes you have auth middleware that sets req.user
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required"
+      });
+    }
+
+    // Validate ObjectId format
+    if (!appointmentId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid appointment ID format"
+      });
+    }
+
+    // Fetch the appointment
+    const appointment = await appointmentModel.findById(appointmentId);
+
+    // Check if appointment exists
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: "Appointment not found"
+      });
+    }
+
+    // Prevent duplicate cancellations
+    if (appointment.status === 'cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: "Appointment is already cancelled"
+      });
+    }
+
+    // Prevent cancelling completed appointments
+    if (appointment.status === 'completed') {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot cancel completed appointments"
+      });
+    }
+
+    // Calculate refund eligibility
+    const appointmentDate = new Date(appointment.date);
+    const [hours, minutes] = appointment.time.split(':').map(Number);
+    appointmentDate.setHours(hours, minutes, 0, 0);
+
+    const hoursUntilAppointment = (appointmentDate - new Date()) / (1000 * 60 * 60);
+    const refundEligible = hoursUntilAppointment > 24;
+
+    // Update appointment
+    appointment.status = 'cancelled';
+    appointment.cancellation = {
+      cancelledBy,
+      reason: reason.trim(),
+      refundEligible,
+      cancellationFee: refundEligible ? 0 : Math.floor(appointment.payment?.amount * 0.1) || 0
+    };
+    appointment.cancelledAt = new Date();
+
+    await appointment.save();
+
+    return res.status(200).json({
+      success: true,
+      message: refundEligible 
+        ? "Appointment cancelled successfully. Full refund will be processed."
+        : `Appointment cancelled. A cancellation fee of $${appointment.cancellation.cancellationFee} may apply.`,
+      appointment: {
+        _id: appointment._id,
+        status: appointment.status,
+        cancelledAt: appointment.cancelledAt,
+        cancellation: appointment.cancellation
+      }
+    });
+
+  } catch (error) {
+    console.error("Error cancelling appointment:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to cancel appointment. Please try again."
+    });
+  }
+};
 
 export {
   getAvailableSlots,

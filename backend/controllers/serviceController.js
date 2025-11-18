@@ -1,7 +1,9 @@
 
 import serviceModel from "../models/serviceModel.js";
 import providerModel from "../models/providerModel.js";
+import NodeCache from 'node-cache';
 
+const cache = new NodeCache({ stdTTL: 300 });
 
 // Get all active services with providers populated
 const getAllServices = async (req, res) => {
@@ -53,6 +55,96 @@ const publicServices = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch services' });
   }
 };
+
+
+
+
+// const publicServices = async (req, res) => {
+//   try {
+//     const cacheKey = 'public-services';
+//     let groupedServices = cache.get(cacheKey);
+    
+//     if (groupedServices) {
+//       console.log('✅ Serving services from cache');
+//       return res.json(groupedServices);
+//     }
+
+//     console.log('🔄 Fetching services from database');
+    
+//      groupedServices = await serviceModel.aggregate([
+//       {
+//         $match: {
+//           isActive: true,
+//           $or: [
+//             { isCategory: true },
+//             { isCategory: false }
+//           ]
+//         }
+//       },
+//       {
+//         $lookup: {
+//           from: 'services', // your collection name
+//           let: { categoryId: '$_id' },
+//           pipeline: [
+//             {
+//               $match: {
+//                 $expr: {
+//                   $and: [
+//                     { $eq: ['$isCategory', false] },
+//                     { $eq: ['$isActive', true] },
+//                     { $eq: ['$parentService', '$$categoryId'] }
+//                   ]
+//                 }
+//               }
+//             },
+//             {
+//               $project: {
+//                 name: 1,
+//                 description: 1,
+//                 duration: 1,
+//                 price: 1,
+//                 image: 1,
+//                 // include only fields you need
+//               }
+//             }
+//           ],
+//           as: 'subServices'
+//         }
+//       },
+//       {
+//         $match: {
+//           isCategory: true
+//         }
+//       },
+//       {
+//         $project: {
+//           name: 1,
+//           description: 1,
+//           image: 1,
+//           subServices: 1,
+//           // include other category fields you need
+//         }
+//       },
+//       {
+//         $sort: { name: 1 }
+//       }
+//     ]);
+
+//     cache.set(cacheKey, groupedServices);
+//     res.json(groupedServices);
+//   } catch (error) {
+//     console.error('Error fetching services:', error);
+//     res.status(500).json({ message: 'Failed to fetch services' });
+//   }
+// };
+
+export const clearServicesCache = () => {
+  cache.del('public-services');
+  console.log('🧹 Services cache cleared');
+};
+
+
+
 
 const allProviderServices = async (req, res) => {
   try {

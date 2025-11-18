@@ -83,8 +83,10 @@ serviceSchema.pre("save", function (next) {
 });
 
 // Create indexes for better performance
-serviceSchema.index({ isActive: 1 });
 serviceSchema.index({ createdAt: -1 });
+// Add these indexes to your schema
+serviceSchema.index({ isCategory: 1, isActive: 1 });
+serviceSchema.index({ parentService: 1, isCategory: 1, isActive: 1 });
 
 const serviceModel =
   mongoose.models.service || mongoose.model("Service", serviceSchema);

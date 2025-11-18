@@ -579,7 +579,7 @@ const addService = async (req, res) => {
 
     const service = new serviceModel(serviceData);
     await service.save();
-
+    
     res.status(201).json({ success: true, service });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
