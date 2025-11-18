@@ -168,8 +168,7 @@ const Appointment = () => {
       // 👇 Automatically detect user's timezone
       const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       
-      console.log('🌍 Detected user timezone:', userTimezone);
-
+  
       const queryParams = new URLSearchParams({
         serviceId: id,
         startDate,
@@ -188,7 +187,6 @@ const Appointment = () => {
 
       const data = await res.json();
       
-      console.log('✅ Received slots for timezone:', data.userTimezone);
 
       if (data.availableSlots) {
         setAvailableSlots(data.availableSlots);
@@ -312,7 +310,7 @@ const Appointment = () => {
     return;
   }
 
-  console.log("Chosen Provider:", chosenProvider);
+
 
   const token = localStorage.getItem('token');
   if (!token) {
@@ -370,7 +368,6 @@ const Appointment = () => {
       },
     };
 
-    console.log("Booking data being sent:", bookingData); // Debug log
 
     const res = await fetch(`${backendUrl}/api/appointment/book-multiple-appointment`, {
       method: "POST",
@@ -1028,48 +1025,60 @@ const Appointment = () => {
         </div>
       )}
 
-      {/* Payment Modal */}
-      {showPayment && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="text-center">
-              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                You are almost there!
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Complete payment to confirm your booking
-              </p>
+     {/* Payment Modal */}
+{showPayment && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+      <div className="text-center">
+        <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          You are almost there!
+        </h3>
+        <p className="text-gray-600 mb-6">
+          Complete payment to confirm your booking
+        </p>
 
-              <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
-                <p className="font-medium text-gray-900 mb-2">
-                  {formatDate(selectedDate)} at {selectedTime}
-                </p>
-                <div className="space-y-1 text-sm text-gray-600">
-                  {selectedServices.map((service) => (
-                    <p key={service._id}>• {service.title}</p>
-                  ))}
-                </div>
-                <div className="border-t border-gray-200 mt-3 pt-3">
-                  <div className="flex justify-between font-semibold">
-                    <span>Total:</span>
-                    <span>{formatNaira(getTotalPrice())}</span>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={handlePayment}
-                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors mb-4"
-              >
-                Pay Now - {formatNaira(getTotalPrice())}
-              </button>
-
-
+        <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
+          <p className="font-medium text-gray-900 mb-2">
+            {formatDate(selectedDate)} at {selectedTime}
+          </p>
+          <div className="space-y-1 text-sm text-gray-600">
+            {selectedServices.map((service) => (
+              <p key={service._id}>• {service.title}</p>
+            ))}
+          </div>
+          <div className="border-t border-gray-200 mt-3 pt-3">
+            {/* ✅ ADD: Show full price */}
+            <div className="flex justify-between text-sm text-gray-600 mb-1">
+              <span>Total Service Price:</span>
+              <span>{formatNaira(getTotalPrice())}</span>
             </div>
+            
+            {/* ✅ CHANGE: Show 50% deposit */}
+            <div className="flex justify-between font-semibold text-green-600">
+              <span>Deposit (50%):</span>
+              <span>{formatNaira(getTotalPrice() * 0.5)}</span>
+            </div>
+            
+            {/* ✅ ADD: Show remaining balance */}
+            {/* <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span>Remaining balance (pay after service):</span>
+              <span>{formatNaira(getTotalPrice() * 0.5)}</span>
+            </div> */}
           </div>
         </div>
-      )}
+
+        {/* ✅ CHANGE: Button shows deposit amount */}
+        <button
+          onClick={handlePayment}
+          className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors mb-4"
+        >
+          Pay Deposit - {formatNaira(getTotalPrice() * 0.5)}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { useState, useEffect, useContext } from 'react';
-import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Loader2, Loader } from 'lucide-react';
 import ServiceCard from '../components/ServiceCard';
 import { AppContext } from '../context/AppContext';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -49,8 +49,10 @@ const Services = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-600" />
+        <Loader
+         className="w-8 h-8 animate-spin text-pink-600" />
       </div>
+      
     );
   }
 
@@ -88,7 +90,7 @@ const Services = () => {
         <div className="space-y-10">
           {services.map((category) => {
             const filteredSubServices = category.subServices?.filter((service) =>
-              service.title.toLowerCase().includes(searchQuery.toLowerCase())
+              service.title?.includes(searchQuery.toLowerCase())
             ) || [];
 
             if (filteredSubServices.length === 0) return null;

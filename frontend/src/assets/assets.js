@@ -10,6 +10,10 @@ import extension1 from "./extension1.jpg";
 import extension from "./extension.jpg";
 import makeup1 from "./makeup1.jpg";
 import butterfly from './butterfly.jpeg'
+import back2 from './back2.jpg'
+import back4 from './back4.jpg'
+import backdark from './backdark.jpg'
+import single from './single.jpg'
 import crotchet from './crotchet.jpeg'
 import stitches from './stitches.jpeg'
 import twist from './twist.jpeg'
@@ -94,7 +98,11 @@ export const assets = {
   crotchet,
   stitches,
   Corn,
-  knotless
+  knotless,
+  back2,
+  back4,
+  backdark,
+  single,
 };
 
 const braidingServices = [
