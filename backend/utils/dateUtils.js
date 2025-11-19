@@ -1,7 +1,7 @@
 import { format, parse, addMinutes, addDays, isAfter, isBefore, setHours, setMinutes } from 'date-fns';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 
-// Your business timezone (Canada - adjust to specific timezone)
+
 const BUSINESS_TIMEZONE = 'America/St_Johns';
 // const BUSINESS_TIMEZONE = 'America/Toronto';
 // const BUSINESS_TIMEZONE = 'Africa/Lagos';
