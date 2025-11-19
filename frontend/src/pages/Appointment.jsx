@@ -27,13 +27,14 @@ import {
   MessageSquare,
   Loader2
 } from "lucide-react";
+import { formatLocalDate, getTodayString } from "../utils/date";
 
 const Appointment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { userData } = useContext(AppContext);
   const { formatNaira, backendUrl } = useContext(ShopContext);
-// const  backendUrl = "http://localhost:3000"
+
   // State management
   const [serviceInfo, setServiceInfo] = useState(null);
   const [allServices, setAllServices] = useState([]);
@@ -49,7 +50,7 @@ const Appointment = () => {
   const [appointmentId, setAppointmentId] = useState("");
   const [expandedDates, setExpandedDates] = useState({});
 
-  // New enhanced state
+  // New enhan
   const [clientNotes, setClientNotes] = useState("");
   const [specialRequests, setSpecialRequests] = useState("");
   const [agreeToCancellationPolicy, setAgreeToCancellationPolicy] = useState(false);
@@ -84,9 +85,7 @@ const Appointment = () => {
   });
   const [showConsentForm, setShowConsentForm] = useState(true);
 
-  const scrollToTop = () => {
 
-  }
   // Fetch service information and all services
   useEffect(() => {
     const fetchService = async () => {
@@ -149,14 +148,17 @@ const Appointment = () => {
     return total;
   };
 
+
   useEffect(() => {
   const fetchAvailableSlots = async () => {
     if (selectedServices.length === 0) return;
 
     setIsLoading(true);
     try {
-      const startDate = new Date().toISOString().split('T')[0];
-      const endDate = new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const startDate = getTodayString();
+      const endDateObj = new Date();
+      endDateObj.setDate(endDateObj.getDate() + 25);
+      const endDate = formatLocalDate(endDateObj);
 
       const servicesForSlots = selectedServices.map(service => ({
         _id: service._id,
@@ -165,16 +167,14 @@ const Appointment = () => {
         price: service.price
       }));
 
-      // 👇 Automatically detect user's timezone
       const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      
   
       const queryParams = new URLSearchParams({
         serviceId: id,
         startDate,
         endDate,
         selectedServices: JSON.stringify(servicesForSlots),
-        timezone: userTimezone  // 👈 Automatically send timezone
+        timezone: userTimezone  
       });
 
       const res = await fetch(
@@ -186,10 +186,16 @@ const Appointment = () => {
       }
 
       const data = await res.json();
-      
 
       if (data.availableSlots) {
-        setAvailableSlots(data.availableSlots);
+        const todayStr = getTodayString();
+        
+        const filteredSlots = data.availableSlots.filter(slot => {
+          const slotDateStr = Array.isArray(slot.date) ? slot.date[0] : slot.date;
+          return slotDateStr >= todayStr;
+        });
+        
+        setAvailableSlots(filteredSlots);
       } else {
         setAvailableSlots([]);
       }
@@ -204,6 +210,78 @@ const Appointment = () => {
 
   fetchAvailableSlots();
 }, [selectedServices, id, backendUrl]);
+
+
+//   useEffect(() => {
+//   const fetchAvailableSlots = async () => {
+//     if (selectedServices.length === 0) return;
+
+//     setIsLoading(true);
+//     try {
+//       // const startDate = new Date().toISOString().split('T')[0];
+//       const endDate = new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+//       const servicesForSlots = selectedServices.map(service => ({
+//         _id: service._id,
+//         title: service.title,
+//         duration: service.duration || 90,
+//         price: service.price
+//       }));
+
+      
+//       const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  
+//       const queryParams = new URLSearchParams({
+//         serviceId: id,
+//         // startDate,
+//         endDate,
+//         selectedServices: JSON.stringify(servicesForSlots),
+//         timezone: userTimezone  
+//       });
+
+//       const res = await fetch(
+//         `${backendUrl}/api/appointment/available-slots?${queryParams.toString()}`
+//       );
+
+//       if (!res.ok) {
+//         throw new Error(`HTTP error! status: ${res.status}`);
+//       }
+
+//       const data = await res.json();
+      
+
+//       // if (data.availableSlots) {
+//       //   setAvailableSlots(data.availableSlots);
+//       // } else {
+//       //   setAvailableSlots([]);
+//       // }
+
+//       if (data.availableSlots) {
+  
+//   const today = new Date();
+//   today.setHours(0, 0, 0, 0);
+  
+//   const filteredSlots = data.availableSlots.filter(slot => {
+//     const slotDate = new Date(slot.date);
+//     slotDate.setHours(0, 0, 0, 0);
+//     return slotDate >= today;
+//   });
+  
+//   setAvailableSlots(filteredSlots);
+// } else {
+//   setAvailableSlots([]);
+// }
+//     } catch (err) {
+//       console.error('Error fetching slots:', err);
+//       toast.error("Failed to fetch available slots");
+//       setAvailableSlots([]);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   fetchAvailableSlots();
+// }, [selectedServices, id, backendUrl]);
 
   const addService = (service) => {
     const isAlreadySelected = selectedServices.some(s => s._id === service._id);
@@ -404,15 +482,19 @@ const Appointment = () => {
     setIsBooking(false);
   }
 };
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+const formatDate = (dateStr) => {
+  // ✅ FIX: Parse date in local timezone, not UTC
+  const cleanDateStr = Array.isArray(dateStr) ? dateStr[0] : dateStr;
+  const [year, month, day] = cleanDateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day); // Create local date
+  
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
 
   const formatDuration = (minutes) => {
     const hours = Math.floor(minutes / 60);
@@ -635,24 +717,36 @@ const Appointment = () => {
                       {availableSlots.map((daySlot, index) => (
                         <button
                           key={index}
-                          onClick={() => {
-                            setSelectedDate(daySlot.date);
-                            setSelectedTime("");
-                          }}
-                          className={`p-3 text-center rounded-lg border transition-all ${selectedDate === daySlot.date
-                            ? "border-pink-500 bg-pink-50 text-gray-700"
-                            : "border-gray-200 hover:border-gray-300 text-gray-700"
-                            }`}
+                        onClick={() => {
+  const dateStr = Array.isArray(daySlot.date) ? daySlot.date[0] : daySlot.date;
+  setSelectedDate(dateStr);
+  setSelectedTime("");
+}}className={`p-3 text-center rounded-lg border transition-all ${
+  // ✅ FIX: Compare correctly
+  (Array.isArray(daySlot.date) ? daySlot.date[0] : daySlot.date) === selectedDate
+    ? "border-pink-500 bg-pink-50 text-gray-700"
+    : "border-gray-200 hover:border-gray-300 text-gray-700"
+}`}
                         >
                           <div className="text-xs font-medium">
                             {daySlot.dayOfWeek.substring(0, 3)}
                           </div>
-                          <div className="text-lg font-bold mt-1">
-                            {new Date(daySlot.date).getDate()}
-                          </div>
-                          <div className="text-xs">
-                            {new Date(daySlot.date).toLocaleString('default', { month: 'short' })}
-                          </div>
+                         <div className="text-lg font-bold mt-1">
+  {/* ✅ FIX: Parse date string without timezone conversion */}
+  {(() => {
+    const dateStr = Array.isArray(daySlot.date) ? daySlot.date[0] : daySlot.date;
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return day;
+  })()}
+</div>
+<div className="text-xs">
+  {(() => {
+    const dateStr = Array.isArray(daySlot.date) ? daySlot.date[0] : daySlot.date;
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return monthNames[month - 1];
+  })()}
+</div>
                         </button>
                       ))}
                     </div>
