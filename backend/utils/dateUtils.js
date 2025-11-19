@@ -3,6 +3,7 @@ import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 
 // Your business timezone (Canada - adjust to specific timezone)
 const BUSINESS_TIMEZONE = 'America/St_Johns';
+// const BUSINESS_TIMEZONE = 'America/Toronto';
 // const BUSINESS_TIMEZONE = 'Africa/Lagos';
 // or 'America/Vancouver' 
 
@@ -171,5 +172,22 @@ export const getCurrentBusinessHour = () => {
 export const getCurrentBusinessMinute = () => {
   return getCurrentBusinessDateTime().getMinutes();
 };
-
+/**
+ * Create date range for database queries (handles timezone properly)
+ * @param {string} dateString - YYYY-MM-DD format
+ * @returns {Object} { start: Date, end: Date } for MongoDB query
+ */
+export const getDateRangeForQuery = (dateString) => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  
+  // Start of day at 00:00 in business timezone
+  const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+  const businessStart = fromZonedTime(startOfDay, BUSINESS_TIMEZONE);
+  
+  // End of day at 23:59:59 in business timezone
+  const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+  const businessEnd = fromZonedTime(endOfDay, BUSINESS_TIMEZONE);
+  
+  return { start: businessStart, end: businessEnd };
+};
 export { BUSINESS_TIMEZONE };

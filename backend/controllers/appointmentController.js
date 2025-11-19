@@ -7,6 +7,7 @@ import Stripe from 'stripe';
 import providerModel from "../models/providerModel.js";
 import dotenv from "dotenv";
 import { sendBookingEmails } from "../services/emailService.js";
+import { fromZonedTime } from 'date-fns-tz';
 import {
   getCurrentBusinessDateTime,
   parseDateInBusinessTz,
@@ -20,7 +21,8 @@ import {
   formatTimeFromDate,
   applyTimeToDate,
   getCurrentBusinessHour,
-  getCurrentBusinessMinute
+  getCurrentBusinessMinute,
+  getDateRangeForQuery
 } from '../utils/dateUtils.js';
 
 
@@ -37,14 +39,16 @@ const checkProviderAvailabilityQuick = async (providerId, date, time, duration, 
   const provider = await providerModel.findById(providerId);
   if (!provider) return false;
 
-  const dayOfWeek = date.getDay();
+  // const dayOfWeek = date.getDay();
+  const dayOfWeek = getBusinessDayOfWeek(date);
   const providerDay = workingHours.find(wh => wh.dayOfWeek === dayOfWeek && wh.isWorking);
   if (!providerDay) return false;
 
   // Pre-fetch appointments for this specific check
+  const dateStr = formatDateForDisplay(date);
   const existingAppointments = await appointmentModel.find({
     providerId,
-    date: date.toISOString().split('T')[0],
+    date: dateStr,
     status: { $in: ['pending', 'confirmed'] }
   }).select('time totalDuration duration').lean();
 
@@ -225,8 +229,11 @@ const dateStr = formatDateForDisplay(date);
 
 
 const findBestAvailableSlotsForDate = async (date, totalDuration, providers, currentTime, isToday) => {
-  const dateStr = date.toISOString().split('T')[0];
-  const dayOfWeek = date.getDay();
+  // const dateStr = date.toISOString().split('T')[0];
+  // const dayOfWeek = date.getDay();
+
+  const dateStr = formatDateForDisplay(date);
+  const dayOfWeek = getBusinessDayOfWeek(date);
   
 
   // Handle very long services (10+ hours) - Multi-day scheduling
@@ -545,10 +552,15 @@ const checkConsecutiveDaysAvailability = async (providerId, startDate, daysNeede
     }
 
     // Check for existing appointments
-    const dateStr = checkDate.toISOString().split('T')[0];
+    // const dateStr = checkDate.toISOString().split('T')[0];
+    const dateStr = formatDateForDisplay(checkDate);
+    const dateRange = getDateRangeForQuery(dateStr)
     const existingAppointments = await appointmentModel.find({
       providerId,
-      date: dateStr,
+     date: {
+        $gte: dateRange.start,
+        $lte: dateRange.end
+      },
       status: { $in: ['pending', 'confirmed'] }
     });
 
