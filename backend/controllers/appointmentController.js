@@ -7,6 +7,23 @@ import Stripe from 'stripe';
 import providerModel from "../models/providerModel.js";
 import dotenv from "dotenv";
 import { sendBookingEmails } from "../services/emailService.js";
+import {
+  getCurrentBusinessDateTime,
+  parseDateInBusinessTz,
+  formatDateForDisplay,
+  createBusinessDateTime,
+  getBusinessDayOfWeek,
+  isBusinessToday,
+  addMinutesToDateTime,
+  addDaysToDate,
+  compareDateTimes,
+  formatTimeFromDate,
+  applyTimeToDate,
+  getCurrentBusinessHour,
+  getCurrentBusinessMinute
+} from '../utils/dateUtils.js';
+
+
 dotenv.config();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -129,11 +146,12 @@ const getAvailableSlots = async (req, res) => {
 
 //  Generate unique slots with parallel processing
 const generateUniqueAvailableSlots = async (start, end, totalDuration, providers) => {
-  const now = new Date();
+  // const now = new Date();
+  const now = getCurrentBusinessDateTime();
   const dateRange = [];
   
   // Generate date range array first
-  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1 )) {
     dateRange.push(new Date(d));
   }
 
@@ -145,8 +163,10 @@ const generateUniqueAvailableSlots = async (start, end, totalDuration, providers
     const batch = dateRange.slice(i, i + batchSize);
 const batchPromises = batch.map(date => {
   // ✅ Calculate isToday once per date in UTC
-  const dateStr = date.toISOString().split('T')[0];
-  const todayStr = now.toISOString().split('T')[0];
+  // const dateStr = date.toISOString().split('T')[0];
+  const dateStr = formatDateForDisplay(date);
+  // const todayStr = now.toISOString().split('T')[0];
+  const todayStr = formatDateForDisplay(now);
   const isToday = dateStr === todayStr;
   
   return processDate(date, totalDuration, providers, now, isToday);
@@ -161,8 +181,11 @@ const batchPromises = batch.map(date => {
 
 // Helper function to process individual date
 const processDate = async (date, totalDuration, providers, currentTime, isToday) => {
-  const dateStr = date.toISOString().split('T')[0];
-  const dayOfWeek = date.getDay();
+  // const dateStr = date.toISOString().split('T');
+  // const dayOfWeek = date.getDay();
+const dateStr = formatDateForDisplay(date);
+  const dayOfWeek = getBusinessDayOfWeek(date);
+
   const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek];
 
   // Skip processing if no providers work on this day
@@ -273,9 +296,10 @@ const findBestAvailableSlotsForDate = async (date, totalDuration, providers, cur
   return availableSlots;
 };
 
-// Generate time slots based on provider working hours
+// Find this section (around line 350-365):
 const generateOptimizedTimeSlots = (date, duration, providers, isToday, currentTime) => {
-  const dayOfWeek = date.getDay();
+  // const dayOfWeek = date.getDay();
+  const dayOfWeek = getBusinessDayOfWeek(date);
   const slots = [];
 
   // Get common working hours across all providers
@@ -295,24 +319,48 @@ const generateOptimizedTimeSlots = (date, duration, providers, isToday, currentT
 
   
   if (isToday) {
-    const currentHour = currentTime.getHours();
-    const currentMinute = currentTime.getMinutes();
-    earliestStart = Math.max(earliestStart, currentHour + (currentMinute > 30 ? 2 : 1));
+    // const currentHour = currentTime.getHours();
+    const currentHour = getCurrentBusinessHour();
+    // const currentMinute = currentTime.getMinutes();
+    const currentMinute = getCurrentBusinessMinute();
+    
+    // If it's past :30, skip to next hour + 1
+
+    if (currentMinute > 30) {
+      earliestStart = Math.max(earliestStart, currentHour + 2);
+    } else if (currentMinute > 0) {
+      // If it's between :01-:30, skip to next hour
+      earliestStart = Math.max(earliestStart, currentHour + 1);
+    } else {
+      // If it's exactly on the hour, still need buffer
+      earliestStart = Math.max(earliestStart, currentHour + 1);
+    }
   }
 
   // Generate slots within common working hours
   for (let hour = earliestStart; hour <= latestEnd - Math.ceil(duration/60); hour++) {
-    for (let minute = 0; minute < 60; minute += 30) { // Only :00 and :30 slots
+    for (let minute = 0; minute < 60; minute += 30) {
       const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
       
       // Calculate end time
-      const endTime = new Date(date);
-      endTime.setHours(hour, minute, 0, 0);
-      endTime.setMinutes(endTime.getMinutes() + duration);
+      // const endTime = new Date(date);
+      // endTime.setHours(hour, minute, 0, 0);
+      // endTime.setMinutes(endTime.getMinutes() + duration);
+
+      const endTime = applyTimeToDate(date, timeStr);
+      const endTimeWithDuration = addMinutesToDateTime(endTime, duration);
       
       // Ensure service ends by 10 PM (22:00)
-      if (endTime.getHours() <= 22) {
-        const endTimeStr = `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
+      // if (endTimeWithDuration.getHours() <= 22) {
+      //   const endTimeStr = `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
+        
+      //   slots.push({
+      //     time: timeStr,
+      //     endTime: endTimeStr
+      //   });
+      // }
+        if (endTimeWithDuration.getHours() <= 22) {
+        const endTimeStr = formatTimeFromDate(endTimeWithDuration); 
         
         slots.push({
           time: timeStr,
@@ -338,7 +386,7 @@ const findAvailableProviderForSlot = async (providers, date, timeSlot, duration,
     if (isAvailable) {
       return {
         time: timeSlot.time,
-        available: true, // 🚨 Explicitly mark as available
+        available: true, 
         duration: duration,
         providerId: provider._id,
         providerName: provider.name,
@@ -606,7 +654,8 @@ const bookMultipleAppointment = async (req, res) => {
     const providerData = await providerModel.findById(providerId);
 
     // Create appointment date object
-    const appointmentDate = new Date(date);
+    // const appointmentDate = new Date(date);
+    const appointmentDate = createBusinessDateTime(date, time);
     const [hour, minute] = time.split(':').map(Number);
     appointmentDate.setHours(hour, minute, 0, 0);
 
