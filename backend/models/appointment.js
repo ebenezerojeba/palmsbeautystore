@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import { BUSINESS_TIMEZONE } from "../utils/dateUtils.js";
+import { fromZonedTime } from "date-fns-tz";
 
 // Service within appointment schema
 const appointmentServiceSchema = new mongoose.Schema({
@@ -22,23 +24,29 @@ const appointmentSchema = new mongoose.Schema({
   serviceId: { type: String }, // Keep for existing single service appointments
   serviceTitle: { type: String }, // Keep for existing single service appointments
 
-  // Appointment Details
- // IMPORTANT: Store date and time separately
-  date: {
+ date: {
     type: Date,
     required: true,
-    // This will store just the date part (YYYY-MM-DD)
     set: function(value) {
       if (typeof value === 'string') {
-        // If it's a string like "2025-08-15", convert to proper Date
-        const dateOnly = new Date(value);
-        dateOnly.setHours(0, 0, 0, 0);
-        return dateOnly;
+        // Parse "2024-11-18" as a date in business timezone
+        const [year, month, day] = value.split('-').map(Number);
+        // Create date at noon to avoid midnight boundary issues
+        const localDate = new Date(year, month - 1, day, 12, 0, 0, 0);
+        // Convert to UTC while preserving the calendar date
+        return fromZonedTime(localDate, BUSINESS_TIMEZONE);
       }
       if (value instanceof Date) {
         const dateOnly = new Date(value);
-        dateOnly.setHours(0, 0, 0, 0);
+        dateOnly.setHours(12, 0, 0, 0);
         return dateOnly;
+      }
+      return value;
+    },
+    get: function(value) {
+      // When reading, convert back to business timezone
+      if (value) {
+        return toZonedTime(value, BUSINESS_TIMEZONE);
       }
       return value;
     }
