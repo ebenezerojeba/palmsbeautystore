@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { BUSINESS_TIMEZONE } from "../utils/dateUtils.js";
-import { fromZonedTime } from "date-fns-tz";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
 
 // Service within appointment schema
 const appointmentServiceSchema = new mongoose.Schema({
@@ -20,39 +20,16 @@ const appointmentSchema = new mongoose.Schema({
   // Services - Updated to support multiple services
   services: [appointmentServiceSchema], // Array of services
 
-  // For backward compatibility with single service appointments
-  serviceId: { type: String }, // Keep for existing single service appointments
-  serviceTitle: { type: String }, // Keep for existing single service appointments
+  serviceId: { type: String },
+  serviceTitle: { type: String }, 
 
  date: {
-    type: Date,
+    type: String,  // Changed from Date to String - stores "YYYY-MM-DD"
     required: true,
-    set: function(value) {
-      if (typeof value === 'string') {
-        // Parse "2024-11-18" as a date in business timezone
-        const [year, month, day] = value.split('-').map(Number);
-        // Create date at noon to avoid midnight boundary issues
-        const localDate = new Date(year, month - 1, day, 12, 0, 0, 0);
-        // Convert to UTC while preserving the calendar date
-        return fromZonedTime(localDate, BUSINESS_TIMEZONE);
-      }
-      if (value instanceof Date) {
-        const dateOnly = new Date(value);
-        dateOnly.setHours(12, 0, 0, 0);
-        return dateOnly;
-      }
-      return value;
-    },
-    get: function(value) {
-      // When reading, convert back to business timezone
-      if (value) {
-        return toZonedTime(value, BUSINESS_TIMEZONE);
-      }
-      return value;
-    }
+    index: true
   },
   
-  // Store time as string in HH:MM format
+  //  HH:MM format
   time: {
     type: String,
     required: true,
@@ -201,15 +178,31 @@ appointmentSchema.index({ date: 1, status: 1 });
 appointmentSchema.index({ providerId: 1, date: 1, status: 1 });
 appointmentSchema.index({ date: 1, time: 1, status: 1 });
 
-// Virtual for appointment end time
-appointmentSchema.virtual('endTime').get(function() {
-  const [hours, minutes] = this.time.split(':').map(Number);
-  const startDate = new Date(this.date);
-  startDate.setHours(hours, minutes);
-  const totalDuration = this.totalDuration || parseInt(this.duration) || 90;
-  const endDate = new Date(startDate.getTime() + totalDuration * 60000);
-  return endDate.toTimeString().slice(0, 5);
+// Virtual to get full datetime (useful for sorting/display)
+appointmentSchema.virtual('dateTime').get(function() {
+  if (this.date && this.time) {
+    return `${this.date}T${this.time}:00`;
+  }
+  return null;
 });
+
+// Helper method to check if appointment is in the past
+appointmentSchema.methods.isPast = function() {
+  const now = new Date();
+  const [year, month, day] = this.date.split('-').map(Number);
+  const [hour, minute] = this.time.split(':').map(Number);
+  const appointmentDate = new Date(year, month - 1, day, hour, minute);
+  return appointmentDate < now;
+};
+
+// Helper method to get appointment end time
+appointmentSchema.methods.getEndTime = function() {
+  const [hour, minute] = this.time.split(':').map(Number);
+  const totalMinutes = hour * 60 + minute + (this.totalDuration || 90);
+  const endHour = Math.floor(totalMinutes / 60);
+  const endMinute = totalMinutes % 60;
+  return `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+};
 
 const appointmentModel = mongoose.models.appointment || 
   mongoose.model("appointment", appointmentSchema);

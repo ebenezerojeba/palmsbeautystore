@@ -1,9 +1,430 @@
 import appointmentModel from "../models/appointment.js";
+import providerModel from "../models/providerModel.js";
 import serviceModel from "../models/serviceModel.js";
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
 import path from 'path';
+import multer from 'multer';
+import csv from 'csv-parser';
+// import fs from 'fs';
+import { Readable } from 'stream';
+import userModel from "../models/userModel.js";
+import mongoose from "mongoose";
+
+// Configure multer for file upload
+const storage = multer.memoryStorage();
+const VagaroUpload = multer({ 
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'text/csv' || file.mimetype === 'text/tab-separated-values' || file.originalname.endsWith('.csv') || file.originalname.endsWith('.tsv')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only CSV/TSV files are allowed'), false);
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  }
+});
+
+// Helper functions
+const parseDate = (dateStr) => {
+  const parts = dateStr.split('/');
+  if (parts.length === 3) {
+    const [month, day, year] = parts;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  
+  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    return dateStr;
+  }
+  
+  const date = new Date(dateStr);
+  if (!isNaN(date.getTime())) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  
+  throw new Error(`Unable to parse date: ${dateStr}`);
+};
+
+const parseVagaroDateTime = (datetimeStr) => {
+  // Parse Vagaro format: "15.12.2025 14:00 UTC" or similar
+  if (!datetimeStr) throw new Error('Empty datetime string');
+  
+  // Remove UTC and extra info
+  const cleaned = datetimeStr.replace(/UTC.*$/i, '').trim();
+  
+  // Try parsing as ISO date
+  const date = new Date(cleaned);
+  if (!isNaN(date.getTime())) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return {
+      date: `${year}-${month}-${day}`,
+      time: `${hours}:${minutes}`
+    };
+  }
+  
+  // Try DD.MM.YYYY HH:MM format
+  const ddmmyyyyMatch = cleaned.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2})/);
+  if (ddmmyyyyMatch) {
+    const [, day, month, year, hours, minutes] = ddmmyyyyMatch;
+    return {
+      date: `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`,
+      time: `${hours.padStart(2, '0')}:${minutes}`
+    };
+  }
+  
+  throw new Error(`Unable to parse datetime: ${datetimeStr}`);
+};
+
+const parseTime = (timeStr) => {
+  timeStr = timeStr.trim();
+  
+  const ampmMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (ampmMatch) {
+    let hours = parseInt(ampmMatch[1]);
+    const minutes = ampmMatch[2];
+    const period = ampmMatch[3].toUpperCase();
+    
+    if (period === 'PM' && hours !== 12) {
+      hours += 12;
+    } else if (period === 'AM' && hours === 12) {
+      hours = 0;
+    }
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes}`;
+  }
+  
+  const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})/);
+  if (timeMatch) {
+    const hours = timeMatch[1].padStart(2, '0');
+    const minutes = timeMatch[2];
+    return `${hours}:${minutes}`;
+  }
+  
+  throw new Error(`Unable to parse time: ${timeStr}`);
+};
+
+const formatPhone = (phone) => {
+  if (!phone) return '';
+  const cleaned = phone.replace(/\D/g, '');
+  if (cleaned.length === 10) {
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+  }
+  return phone;
+};
+
+const findOrCreateUser = async (name, email, phone) => {
+  if (email) {
+    let user = await userModel.findOne({ email: email.toLowerCase().trim() });
+    if (user) return user;
+  }
+  
+  if (phone) {
+    const formattedPhone = formatPhone(phone);
+    let user = await userModel.findOne({ phone: formattedPhone });
+    if (user) return user;
+  }
+  
+  try {
+    const newUser = await userModel.create({
+      name: name || 'Imported Client',
+      email: email?.toLowerCase().trim() || `imported_${Date.now()}_${Math.random().toString(36).slice(2)}@temp.com`,
+      phone: formatPhone(phone) || '',
+      password: Math.random().toString(36).slice(-8),
+      isImported: true,
+    });
+    return newUser;
+  } catch (error) {
+    console.error(`Error creating user for ${name}:`, error.message);
+    return null;
+  }
+};
+
+const getServiceInfo = async (serviceName) => {
+  if (!serviceName) return null;
+  const service = await serviceModel.findOne({
+    title: new RegExp(`^${serviceName}$`, 'i'),
+  });
+  return service;
+};
+
+const getProviderInfo = async (providerName) => {
+  if (!providerName) return null;
+  const provider = await providerModel.findOne({
+    name: new RegExp(`^${providerName}$`, 'i'),
+    isActive: true,
+  });
+  return provider;
+};
+
+// Main import function
+const importVagaroAppointments = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded',
+      });
+    }
+
+    console.log('📥 Starting Vagaro import from uploaded file...');
+
+    const results = [];
+    const errors = [];
+    let rowIndex = 0;
+
+    // Create readable stream from buffer
+    const bufferStream = new Readable();
+    bufferStream.push(req.file.buffer);
+    bufferStream.push(null);
+
+    // Parse CSV/TSV with error handling
+    try {
+      await new Promise((resolve, reject) => {
+        // Detect delimiter by reading first line
+        const firstChunk = req.file.buffer.toString('utf8', 0, 500);
+        const delimiter = firstChunk.includes('\t') ? '\t' : ',';
+        
+        console.log(`📄 Detected delimiter: ${delimiter === '\t' ? 'TAB (TSV)' : 'COMMA (CSV)'}`);
+        
+        const parser = bufferStream.pipe(csv({ separator: delimiter }));
+        
+        parser.on('data', (row) => {
+          results.push({ row, index: rowIndex++ });
+        });
+        
+        parser.on('end', () => {
+          console.log(`✅ CSV parsed successfully: ${results.length} rows`);
+          resolve();
+        });
+        
+        parser.on('error', (err) => {
+          console.error('❌ CSV parsing error:', err);
+          reject(new Error('Failed to parse CSV file: ' + err.message));
+        });
+      });
+    } catch (parseError) {
+      console.error('Parse error:', parseError);
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid CSV file format',
+        error: parseError.message,
+      });
+    }
+
+    if (results.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'CSV file is empty or invalid',
+      });
+    }
+
+    console.log(`📋 Processing ${results.length} appointments...`);
+
+    let imported = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    // Process each row with better error handling
+    for (const { row, index } of results) {
+      try {
+        // Log the first row to see actual column names
+        if (index === 0) {
+          console.log('📋 CSV Columns found:', Object.keys(row));
+        }
+
+        // Extract data - case insensitive and trimmed column matching
+        const getColumn = (row, ...possibleNames) => {
+          for (const name of possibleNames) {
+            const key = Object.keys(row).find(k => 
+              k.toLowerCase().trim() === name.toLowerCase().trim()
+            );
+            if (key && row[key]) return row[key].trim();
+          }
+          return null;
+        };
+
+        // Vagaro export column mappings
+        const titleField = getColumn(row, 'Title', 'Service', 'Service Name', 'Treatment');
+        const additionalTitle = getColumn(row, 'Additional Title', 'Client Name', 'Customer Name', 'Name');
+        const startTime = getColumn(row, 'Given planned earliest start', 'Start', 'Start Time', 'Date/Time');
+        const endTime = getColumn(row, 'Given planned earliest end', 'End', 'End Time');
+        const notes = getColumn(row, 'Notes', 'Client Notes', 'Comments', 'Special Instructions') || '';
+        const assignedResources = getColumn(row, 'Assigned Resources', 'Provider', 'Staff', 'Therapist');
+        
+        // Try to extract client name from title or additional title
+        const clientName = additionalTitle || titleField?.split('-')[0]?.trim() || 'Imported Client';
+        const serviceName = titleField || 'Imported Service';
+        const providerName = assignedResources;
+
+        // We don't have email/phone from this export format
+        const clientEmail = null;
+        const clientPhone = null;
+
+        // Validation
+        if (!startTime) {
+          console.log(`⚠️ Row ${index + 1}: Missing start time`);
+          skipped++;
+          errors.push({
+            row: index + 1,
+            error: 'Missing start time',
+            client: clientName || 'Unknown',
+          });
+          continue;
+        }
+
+// Parse date and time from Vagaro format
+let appointmentDate, appointmentTime;
+let duration = 90; // default
+let price = 0; // No price info in this export format
+
+try {
+  const startParsed = parseVagaroDateTime(startTime);
+  appointmentDate = startParsed.date;  // ✅ This should already be "YYYY-MM-DD" format
+  appointmentTime = startParsed.time;
+  
+  console.log(`📅 Row ${index + 1}: Parsed date as ${appointmentDate} at ${appointmentTime}`);
+  
+  // Calculate duration if we have end time
+  if (endTime) {
+    try {
+      const endParsed = parseVagaroDateTime(endTime);
+      const start = new Date(startParsed.date + ' ' + startParsed.time);
+      const end = new Date(endParsed.date + ' ' + endParsed.time);
+      duration = Math.round((end - start) / 60000); // milliseconds to minutes
+      if (duration <= 0) duration = 90; // fallback to default
+    } catch (endParseError) {
+      console.log(`⚠️ Row ${index + 1}: Could not parse end time, using default duration`);
+    }
+  }
+} catch (dateError) {
+  console.log(`⚠️ Row ${index + 1}: Date/Time parsing error: ${dateError.message}`);
+  failed++;
+  errors.push({
+    row: index + 1,
+    error: `Invalid date/time format: ${dateError.message}`,
+    client: clientName,
+  });
+  continue;
+}
+
+// ✅ CRITICAL: Check for duplicates AFTER we have the correct date format
+const existingAppointment = await appointmentModel.findOne({
+  date: appointmentDate,  // Now this is guaranteed to be "YYYY-MM-DD" format
+  time: appointmentTime,
+  userName: clientName,
+});
+
+if (existingAppointment) {
+  console.log(`⏭️ Row ${index + 1}: Duplicate found - ${clientName} on ${appointmentDate} at ${appointmentTime}`);
+  skipped++;
+  continue;
+}
+
+        // Create appointment
+        await appointmentModel.create({
+          userId: user._id,
+          providerId: provider._id,
+          providerName: provider.name,
+
+          services: [{
+            serviceId: service?._id || new mongoose.Types.ObjectId(),
+            serviceTitle: serviceName,
+            duration: duration,
+            price: price,
+            order: 1,
+          }],
+          serviceId: service?._id || new mongoose.Types.ObjectId(),
+          serviceTitle: serviceName,
+
+          userName: clientName,
+          userEmail: clientEmail || user.email,
+          userPhone: formatPhone(clientPhone) || user.phone || '',
+
+          date: appointmentDate,
+          time: appointmentTime,
+          totalDuration: duration,
+
+          clientNotes: notes,
+
+          status: 'confirmed',
+          isLongDuration: duration > 480,
+          isMultiDay: duration >= 600,
+
+          payment: {
+            status: 'paid',
+            amount: price,
+            currency: 'CAD',
+            paymentMethod: 'vagaro_import',
+            paymentDate: new Date(),
+          },
+
+          bookedAt: new Date(),
+          confirmedAt: new Date(),
+          createdBy: 'vagaro_import',
+          importedFrom: 'vagaro',
+          importedAt: new Date(),
+        });
+
+        imported++;
+        console.log(`✅ Row ${index + 1}: Appointment created for ${clientName}`);
+
+      } catch (error) {
+        console.error(`❌ Error processing row ${index + 1}:`, error.message);
+        failed++;
+        errors.push({
+          row: index + 1,
+          error: error.message,
+          client: row['Title'] || row['Additional Title'] || 'Unknown',
+        });
+      }
+    }
+
+    console.log(`📊 Import complete: ${imported} imported, ${skipped} skipped, ${failed} failed`);
+
+    // IMPORTANT: Set proper headers before sending response
+    res.setHeader('Content-Type', 'application/json');
+
+    // Return complete response
+    return res.status(200).json({
+      success: true,
+      message: 'Import completed successfully',
+      imported,
+      skipped,
+      failed,
+      total: results.length,
+      errors: errors.slice(0, 10), // Return first 10 errors
+    });
+
+  } catch (error) {
+    console.error('❌ Critical import error:', error);
+    
+    // Ensure we always return valid JSON
+    res.setHeader('Content-Type', 'application/json');
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Import failed',
+      error: error.message,
+      imported: 0,
+      skipped: 0,
+      failed: 0,
+      total: 0,
+    });
+  }
+};
+
+
 
 const adminLogin = async (req, res) => {
   try {
@@ -25,7 +446,6 @@ const adminLogin = async (req, res) => {
     res.json({ success: false, message: error.message });
   }
 };
-
 
 // API to get dashboard data for admin panel
 const adminDashboard = async (req, res) => {
@@ -99,7 +519,6 @@ const getAllAppointment = async (req, res) => {
     res.json({ success: false, message: error.message });
   }
 };
-
 // Complete appointment
 const completeAppointment = async (req, res) => {
   try {
@@ -128,7 +547,6 @@ const completeAppointment = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to complete appointment" });
   }
 };
-
 // Confirm appointment
 const confirmAppointment = async (req, res) => {
   try {
@@ -158,34 +576,28 @@ const confirmAppointment = async (req, res) => {
   }
 };
 
-
 // Example route setup for admin
 // Admin route (for adm// Updated Admin Cancel Appointment Backend Function
 const cancelAppointment = async (req, res) => {
   try {
-    const { appointmentId, reason, cancelledBy = "provider" } = req.body;
-
-    // Validate input
-    if (!appointmentId || !reason) {
+    const { appointmentId, cancelledBy, reason } = req.body;
+    
+    // Validate required fields
+    if (!appointmentId || !cancelledBy || !reason) {
       return res.status(400).json({
         success: false,
-        message: "Appointment ID and reason are required"
+        message: "Missing required fields"
       });
     }
 
     // Fetch the appointment
     const appointment = await appointmentModel.findById(appointmentId);
-
-    // Check if appointment exists
     if (!appointment) {
       return res.status(404).json({
         success: false,
         message: "Appointment not found"
       });
     }
-
-    // For admin cancellation, we don't need to check if the admin owns the appointment
-    // But we should verify the admin is authenticated (handled by middleware)
 
     // Prevent duplicate cancellations
     if (appointment.status === 'cancelled') {
@@ -244,9 +656,6 @@ const cancelAppointment = async (req, res) => {
     });
   }
 };
-
-
-
 
 // Mark appointment as no-show
 const markNoShow = async (req, res) => {
@@ -723,6 +1132,217 @@ const deleteServiceImage = async (req, res) => {
     res.status(500).json({ success: false, error: "Failed to delete image" });
   }
 };
+// Admin create appointment (no payment required)
+const createAppointmentByAdmin = async (req, res) => {
+  try {
+    const {
+      services,
+      date,
+      time,
+      providerId,
+      userName,
+      userEmail,
+      userPhone,
+      clientNotes,
+      paymentStatus = "pending",
+      paymentAmount,
+      consentForm = {}
+    } = req.body;
+
+    // Validation
+    if (!services || !Array.isArray(services) || services.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "At least one service is required" 
+      });
+    }
+
+    if (!date || !time) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Date and time are required" 
+      });
+    }
+
+    if (!providerId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Provider is required" 
+      });
+    }
+
+    if (!userName || !userEmail) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Customer name and email are required" 
+      });
+    }
+
+    // Validate provider
+    const provider = await providerModel.findById(providerId);
+    if (!provider || !provider.isActive) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Provider not available" 
+      });
+    }
+
+    // Use your existing date utility functions for consistency
+    const dateObj = parseDateInBusinessTz(date);
+    const dateStr = formatDateForDisplay(dateObj);
+
+    // Calculate totals using your existing function
+    const { calculatedDuration, calculatedAmount, processedServices } = 
+      calculateServiceTotals(services);
+
+    // ✅ Use your robust conflict detection (same as regular booking)
+    const existingAppointments = await appointmentModel
+      .find({
+        providerId,
+        date: dateStr,
+        status: { $in: ["pending", "confirmed"] },
+      })
+      .lean();
+
+    // Check for conflicts using your existing function
+    for (const apt of existingAppointments) {
+      const aptDuration = apt.totalDuration || apt.duration || 90;
+      
+      if (hasTimeConflictStrict(time, calculatedDuration, apt.time, aptDuration)) {
+        return res.status(409).json({
+          success: false,
+          message: "This time slot conflicts with an existing appointment.",
+          conflictingTime: apt.time,
+          existingAppointment: {
+            time: apt.time,
+            duration: aptDuration,
+            client: apt.userName
+          }
+        });
+      }
+    }
+
+    // ✅ Check provider availability using your existing function
+    const availability = await checkRealTimeAvailability(
+      dateStr,
+      time,
+      calculatedDuration,
+      providerId
+    );
+
+    if (!availability.available) {
+      return res.status(409).json({
+        success: false,
+        message: "Time slot not available",
+        suggestedSlots: availability.suggestedSlots || []
+      });
+    }
+
+    // Create appointment
+    const newAppointment = await appointmentModel.create({
+      // Required fields from your schema
+      userId: "admin-created", // or generate a temp user ID
+      providerId: providerId,
+      providerName: provider.name,
+      
+      // Services
+      services: processedServices,
+      serviceId: processedServices[0].serviceId,
+      serviceTitle: processedServices.length > 1 
+        ? `${processedServices[0].serviceTitle} + ${processedServices.length - 1} more`
+        : processedServices[0].serviceTitle,
+      
+      // Client information
+      userName: userName,
+      userEmail: userEmail,
+      userPhone: userPhone || "",
+      
+      // Appointment timing
+      date: dateStr, // Store as "YYYY-MM-DD" string (consistent with your schema)
+      time: time,
+      totalDuration: calculatedDuration,
+      
+      // Client notes and consent
+      clientNotes: clientNotes || "",
+      consentForm: {
+        healthConditions: consentForm.healthConditions || "",
+        allergies: consentForm.allergies || "",
+        consentToTreatment: true, // Admin bookings assume consent
+        submittedAt: new Date(),
+      },
+      
+      // Status and flags
+      status: "confirmed",
+      isLongDuration: calculatedDuration > 480,
+      isMultiDay: calculatedDuration >= 600,
+      
+      // Timestamps
+      bookedAt: new Date(),
+      confirmedAt: new Date(),
+      
+      // Payment information
+      payment: {
+        status: paymentStatus,
+        amount: paymentAmount || calculatedAmount,
+        currency: "CAD",
+        paymentDate: paymentStatus === "paid" ? new Date() : null,
+        paymentMethod: paymentStatus === "paid" ? "admin_cash" : null,
+      },
+      
+      // Admin tracking
+      createdBy: "admin",
+    });
+
+    console.log("✅ Admin appointment created successfully:", {
+      id: newAppointment._id,
+      date: newAppointment.date,
+      time: newAppointment.time,
+      provider: newAppointment.providerName,
+      client: newAppointment.userName
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Appointment created successfully",
+      appointment: {
+        _id: newAppointment._id,
+        date: newAppointment.date,
+        time: newAppointment.time,
+        status: newAppointment.status,
+        providerName: newAppointment.providerName,
+        userName: newAppointment.userName,
+        services: newAppointment.services,
+        totalDuration: newAppointment.totalDuration,
+        payment: newAppointment.payment
+      },
+    });
+
+  } catch (error) {
+    console.error("❌ Error creating appointment by admin:", error);
+    
+    // Handle specific error types
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: Object.values(error.errors).map(e => e.message)
+      });
+    }
+    
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "Duplicate appointment detected"
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create appointment",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
 
 export {
   adminLogin,
@@ -745,4 +1365,7 @@ export {
   addCategory,
   updateCategory,
   deleteCategory,
+  createAppointmentByAdmin,
+  importVagaroAppointments,
+  VagaroUpload
 };

@@ -70,7 +70,32 @@ const providerSchema = new mongoose.Schema({
   rating: {
     average: { type: Number, default: 0, min: 0, max: 5 },
     count: { type: Number, default: 0 }
-  }
+  },
+
+    // New field for specific date overrides
+  dateOverrides: [{
+    date: {
+      type: String, // Format: "YYYY-MM-DD"
+      required: true
+    },
+    isClosed: {
+      type: Boolean,
+      default: false // If true, entire day is blocked
+    },
+    customHours: {
+      startTime: String, // e.g., "09:00"
+      endTime: String,   // e.g., "17:00"
+    },
+    blockedTimeSlots: [{
+      startTime: String, // e.g., "10:00"
+      endTime: String,   // e.g., "12:00"
+      reason: String     // Optional: "Lunch break", "Meeting", etc.
+    }],
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
 }, {
   timestamps: true
 });

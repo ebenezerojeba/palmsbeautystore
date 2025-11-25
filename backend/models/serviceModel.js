@@ -11,13 +11,19 @@ const serviceSchema = new mongoose.Schema({
     trim: true,
   },
   duration: {
-    type: String,
-    trim: true,
+    type: Number,
   },
   price: {
-    type: String,
-    trim: true,
+    type: Number,
   },
+  // duration: {
+  //   type: String,
+  //   trim: true,
+  // },
+  // price: {
+  //   type: String,
+  //   trim: true,
+  // },
   image: {
     type: String,
     default: null,
