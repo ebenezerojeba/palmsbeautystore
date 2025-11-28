@@ -15,6 +15,35 @@ export const getCurrentBusinessDateTime = () => {
 };
 
 /**
+ * Get current date in business timezone as YYYY-MM-DD string
+ */
+export const getCurrentBusinessDate = () => {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: BUSINESS_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+}
+
+//  * Validate date string format
+//  */
+export const isValidDateString = (dateStr) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+  
+  const date = new Date(dateStr + 'T12:00:00'); // Noon to avoid timezone issues
+  return !isNaN(date.getTime());
+};
+
+/**
+ * Validate time string format
+ */
+export const isValidTimeString = (timeStr) => {
+  return /^([01]\d|2[0-3]):([0-5]\d)$/.test(timeStr);
+};
+
+/**
  * Convert a date string to business timezone date object
  * @param {string} dateString - Date in YYYY-MM-DD format
  * @returns {Date} Date object in business timezone

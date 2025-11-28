@@ -8,7 +8,6 @@ import {
   cancelAppointment,
   completeAppointment,
   confirmAppointment,
-  createAppointmentByAdmin,
   deleteCategory,
   deleteService,
   deleteServiceImage,
@@ -39,6 +38,7 @@ import {
   ServicesWithProvider,
   updateProvider,
 } from "../controllers/providerController.js";
+import { createAppointmentByAdmin } from "../controllers/appointmentController.js";
 
 const adminRouter = express.Router();
 

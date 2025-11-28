@@ -9,7 +9,7 @@ import dotenv from "dotenv";
 import { sendBookingEmails } from "../services/emailService.js";
 import { toZonedTime } from "date-fns-tz";
 import { acquireBookingLock } from "../utils/bookinglock.js";
-import { BUSINESS_TIMEZONE } from "../utils/dateUtils.js";
+import { BUSINESS_TIMEZONE, getCurrentBusinessDate, isValidDateString, isValidTimeString } from "../utils/dateUtils.js";
 import {
   getCurrentBusinessDateTime,
   parseDateInBusinessTz,
@@ -34,25 +34,6 @@ const __dirname = path.dirname(__filename);
 
 const BUFFER_MINUTES = 15; // Buffer time between appointments
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * Check if a specific date has any overrides
- * Returns the override object if found, null otherwise
- */
 const getDateOverride = (provider, dateStr) => {
   if (!provider.dateOverrides || provider.dateOverrides.length === 0) {
     return null;
@@ -60,9 +41,6 @@ const getDateOverride = (provider, dateStr) => {
   return provider.dateOverrides.find(override => override.date === dateStr);
 };
 
-/**
- * Check if a time slot is blocked by a date override
- */
 const isTimeSlotBlocked = (dateOverride, time, duration) => {
   if (!dateOverride || !dateOverride.blockedTimeSlots) {
     return false;
@@ -92,10 +70,6 @@ const isTimeSlotBlocked = (dateOverride, time, duration) => {
   return false;
 };
 
-/**
- * Get effective working hours for a specific date
- * Takes into account both regular schedule and date overrides
- */
 const getEffectiveWorkingHours = (provider, dateStr, dayOfWeek) => {
   // Check for date override first
   const dateOverride = getDateOverride(provider, dateStr);
@@ -123,19 +97,6 @@ const getEffectiveWorkingHours = (provider, dateStr, dayOfWeek) => {
   return regularDay || null;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 const checkRealTimeAvailability = async (date, time, duration, providerId) => {
   const dateObj = parseDateInBusinessTz(date);
   const provider = await providerModel.findById(providerId);
@@ -145,8 +106,6 @@ const checkRealTimeAvailability = async (date, time, duration, providerId) => {
   }
 
   const dateStr = formatDateForDisplay(dateObj);
-  
-  // ✅ COMPREHENSIVE FIX: Check ALL possible date formats
   const year = dateObj.getFullYear();
   const month = dateObj.getMonth();
   const day = dateObj.getDate();
@@ -171,7 +130,7 @@ const checkRealTimeAvailability = async (date, time, duration, providerId) => {
     .select("time totalDuration duration status date")
     .lean();
 
-  console.log(`📅 Real-time check for ${dateStr}: Found ${existingAppointments.length} appointments`);
+
 
   const appointmentsMap = {};
   existingAppointments.forEach((apt) => {
@@ -218,7 +177,7 @@ const findBestAvailableSlotsForDate = async (
   
 // ✅ DEBUG: Check ALL appointments regardless of status
 if (dateStr === '2025-12-02' || dateStr === '2025-12-06' || dateStr === '2025-12-07') {
-  console.log(`🔍 DETAILED DEBUG for ${dateStr}`);
+
   const debugAppointments = await appointmentModel
     .find({
       providerId: { $in: providerIds },
@@ -227,7 +186,7 @@ if (dateStr === '2025-12-02' || dateStr === '2025-12-06' || dateStr === '2025-12
     .select("date time userName status")
     .lean();
   
-  console.log(`Found ${debugAppointments.length} appointments (any status):`);
+ 
   debugAppointments.forEach(apt => {
     console.log(`  - ${apt.date} at ${apt.time} | ${apt.userName} | Status: ${apt.status}`);
   });
@@ -257,7 +216,7 @@ if (dateStr === '2025-12-02' || dateStr === '2025-12-06' || dateStr === '2025-12
     .select("providerId time totalDuration duration status date userName")
     .lean();
 
-  console.log(`📅 Found ${existingAppointments.length} existing appointments for ${dateStr}`);
+
   
   const bookedSlots = new Set();
   const appointmentsByProvider = {};
@@ -423,7 +382,6 @@ const finalStart = start < todayMidnight ? todayMidnight : start;
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("Error fetching available slots:", error);
     res.status(500).json({
       message: "Failed to fetch available slots",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
@@ -572,98 +530,6 @@ const processDate = async (
   }
 };
 
-
-
-
-
-// const findBestAvailableSlotsForDate = async (
-//   date,
-//   totalDuration,
-//   providers,
-//   currentTime,
-//   isToday
-// ) => {
-//   const dateStr = formatDateForDisplay(date);
-//   const dayOfWeek = getBusinessDayOfWeek(date);
-
-//   if (totalDuration >= 600) {
-//     return await handleMultiDayService(date, totalDuration, providers);
-//   }
-
-//   const workingProviders = providers.filter((provider) => {
-//     const providerDay = provider.workingHours.find(
-//       (wh) => wh.dayOfWeek === dayOfWeek && wh.isWorking
-//     );
-//     return !!providerDay;
-//   });
-
-//   if (workingProviders.length === 0) {
-//     return [];
-//   }
-
-//   const providerIds = workingProviders.map((p) => p._id);
-  
-//   // CRITICAL: Fetch ALL appointments including recently created ones
-// // CRITICAL: Include ALL appointment statuses that block slots
-// const existingAppointments = await appointmentModel
-//   .find({
-//     providerId: { $in: providerIds },
-//     date: dateStr,
-//     status: { $in: ["pending", "confirmed", "paid"] }, 
-//   })
-//   .select("providerId time totalDuration duration status")
-//   .lean();
-
-// console.log(`📅 Found ${existingAppointments.length} existing appointments for ${dateStr}`);
-
-//   // Build a Set of booked time slots for quick lookup
-//   const bookedSlots = new Set();
-//   const appointmentsByProvider = {};
-  
-//   existingAppointments.forEach((apt) => {
-//     // Create unique key for each booked slot
-//     const slotKey = `${apt.providerId}-${apt.time}`;
-//     bookedSlots.add(slotKey);
-    
-//     if (!appointmentsByProvider[apt.providerId]) {
-//       appointmentsByProvider[apt.providerId] = {};
-//     }
-//     appointmentsByProvider[apt.providerId][apt.time] = apt;
-//   });
-
-//   const potentialTimeSlots = generateOptimizedTimeSlots(
-//     date,
-//     totalDuration,
-//     workingProviders,
-//     isToday,
-//     currentTime
-//   );
-
-//   if (potentialTimeSlots.length === 0) {
-//     return [];
-//   }
-
-//   const availableSlots = [];
-
-//   // Process slots synchronously to ensure accurate availability
-//   for (const timeSlot of potentialTimeSlots) {
-//     const result = await findAvailableProviderForSlot(
-//       workingProviders,
-//       date,
-//       timeSlot,
-//       totalDuration,
-//       appointmentsByProvider,
-//       bookedSlots // Pass booked slots for quick filtering
-//     );
-    
-//     if (result !== null && result.available === true) {
-//       availableSlots.push(result);
-//     }
-//   }
-
-//   return availableSlots;
-// };
-
 const generateOptimizedTimeSlots = (
   date,
   duration,
@@ -672,20 +538,20 @@ const generateOptimizedTimeSlots = (
   currentTime
 ) => {
   const dayOfWeek = getBusinessDayOfWeek(date);
+  const dateStr = formatDateForDisplay(date);
   const slots = [];
 
   // Find the earliest start and latest end across all providers
-  let earliestStartMinutes = 24 * 60; // Start with end of day
-  let latestEndMinutes = 0; // Start with beginning of day
+  let earliestStartMinutes = 24 * 60;
+  let latestEndMinutes = 0;
 
   providers.forEach((provider) => {
-    const providerDay = provider.workingHours.find(
-      (wh) => wh.dayOfWeek === dayOfWeek && wh.isWorking
-    );
+    // Get effective hours (considers date overrides)
+    const effectiveHours = getEffectiveWorkingHours(provider, dateStr, dayOfWeek);
     
-    if (providerDay) {
-      const [startHour, startMin] = providerDay.startTime.split(":").map(Number);
-      const [endHour, endMin] = providerDay.endTime.split(":").map(Number);
+    if (effectiveHours) {
+      const [startHour, startMin] = effectiveHours.startTime.split(":").map(Number);
+      const [endHour, endMin] = effectiveHours.endTime.split(":").map(Number);
 
       const providerStart = startHour * 60 + startMin;
       const providerEnd = endHour * 60 + endMin;
@@ -695,7 +561,6 @@ const generateOptimizedTimeSlots = (
     }
   });
 
-  // If no working hours found, return empty
   if (earliestStartMinutes >= latestEndMinutes) {
     return [];
   }
@@ -706,7 +571,6 @@ const generateOptimizedTimeSlots = (
     const currentMinute = getCurrentBusinessMinute();
     const currentTimeMinutes = currentHour * 60 + currentMinute;
 
-    // Add 1 hour buffer for same-day bookings and round to next 30-min slot
     const minStartMinutes = Math.ceil((currentTimeMinutes + 60) / 30) * 30;
     earliestStartMinutes = Math.max(earliestStartMinutes, minStartMinutes);
   }
@@ -715,7 +579,6 @@ const generateOptimizedTimeSlots = (
   for (let slotStart = earliestStartMinutes; slotStart < latestEndMinutes; slotStart += 30) {
     const slotEnd = slotStart + duration;
     
-    // ✅ KEY FIX: Only add slot if appointment ENDS at or before provider's end time
     if (slotEnd <= latestEndMinutes) {
       const startHour = Math.floor(slotStart / 60);
       const startMin = slotStart % 60;
@@ -735,9 +598,6 @@ const generateOptimizedTimeSlots = (
   return slots;
 };
 
-/* Check for time conflicts between two appointments
- * Returns true if there IS a conflict
- */
 const hasTimeConflict = (
   requestStart,
   requestDuration,
@@ -756,7 +616,10 @@ const hasTimeConflict = (
   return !(reqEndMinutes <= existStartMinutes || reqStartMinutes >= existEndMinutes);
 };
 
-
+/**
+ * UPDATED: findAvailableProviderForSlot
+ * Now checks date overrides and blocked time slots
+ */
 const findAvailableProviderForSlot = async (
   providers,
   date,
@@ -766,34 +629,38 @@ const findAvailableProviderForSlot = async (
   bookedSlots = new Set()
 ) => {
   const dayOfWeek = getBusinessDayOfWeek(date);
+  const dateStr = formatDateForDisplay(date);
 
   for (const provider of providers) {
     const providerId = provider._id.toString();
     
-    // Quick check: is this exact slot already booked for this provider?
     const slotKey = `${providerId}-${timeSlot.time}`;
     if (bookedSlots.has(slotKey)) {
       continue;
     }
 
-    // Check if provider works on this day
-    const providerDay = provider.workingHours.find(
-      (wh) => wh.dayOfWeek === dayOfWeek && wh.isWorking
-    );
+    // Get effective working hours (considers date overrides)
+    const effectiveHours = getEffectiveWorkingHours(provider, dateStr, dayOfWeek);
+    
+    if (!effectiveHours) continue;
 
-    if (!providerDay) continue;
+    // Check if time slot is blocked by date override
+    const dateOverride = getDateOverride(provider, dateStr);
+    if (isTimeSlotBlocked(dateOverride, timeSlot.time, duration)) {
+      continue;
+    }
 
     // Convert all times to minutes for accurate comparison
     const [slotStartHour, slotStartMin] = timeSlot.time.split(':').map(Number);
     const slotStartMinutes = slotStartHour * 60 + slotStartMin;
     const slotEndMinutes = slotStartMinutes + duration;
 
-    const [providerStartHour, providerStartMin] = providerDay.startTime.split(':').map(Number);
-    const [providerEndHour, providerEndMin] = providerDay.endTime.split(':').map(Number);
+    const [providerStartHour, providerStartMin] = effectiveHours.startTime.split(':').map(Number);
+    const [providerEndHour, providerEndMin] = effectiveHours.endTime.split(':').map(Number);
     const providerStartMinutes = providerStartHour * 60 + providerStartMin;
     const providerEndMinutes = providerEndHour * 60 + providerEndMin;
 
-    // ✅ Check if slot fits within provider's working hours
+    // Check if slot fits within provider's working hours
     if (slotStartMinutes < providerStartMinutes || slotEndMinutes > providerEndMinutes) {
       continue;
     }
@@ -814,7 +681,6 @@ const findAvailableProviderForSlot = async (
     }
 
     if (!hasConflict) {
-      // Format end time for response
       const endHour = Math.floor(slotEndMinutes / 60);
       const endMin = slotEndMinutes % 60;
       const estimatedEndTime = `${endHour.toString().padStart(2, "0")}:${endMin.toString().padStart(2, "0")}`;
@@ -848,12 +714,18 @@ const checkProviderAvailabilityInstant = (
   providerAppointments
 ) => {
   const dayOfWeek = getBusinessDayOfWeek(date);
+  const dateStr = formatDateForDisplay(date);
   
-  const providerDay = provider.workingHours.find(
-    (wh) => wh.dayOfWeek === dayOfWeek && wh.isWorking
-  );
+  // Get effective working hours (considers overrides)
+  const effectiveHours = getEffectiveWorkingHours(provider, dateStr, dayOfWeek);
+  
+  if (!effectiveHours) {
+    return false; // Day is closed or provider doesn't work
+  }
 
-  if (!providerDay) {
+  // Check if time slot is blocked by date override
+  const dateOverride = getDateOverride(provider, dateStr);
+  if (isTimeSlotBlocked(dateOverride, time, duration)) {
     return false;
   }
 
@@ -862,8 +734,8 @@ const checkProviderAvailabilityInstant = (
   const requestStartMinutes = requestHour * 60 + requestMinute;
   const requestEndMinutes = requestStartMinutes + duration;
 
-  const [startHour, startMinute] = providerDay.startTime.split(':').map(Number);
-  const [endHour, endMinute] = providerDay.endTime.split(':').map(Number);
+  const [startHour, startMinute] = effectiveHours.startTime.split(':').map(Number);
+  const [endHour, endMinute] = effectiveHours.endTime.split(':').map(Number);
   const workStartMinutes = startHour * 60 + startMinute;
   const workEndMinutes = endHour * 60 + endMinute;
 
@@ -1017,7 +889,6 @@ const bookMultipleAppointment = async (req, res) => {
     const { calculatedDuration, calculatedAmount, processedServices } =
       calculateServiceTotals(services);
 
-    // ✅ FIX: Parse date and format as string for storage
     const dateObj = parseDateInBusinessTz(date);
     const dateStr = formatDateForDisplay(dateObj); // Returns "YYYY-MM-DD" string
 
@@ -1027,7 +898,6 @@ const bookMultipleAppointment = async (req, res) => {
         return res.status(404).json({ message: "Provider not available" });
       }
 
-      // ✅ FIX: Query using the date STRING, not Date object
       const latestAppointments = await appointmentModel
         .find({
           providerId,
@@ -1056,7 +926,6 @@ const bookMultipleAppointment = async (req, res) => {
 
     const providerData = await providerModel.findById(providerId);
 
-    // ✅ FIX: Store date as STRING in metadata
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
@@ -1102,7 +971,6 @@ const bookMultipleAppointment = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("❌ Error creating payment session:", error);
     res.status(500).json({
       message: error.message || "Failed to create payment session",
     });
@@ -1204,18 +1072,7 @@ const verifyAppointmentPayment = async (req, res) => {
       },
     });
 
-    console.log("✅ Appointment created successfully after payment");
-    console.log("📅 Stored date:", newAppointment.date); // Should show "2024-11-21"
-
-
-       try {
-      await sendBookingEmails(newAppointment.toObject());
-      console.log("📧 Confirmation emails sent successfully");
-    } catch (emailError) {
-      console.error("❌ Failed to send confirmation emails:", emailError);
-    
-    }
-
+    await sendBookingEmails(newAppointment.toObject());
     return res.json({
       success: true,
       message: "Payment verified and appointment confirmed",
@@ -1224,7 +1081,6 @@ const verifyAppointmentPayment = async (req, res) => {
    
 
   } catch (error) {
-    console.error("❌ Payment verification error:", error);
     res.status(500).json({
       success: false,
       message: "Payment verification failed",
@@ -1233,274 +1089,7 @@ const verifyAppointmentPayment = async (req, res) => {
   }
 };
 
-
-
-//     const { services, date, time, totalAmount, clientNotes, consentForm } =
-//       req.body;
-//     let { providerId } = req.body;
-//     const userId = req.userId;
-
-//     // Validation
-//     if (!services || !Array.isArray(services) || services.length === 0) {
-//       return res
-//         .status(400)
-//         .json({ message: "At least one service is required" });
-//     }
-
-//     if (!consentForm?.consentToTreatment) {
-//       return res.status(400).json({ message: "Treatment consent is required" });
-//     }
-
-//     // Get user data
-//     const userData = await userModel.findById(userId);
-//     if (!userData) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
-
-//     // Calculate service totals
-//     const { calculatedDuration, calculatedAmount, processedServices } =
-//       calculateServiceTotals(services);
-
-//     // Validate provider availability
-//     if (providerId) {
-//       const provider = await providerModel.findById(providerId);
-//       if (!provider || !provider.isActive) {
-//         return res.status(404).json({ message: "Provider not available" });
-//       }
-//    const dateObj = parseDateInBusinessTz(date);
-//     const dateStr = formatDateForDisplay(dateObj);
-
-//     // CRITICAL: Double-check availability right before booking
-//     // Fetch the LATEST appointments to avoid race conditions
-//     const latestAppointments = await appointmentModel
-//       .find({
-//         providerId,
-//         date: dateStr,
-//         status: { $in: ["pending", "confirmed"] },
-//       })
-//       .lean();
-
-//     // Check for conflicts with all existing appointments
-//     for (const apt of latestAppointments) {
-//       const aptDuration = apt.totalDuration || apt.duration || 90;
-//       if (hasTimeConflictStrict(time, calculatedDuration, apt.time, aptDuration)) {
-//         return res.status(409).json({
-//           message: "This time slot was just booked. Please select a different time.",
-//           conflictingTime: apt.time,
-//         });
-//       }
-//     }
- 
-//     // Try to acquire a lock to prevent simultaneous bookings
-//     const lockAcquired = await acquireBookingLock(providerId, dateStr, time);
-//     if (!lockAcquired) {
-//       return res.status(409).json({
-//         message: "Another booking is in progress for this slot. Please try again.",
-//       });
-//     }
-//     }
-
-//     const providerData = await providerModel.findById(providerId);
-
-//     // DON'T CREATE APPOINTMENT YET - Just create Stripe session with all data in metadata
-//     const session = await stripe.checkout.sessions.create({
-//       payment_method_types: ["card"],
-//       line_items: [
-//         {
-//           price_data: {
-//             currency: "cad",
-//             product_data: {
-//               name: `${services.length > 1 ? "Multiple Services" : services[0].serviceTitle} (50% Deposit)`,
-//             },
-//             unit_amount: Math.round(calculatedAmount * 0.5 * 100),
-//           },
-//           quantity: 1,
-//         },
-//       ],
-//       mode: "payment",
-//       success_url: `${process.env.FRONTEND_URL}/appointment/verify?session_id={CHECKOUT_SESSION_ID}`,
-//       cancel_url: `${process.env.FRONTEND_URL}/appointment/cancelled`,
-//       metadata: {
-//         userId: userId.toString(),
-//         providerId: providerId.toString(),
-//         providerName: providerData.name,
-//         userName: userData.name,
-//         userEmail: userData.email,
-//         userPhone: userData.phone,
-//         date: appointmentDate.toISOString(),
-//         time: time,
-//         totalDuration: calculatedDuration.toString(),
-//         calculatedAmount: calculatedAmount.toString(),
-//         services: JSON.stringify(processedServices),
-//         clientNotes: clientNotes || "",
-//         consentForm: JSON.stringify(consentForm),
-//       },
-//       customer_email: userData.email,
-//     });
-
-//     res.status(200).json({
-//       message: "Please complete payment to confirm your appointment.",
-//       paymentUrl: session.url,
-//       sessionId: session.id,
-//       assignedProvider: {
-//         name: providerData.name,
-//         profileImage: providerData.profileImage,
-//       },
-//     });
-//   } catch (error) {
-//     console.error("❌ Error creating payment session:", error);
-//     res.status(500).json({
-//       message: error.message || "Failed to create payment session",
-//     });
-//   }
-// };
-
-// const verifyAppointmentPayment = async (req, res) => {
-//   try {
-//     const { sessionId } = req.body;
-
-//     if (!sessionId) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Session ID is required",
-//       });
-//     }
-
-//     // Retrieve the session
-//     let session;
-//     try {
-//       session = await stripe.checkout.sessions.retrieve(sessionId, {
-//         expand: ["payment_intent"],
-//       });
-//     } catch (stripeError) {
-//       console.error("❌ Stripe session retrieval failed:", stripeError.message);
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid payment session",
-//         details: stripeError.message,
-//       });
-//     }
-
-//     // Check if payment is completed
-//     if (session.payment_status === "unpaid") {
-//       return res.status(200).json({
-//         success: false,
-//         status: "processing",
-//         message: "Payment is being processed",
-//         payment_status: session.payment_status,
-//       });
-//     }
-
-//     if (session.payment_status !== "paid") {
-//       return res.status(200).json({
-//         success: false,
-//         message: `Payment ${session.payment_status}. Please try again or contact support.`,
-//         payment_status: session.payment_status,
-//       });
-//     }
-
-//     // Check if appointment already exists for this session
-//     const existingAppointment = await appointmentModel.findOne({
-//       "payment.transactionId": session.payment_intent.id,
-//     });
-
-//     if (existingAppointment) {
-//       return res.json({
-//         success: true,
-//         message: "Appointment already confirmed",
-//         appointment: existingAppointment,
-//       });
-//     }
-
-//     // NOW CREATE THE APPOINTMENT - Only after payment is confirmed
-//     const metadata = session.metadata;
-//     const services = JSON.parse(metadata.services);
-//     const consentForm = JSON.parse(metadata.consentForm);
-
-//     const newAppointment = await appointmentModel.create({
-//       userId: metadata.userId,
-//       providerId: metadata.providerId,
-//       providerName: metadata.providerName,
-//       services: services,
-//       serviceId: services[0].serviceId,
-//       serviceTitle:
-//         services.length > 1
-//           ? `${services[0].serviceTitle} + ${services.length - 1} more`
-//           : services[0].serviceTitle,
-//       userName: metadata.userName,
-//       userEmail: metadata.userEmail,
-//       userPhone: metadata.userPhone,
-//       date: new Date(metadata.date),
-//       time: metadata.time,
-//       clientNotes: metadata.clientNotes,
-//       consentForm: {
-//         healthConditions: consentForm.healthConditions || "",
-//         allergies: consentForm.allergies || "",
-//         consentToTreatment: consentForm.consentToTreatment || false,
-//         submittedAt: consentForm.submittedAt || new Date(),
-//       },
-//       totalDuration: parseInt(metadata.totalDuration),
-//       isLongDuration: parseInt(metadata.totalDuration) > 480,
-//       isMultiDay: parseInt(metadata.totalDuration) >= 600,
-//       status: "confirmed", // Directly confirmed since payment is done
-//       confirmedAt: new Date(),
-//       payment: {
-//         status: "paid",
-//         transactionId: session.payment_intent.id,
-//         paymentDate: new Date(),
-//         amount: session.amount_total / 100,
-//         currency: "CAD",
-//       },
-//     });
-
-//     console.log("✅ Appointment created successfully after payment");
-
-//     // Send confirmation emails
-//     // try {
-//     //   await sendBookingEmails(newAppointment.toObject());
-//     //   console.log("📧 Confirmation emails sent successfully");
-//     // } catch (emailError) {
-//     //   console.error("❌ Failed to send confirmation emails:", emailError);
-//     // }
-
-//     return res.json({
-//       success: true,
-//       message: "Payment verified and appointment confirmed",
-//       appointment: newAppointment,
-//     });
-//   } catch (error) {
-//     console.error("❌ Payment verification error:", error);
-//     console.error("Error stack:", error.stack);
-
-//     let statusCode = 500;
-//     let message = "Payment verification failed";
-//     let details = error.message;
-
-//     if (error.name === "CastError") {
-//       statusCode = 400;
-//       message = "Invalid data format";
-//     } else if (error.type === "StripeInvalidRequestError") {
-//       statusCode = 400;
-//       message = "Invalid Stripe session";
-//       details = error.raw?.message || error.message;
-//     } else if (error.name === "ValidationError") {
-//       statusCode = 400;
-//       message = "Data validation failed";
-//       details = Object.values(error.errors)
-//         .map((e) => e.message)
-//         .join(", ");
-//     }
-
-//     res.status(statusCode).json({
-//       success: false,
-//       message,
-//       details,
-//       error_type: error.name || error.type,
-//     });
-//   }
-// };
-
-// Helper function to calculate service totals
+// elper function to calculate service totals
 const calculateServiceTotals = (services) => {
   let calculatedDuration = 0;
   let calculatedAmount = 0;
@@ -1613,7 +1202,7 @@ const bookAppointment = async (req, res) => {
       paymentUrl: session.url,
     });
   } catch (error) {
-    console.error("Error booking appointment:", error);
+
     res
       .status(500)
       .json({ message: error.message || "Failed to book appointment" });
@@ -1953,11 +1542,235 @@ const cancelAppointment = async (req, res) => {
   }
 };
 
+const createAppointmentByAdmin = async (req, res) => {
+  try {
+    const {
+      services,
+      date,
+      time,
+      providerId,
+      userName,
+      userEmail,
+      userPhone,
+      clientNotes,
+      paymentStatus = "pending",
+      paymentAmount,
+      consentForm = {}
+    } = req.body;
+
+    // Validation
+    if (!services || !Array.isArray(services) || services.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "At least one service is required" 
+      });
+    }
+
+    if (!date || !time) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Date and time are required" 
+      });
+    }
+
+    // ✅ Validate date format
+    if (!isValidDateString(date)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid date format. Use YYYY-MM-DD (e.g., 2024-11-29)"
+      });
+    }
+
+    // ✅ Validate time format
+    if (!isValidTimeString(time)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid time format. Use HH:MM in 24-hour format (e.g., 14:00)"
+      });
+    }
+
+    // ✅ Check if date is in the past
+    const currentDate = getCurrentBusinessDate();
+    if (date < currentDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot create appointments in the past"
+      });
+    }
+
+    if (!providerId || !userName || !userEmail) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Provider, customer name, and email are required" 
+      });
+    }
+
+    // Validate provider
+    const provider = await providerModel.findById(providerId);
+
+    if (!provider) {
+      return res.status(404).json({
+        success: false,
+        message: "Provider not found"
+      });
+    }
+
+    // Calculate totals
+    const { calculatedDuration, calculatedAmount, processedServices } = 
+      calculateServiceTotals(services);
+
+    // ✅ Check for conflicts using date string directly
+    const existingAppointments = await appointmentModel
+      .find({
+        providerId,
+        date: date, // Exact string match
+        status: { $in: ["pending", "confirmed"] },
+      })
+      .lean();
+
+    // Check for time conflicts
+    for (const apt of existingAppointments) {
+      const aptDuration = apt.totalDuration || apt.duration || 90;
+      
+      if (hasTimeConflictStrict(time, calculatedDuration, apt.time, aptDuration)) {
+        return res.status(409).json({
+          success: false,
+          message: "This time slot conflicts with an existing appointment.",
+          conflictingTime: apt.time,
+          existingAppointment: {
+            time: apt.time,
+            duration: aptDuration,
+            client: apt.userName
+          }
+        });
+      }
+    }
+
+    // Check provider availability
+    const availability = await checkRealTimeAvailability(
+      date,
+      time,
+      calculatedDuration,
+      providerId
+    );
+
+    if (!availability.available) {
+      return res.status(409).json({
+        success: false,
+        message: "Time slot not available",
+        suggestedSlots: availability.suggestedSlots || []
+      });
+    }
+
+    // ✅ Create appointment with string date/time
+    const newAppointment = await appointmentModel.create({
+      userId: "admin-created",
+      providerId: providerId,
+      providerName: provider.name,
+      
+      services: processedServices,
+      serviceId: processedServices[0].serviceId,
+      serviceTitle: processedServices.length > 1 
+        ? `${processedServices[0].serviceTitle} + ${processedServices.length - 1} more`
+        : processedServices[0].serviceTitle,
+      
+      userName: userName,
+      userEmail: userEmail,
+      userPhone: userPhone || "",
+      
+      // ✅ Store as strings - no conversion needed
+      date: date,           // "2024-11-29"
+      time: time,           // "14:00"
+      timezone: 'America/St_Johns', // Store timezone reference
+      totalDuration: calculatedDuration,
+      
+      clientNotes: clientNotes || "",
+      consentForm: {
+        healthConditions: consentForm.healthConditions || "",
+        allergies: consentForm.allergies || "",
+        consentToTreatment: true,
+        submittedAt: new Date(), // This can be Date object - it's for audit
+      },
+      
+      status: "confirmed",
+      isLongDuration: calculatedDuration > 480,
+      isMultiDay: calculatedDuration >= 600,
+      
+      // Audit timestamps can be Date objects
+      bookedAt: new Date(),
+      confirmedAt: new Date(),
+      
+      payment: {
+        status: paymentStatus,
+        amount: paymentAmount || calculatedAmount,
+        currency: "CAD",
+        paymentDate: paymentStatus === "paid" ? new Date() : null,
+        paymentMethod: paymentStatus === "paid" ? "admin_cash" : null,
+      },
+      
+      createdBy: "admin",
+    });
+
+    console.log("Admin appointment created successfully:", {
+      id: newAppointment._id,
+      date: newAppointment.date,      // "2024-11-29"
+      time: newAppointment.time,       // "14:00"
+      timezone: newAppointment.timezone,
+      provider: newAppointment.providerName,
+      client: newAppointment.userName
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Appointment created successfully",
+      appointment: {
+        _id: newAppointment._id,
+        date: newAppointment.date,
+        time: newAppointment.time,
+        status: newAppointment.status,
+        providerName: newAppointment.providerName,
+        userName: newAppointment.userName,
+        services: newAppointment.services,
+        totalDuration: newAppointment.totalDuration,
+        payment: newAppointment.payment
+      },
+    });
+
+  } catch (error) {
+    console.error("❌ Error creating appointment by admin:", error);
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: Object.values(error.errors).map(e => e.message)
+      });
+    }
+    
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "Duplicate appointment detected"
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create appointment",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+
+
+
 export {
   getAvailableSlots,
   bookAppointment,
   verifyAppointmentPayment,
   cancelAppointment,
+  createAppointmentByAdmin,
   updateAppointmentNotes,
   getUserAppointments,
   completeAppointment,

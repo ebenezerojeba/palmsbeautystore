@@ -11,6 +11,7 @@ import csv from 'csv-parser';
 import { Readable } from 'stream';
 import userModel from "../models/userModel.js";
 import mongoose from "mongoose";
+import { formatDateForDisplay, parseDateInBusinessTz } from "../utils/dateUtils.js";
 
 // Configure multer for file upload
 const storage = multer.memoryStorage();
@@ -577,28 +578,59 @@ const confirmAppointment = async (req, res) => {
 };
 
 // Example route setup for admin
-// Admin route (for adm// Updated Admin Cancel Appointment Backend Function
 const cancelAppointment = async (req, res) => {
   try {
     const { appointmentId, cancelledBy, reason } = req.body;
     
-    // Validate required fields
-    if (!appointmentId || !cancelledBy || !reason) {
+    // Add detailed logging
+    console.log("Cancel appointment request:", {
+      appointmentId,
+      appointmentIdType: typeof appointmentId,
+      cancelledBy,
+      reason
+    });
+    
+    // Validate required fields with specific messages
+    if (!appointmentId) {
       return res.status(400).json({
         success: false,
-        message: "Missing required fields"
+        message: "Appointment ID is required"
+      });
+    }
+
+    if (!cancelledBy) {
+      return res.status(400).json({
+        success: false,
+        message: "CancelledBy field is required"
+      });
+    }
+
+    if (!reason) {
+      return res.status(400).json({
+        success: false,
+        message: "Cancellation reason is required"
+      });
+    }
+
+    // Validate MongoDB ObjectId format
+    if (!appointmentId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid appointment ID format"
       });
     }
 
     // Fetch the appointment
     const appointment = await appointmentModel.findById(appointmentId);
     if (!appointment) {
+      console.log("Appointment not found with ID:", appointmentId);
       return res.status(404).json({
         success: false,
         message: "Appointment not found"
       });
     }
 
+    // Rest of your code...
     // Prevent duplicate cancellations
     if (appointment.status === 'cancelled') {
       return res.status(400).json({
@@ -637,9 +669,10 @@ const cancelAppointment = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: refundEligible 
-        ? "Appointment cancelled successfully. Full refund will be processed."
-        : `Appointment cancelled. A cancellation fee of $${appointment.cancellation.cancellationFee} may apply.`,
+      message: "Appointment cancelled successfully",  
+      // message: refundEligible 
+      //   ? "Appointment cancelled successfully. Full refund will be processed."
+      //   : `Appointment cancelled. A cancellation fee of $${appointment.cancellation.cancellationFee} may apply.`,
       appointment: {
         _id: appointment._id,
         status: appointment.status,
@@ -652,7 +685,8 @@ const cancelAppointment = async (req, res) => {
     console.error("Error cancelling appointment:", error);
     return res.status(500).json({
       success: false,
-      message: "Failed to cancel appointment. Please try again."
+      message: "Failed to cancel appointment. Please try again.",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -1132,217 +1166,7 @@ const deleteServiceImage = async (req, res) => {
     res.status(500).json({ success: false, error: "Failed to delete image" });
   }
 };
-// Admin create appointment (no payment required)
-const createAppointmentByAdmin = async (req, res) => {
-  try {
-    const {
-      services,
-      date,
-      time,
-      providerId,
-      userName,
-      userEmail,
-      userPhone,
-      clientNotes,
-      paymentStatus = "pending",
-      paymentAmount,
-      consentForm = {}
-    } = req.body;
 
-    // Validation
-    if (!services || !Array.isArray(services) || services.length === 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "At least one service is required" 
-      });
-    }
-
-    if (!date || !time) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Date and time are required" 
-      });
-    }
-
-    if (!providerId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Provider is required" 
-      });
-    }
-
-    if (!userName || !userEmail) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Customer name and email are required" 
-      });
-    }
-
-    // Validate provider
-    const provider = await providerModel.findById(providerId);
-    if (!provider || !provider.isActive) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Provider not available" 
-      });
-    }
-
-    // Use your existing date utility functions for consistency
-    const dateObj = parseDateInBusinessTz(date);
-    const dateStr = formatDateForDisplay(dateObj);
-
-    // Calculate totals using your existing function
-    const { calculatedDuration, calculatedAmount, processedServices } = 
-      calculateServiceTotals(services);
-
-    // ✅ Use your robust conflict detection (same as regular booking)
-    const existingAppointments = await appointmentModel
-      .find({
-        providerId,
-        date: dateStr,
-        status: { $in: ["pending", "confirmed"] },
-      })
-      .lean();
-
-    // Check for conflicts using your existing function
-    for (const apt of existingAppointments) {
-      const aptDuration = apt.totalDuration || apt.duration || 90;
-      
-      if (hasTimeConflictStrict(time, calculatedDuration, apt.time, aptDuration)) {
-        return res.status(409).json({
-          success: false,
-          message: "This time slot conflicts with an existing appointment.",
-          conflictingTime: apt.time,
-          existingAppointment: {
-            time: apt.time,
-            duration: aptDuration,
-            client: apt.userName
-          }
-        });
-      }
-    }
-
-    // ✅ Check provider availability using your existing function
-    const availability = await checkRealTimeAvailability(
-      dateStr,
-      time,
-      calculatedDuration,
-      providerId
-    );
-
-    if (!availability.available) {
-      return res.status(409).json({
-        success: false,
-        message: "Time slot not available",
-        suggestedSlots: availability.suggestedSlots || []
-      });
-    }
-
-    // Create appointment
-    const newAppointment = await appointmentModel.create({
-      // Required fields from your schema
-      userId: "admin-created", // or generate a temp user ID
-      providerId: providerId,
-      providerName: provider.name,
-      
-      // Services
-      services: processedServices,
-      serviceId: processedServices[0].serviceId,
-      serviceTitle: processedServices.length > 1 
-        ? `${processedServices[0].serviceTitle} + ${processedServices.length - 1} more`
-        : processedServices[0].serviceTitle,
-      
-      // Client information
-      userName: userName,
-      userEmail: userEmail,
-      userPhone: userPhone || "",
-      
-      // Appointment timing
-      date: dateStr, // Store as "YYYY-MM-DD" string (consistent with your schema)
-      time: time,
-      totalDuration: calculatedDuration,
-      
-      // Client notes and consent
-      clientNotes: clientNotes || "",
-      consentForm: {
-        healthConditions: consentForm.healthConditions || "",
-        allergies: consentForm.allergies || "",
-        consentToTreatment: true, // Admin bookings assume consent
-        submittedAt: new Date(),
-      },
-      
-      // Status and flags
-      status: "confirmed",
-      isLongDuration: calculatedDuration > 480,
-      isMultiDay: calculatedDuration >= 600,
-      
-      // Timestamps
-      bookedAt: new Date(),
-      confirmedAt: new Date(),
-      
-      // Payment information
-      payment: {
-        status: paymentStatus,
-        amount: paymentAmount || calculatedAmount,
-        currency: "CAD",
-        paymentDate: paymentStatus === "paid" ? new Date() : null,
-        paymentMethod: paymentStatus === "paid" ? "admin_cash" : null,
-      },
-      
-      // Admin tracking
-      createdBy: "admin",
-    });
-
-    console.log("✅ Admin appointment created successfully:", {
-      id: newAppointment._id,
-      date: newAppointment.date,
-      time: newAppointment.time,
-      provider: newAppointment.providerName,
-      client: newAppointment.userName
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: "Appointment created successfully",
-      appointment: {
-        _id: newAppointment._id,
-        date: newAppointment.date,
-        time: newAppointment.time,
-        status: newAppointment.status,
-        providerName: newAppointment.providerName,
-        userName: newAppointment.userName,
-        services: newAppointment.services,
-        totalDuration: newAppointment.totalDuration,
-        payment: newAppointment.payment
-      },
-    });
-
-  } catch (error) {
-    console.error("❌ Error creating appointment by admin:", error);
-    
-    // Handle specific error types
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: Object.values(error.errors).map(e => e.message)
-      });
-    }
-    
-    if (error.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: "Duplicate appointment detected"
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to create appointment",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-};
 
 export {
   adminLogin,
@@ -1365,7 +1189,6 @@ export {
   addCategory,
   updateCategory,
   deleteCategory,
-  createAppointmentByAdmin,
   importVagaroAppointments,
   VagaroUpload
 };

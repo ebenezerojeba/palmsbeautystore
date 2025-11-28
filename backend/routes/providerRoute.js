@@ -1,6 +1,6 @@
 // routes/providerRoutes.js
 import express from "express";
-import { getAllProviders, getProvider, getProviderAppointments, getProviderAppointmentStats, getProviders, getProvidersByService, getProviderSchedule, getProviderUpcomingAppointments, getTodaysAppointments, updateProviderWorkingHours } from "../controllers/providerController.js";
+import { deleteAllProviderDateOverrides, deleteProviderDateOverride, getAllProviders, getProvider, getProviderAppointments, getProviderAppointmentStats, getProviderDateOverrides, getProviders, getProvidersByService, getProviderSchedule, getProviderUpcomingAppointments, getTodaysAppointments, updateProviderDateOverrides, updateProviderWorkingHours } from "../controllers/providerController.js";
 import providerModel from "../models/providerModel.js";
 import mongoose from "mongoose";
 
@@ -24,6 +24,11 @@ providerRouter.get('/:providerId/upcoming-appointments', getProviderUpcomingAppo
 
 // Get appointment stats for a specific provider
 providerRouter.get('/:providerId/appointment-stats', getProviderAppointmentStats);
+
+providerRouter.put('/:providerId/date-overrides', updateProviderDateOverrides)
+providerRouter.get('/:providerId/date-overrides', getProviderDateOverrides)
+providerRouter.delete('/:providerId/date-overrides/:date', deleteProviderDateOverride)
+providerRouter.delete('/:providerId/date-overrides/', deleteAllProviderDateOverrides)
 // / New route to get providers by service
 
 

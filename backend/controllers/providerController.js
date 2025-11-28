@@ -952,3 +952,375 @@ export const getProviderAppointmentStats = async (req, res) => {
     });
   }
 };
+
+/**
+ * Update provider date overrides
+ * PUT /api/provider/:providerId/date-overrides
+ */
+export const updateProviderDateOverrides = async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const { dateOverrides } = req.body;
+    
+    if (!providerId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid provider ID format" 
+      });
+    }
+    
+    // Validate date overrides format
+    if (!Array.isArray(dateOverrides)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Date overrides must be an array" 
+      });
+    }
+    
+    // Validate each override entry
+    for (const override of dateOverrides) {
+      // Validate date format (YYYY-MM-DD)
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(override.date)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Invalid date format: ${override.date}. Use YYYY-MM-DD` 
+        });
+      }
+      
+      // If custom hours provided, validate time format
+      if (override.customHours) {
+        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        
+        if (override.customHours.startTime && !timeRegex.test(override.customHours.startTime)) {
+          return res.status(400).json({ 
+            success: false, 
+            message: `Invalid start time format for ${override.date}. Use HH:MM` 
+          });
+        }
+        
+        if (override.customHours.endTime && !timeRegex.test(override.customHours.endTime)) {
+          return res.status(400).json({ 
+            success: false, 
+            message: `Invalid end time format for ${override.date}. Use HH:MM` 
+          });
+        }
+        
+        // Validate that end time is after start time
+        if (override.customHours.startTime && override.customHours.endTime) {
+          const [startHour, startMin] = override.customHours.startTime.split(':').map(Number);
+          const [endHour, endMin] = override.customHours.endTime.split(':').map(Number);
+          const startMinutes = startHour * 60 + startMin;
+          const endMinutes = endHour * 60 + endMin;
+          
+          if (endMinutes <= startMinutes) {
+            return res.status(400).json({ 
+              success: false, 
+              message: `End time must be after start time for ${override.date}` 
+            });
+          }
+        }
+      }
+      
+      // Validate blocked time slots
+      if (override.blockedTimeSlots && Array.isArray(override.blockedTimeSlots)) {
+        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        
+        for (const slot of override.blockedTimeSlots) {
+          if (!timeRegex.test(slot.startTime) || !timeRegex.test(slot.endTime)) {
+            return res.status(400).json({ 
+              success: false, 
+              message: `Invalid time format in blocked slots for ${override.date}` 
+            });
+          }
+          
+          // Validate that end time is after start time
+          const [startHour, startMin] = slot.startTime.split(':').map(Number);
+          const [endHour, endMin] = slot.endTime.split(':').map(Number);
+          const startMinutes = startHour * 60 + startMin;
+          const endMinutes = endHour * 60 + endMin;
+          
+          if (endMinutes <= startMinutes) {
+            return res.status(400).json({ 
+              success: false, 
+              message: `Blocked slot end time must be after start time for ${override.date}` 
+            });
+          }
+        }
+      }
+    }
+    
+    // Update provider
+    const provider = await providerModel.findByIdAndUpdate(
+      providerId,
+      { dateOverrides },
+      { new: true, runValidators: true }
+    ).populate('services', 'title duration price');
+    
+    if (!provider) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Provider not found" 
+      });
+    }
+    
+    console.log(`✅ Date overrides updated for provider ${provider.name}`);
+    console.log(`📅 Total overrides: ${dateOverrides.length}`);
+    
+    res.status(200).json({ 
+      success: true, 
+      message: "Date overrides updated successfully",
+      provider 
+    });
+  } catch (error) {
+    console.error("Error updating provider date overrides:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to update date overrides",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Get provider date overrides for a specific date range
+ * GET /api/provider/:providerId/date-overrides?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+ */
+export const getProviderDateOverrides = async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const { startDate, endDate } = req.query;
+    
+    if (!providerId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid provider ID format" 
+      });
+    }
+    
+    const provider = await providerModel
+      .findById(providerId)
+      .select('name dateOverrides');
+    
+    if (!provider) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Provider not found" 
+      });
+    }
+    
+    let overrides = provider.dateOverrides || [];
+    
+    // Filter by date range if provided
+    if (startDate && endDate) {
+      overrides = overrides.filter(override => {
+        return override.date >= startDate && override.date <= endDate;
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      dateOverrides: overrides,
+      count: overrides.length
+    });
+  } catch (error) {
+    console.error("Error fetching provider date overrides:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to fetch date overrides",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Delete a specific date override for a provider
+ * DELETE /api/provider/:providerId/date-overrides/:date
+ */
+export const deleteProviderDateOverride = async (req, res) => {
+  try {
+    const { providerId, date } = req.params;
+    
+    // Validate provider ID format
+    if (!providerId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid provider ID format" 
+      });
+    }
+    
+    // Validate date format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Invalid date format: ${date}. Use YYYY-MM-DD` 
+      });
+    }
+    
+    // Find the provider
+    const provider = await providerModel.findById(providerId);
+    
+    if (!provider) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Provider not found" 
+      });
+    }
+    
+    // Check if date override exists
+    const overrideExists = provider.dateOverrides?.some(
+      override => override.date === date
+    );
+    
+    if (!overrideExists) {
+      return res.status(404).json({ 
+        success: false, 
+        message: `No override found for date: ${date}` 
+      });
+    }
+    
+    // Remove the date override
+    provider.dateOverrides = provider.dateOverrides.filter(
+      override => override.date !== date
+    );
+    
+    // Save the updated provider
+    await provider.save();
+    
+    console.log(`✅ Date override deleted for ${provider.name} on ${date}`);
+    
+    res.status(200).json({ 
+      success: true, 
+      message: `Date override for ${date} deleted successfully`,
+      remainingOverrides: provider.dateOverrides.length
+    });
+  } catch (error) {
+    console.error("Error deleting provider date override:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to delete date override",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Delete all date overrides for a provider
+ * DELETE /api/provider/:providerId/date-overrides
+ */
+export const deleteAllProviderDateOverrides = async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    
+    // Validate provider ID format
+    if (!providerId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid provider ID format" 
+      });
+    }
+    
+    // Update provider to remove all date overrides
+    const provider = await providerModel.findByIdAndUpdate(
+      providerId,
+      { $set: { dateOverrides: [] } },
+      { new: true }
+    ).select('name dateOverrides');
+    
+    if (!provider) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Provider not found" 
+      });
+    }
+    
+    console.log(`✅ All date overrides deleted for ${provider.name}`);
+    
+    res.status(200).json({ 
+      success: true, 
+      message: "All date overrides deleted successfully",
+      provider
+    });
+  } catch (error) {
+    console.error("Error deleting all provider date overrides:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to delete all date overrides",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Delete multiple date overrides by date array
+ * POST /api/provider/:providerId/date-overrides/bulk-delete
+ */
+export const bulkDeleteProviderDateOverrides = async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const { dates } = req.body;
+    
+    // Validate provider ID format
+    if (!providerId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid provider ID format" 
+      });
+    }
+    
+    // Validate dates array
+    if (!Array.isArray(dates) || dates.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Dates must be a non-empty array" 
+      });
+    }
+    
+    // Validate each date format
+    for (const date of dates) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Invalid date format: ${date}. Use YYYY-MM-DD` 
+        });
+      }
+    }
+    
+    // Find the provider
+    const provider = await providerModel.findById(providerId);
+    
+    if (!provider) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Provider not found" 
+      });
+    }
+    
+    const initialCount = provider.dateOverrides?.length || 0;
+    
+    // Remove the specified date overrides
+    provider.dateOverrides = provider.dateOverrides?.filter(
+      override => !dates.includes(override.date)
+    ) || [];
+    
+    const deletedCount = initialCount - provider.dateOverrides.length;
+    
+    // Save the updated provider
+    await provider.save();
+    
+    console.log(`✅ Bulk deleted ${deletedCount} date overrides for ${provider.name}`);
+    
+    res.status(200).json({ 
+      success: true, 
+      message: `Successfully deleted ${deletedCount} date override(s)`,
+      deletedCount,
+      remainingOverrides: provider.dateOverrides.length
+    });
+  } catch (error) {
+    console.error("Error bulk deleting provider date overrides:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to bulk delete date overrides",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
