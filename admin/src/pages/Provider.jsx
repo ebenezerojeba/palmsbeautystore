@@ -31,6 +31,7 @@ import { toast } from 'react-toastify'
 import ScheduleManagement from '../components/Provider/ScheduleManagement';
 import EditProvider from '../components/Provider/EditProvider';
 import AddProviderModal from '../components/Provider/AddProvider';
+import DateOverrideManagement from '../components/DateOverideManagement';
 
 const Provider = () => {
   const [providers, setProviders] = useState([]);
@@ -110,7 +111,6 @@ const backendUrl = import.meta.env.VITE_BACKEND_URL;
     }
   };
 
-
   const loadServices = async () => {
     try {
       setLoading(true);
@@ -141,7 +141,6 @@ const backendUrl = import.meta.env.VITE_BACKEND_URL;
       setLoading(false);
     }
   };
-
 
   const loadServicesWithProviders = async () => {
     try {
@@ -187,110 +186,6 @@ const backendUrl = import.meta.env.VITE_BACKEND_URL;
       setScheduleLoading(false);
     }
   };
-
-//   // FIXED FRONTEND CODE:
-//   const addServiceToProvider = async (providerId, serviceId) => {
-//     try {
-//       console.log('Adding service to provider:', { providerId, serviceId }); // Debug log
-
-//       const response = await fetch(
-//         `${backendUrl}/api/admin/service/${serviceId}/provider/${providerId}`,
-//         {
-//           method: 'POST',
-//           headers: {
-//             'Content-Type': 'application/json',
-
-//           },
-//           // Add empty body since your backend doesn't expect body data
-//           body: JSON.stringify({})
-//         }
-//       );
-
-//       console.log('Response status:', response.status); // Debug log
-
-//       if (!response.ok) {
-//         const errorText = await response.text();
-//         console.error('Error response:', errorText);
-//         throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-//       }
-
-//       const result = await response.json();
-//       console.log('Success result:', result); // Debug log
-
-//       if (result.success) {
-//         showMessage('success', 'Service added successfully!');
-//         await Promise.all([loadProviders(), loadServices()]);
-
-//         // Update selected provider if it's the one being modified
-//         if (selectedProvider && selectedProvider._id === providerId) {
-//           const updatedProvider = providers.find(p => p._id === providerId);
-//           if (updatedProvider) {
-//             setSelectedProvider(updatedProvider);
-//           }
-//         }
-//       } else {
-//         throw new Error(result.message || 'Failed to add service');
-//       }
-//     } catch (error) {
-//       console.error('Failed to add service:', error);
-//       showMessage('error', 'Failed to add service: ' + error.message);
-//       throw error; // Re-throw so the modal can handle it
-//     }
-//   };
-
-
-// const addServicesToProvider = async (providerId, serviceIds) => {
-//   try {
-//     console.log('Adding multiple services:', { providerId, serviceIds }); // Debug log
-
-//     // Ensure serviceIds is an array (handle both single and multiple)
-//     const servicesArray = Array.isArray(serviceIds) ? serviceIds : [serviceIds];
-
-//     const response = await fetch(
-//       `${backendUrl}/api/admin/services/provider/${providerId}`,
-//       {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify({ serviceIds: servicesArray })
-//       }
-//     );
-
-//     console.log('Response status:', response.status); // Debug log
-
-//     if (!response.ok) {
-//       const errorText = await response.text();
-//       console.error('Error response:', errorText);
-//       throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-//     }
-
-//     const result = await response.json();
-//     console.log('Success result:', result); // Debug log
-
-//     if (result.success) {
-//       showMessage('success', `Successfully added ${servicesArray.length} service(s)!`);
-//       await Promise.all([loadProviders(), loadServices()]);
-
-//       // Update selected provider if it's the one being modified
-//       if (selectedProvider && selectedProvider._id === providerId) {
-//         const updatedProvider = providers.find(p => p._id === providerId);
-//         if (updatedProvider) {
-//           setSelectedProvider(updatedProvider);
-//         }
-//       }
-//     } else {
-//       throw new Error(result.message || 'Failed to add services');
-//     }
-//   } catch (error) {
-//     console.error('Failed to add services:', error);
-//     showMessage('error', 'Failed to add services: ' + error.message);
-//     throw error; // Re-throw so the modal can handle it
-//   }
-// };
-
-
-
 
 const addServicesToProvider = async (providerId, serviceIds) => {
   try {
@@ -376,22 +271,6 @@ const updateProviderServicesLocally = async (providerId, newServiceIds) => {
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   const removeServiceFromProvider = async (providerId, serviceId) => {
     if (!window.confirm('Are you sure you want to remove this service from the provider?')) {
       return;
@@ -470,6 +349,42 @@ const updateProviderServicesLocally = async (providerId, newServiceIds) => {
     }
   };
 
+   // NEW: Update date overrides
+ const updateProviderDateOverrides = async (providerId, dateOverrides) => {
+  try {
+    const response = await fetch(
+      `${backendUrl}/api/provider/${providerId}/date-overrides`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dateOverrides }),
+      }
+    );
+
+    const result = await response.json();
+
+    if (result.success) {
+      toast.success('Date overrides updated successfully!');
+      
+      // ✅ Reload providers to get fresh data
+      await loadProviders();
+      
+      // ✅ IMPORTANT: Update selectedProvider with the result from backend
+      if (selectedProvider && selectedProvider._id === providerId) {
+        // Use the provider data returned from the API (which includes updated dateOverrides)
+        setSelectedProvider(result.provider);
+      }
+      
+      // Go back to detail view
+      setView('detail');
+    } else {
+      throw new Error(result.message || 'Failed to update date overrides');
+    }
+  } catch (error) {
+    console.error('Failed to update date overrides:', error);
+    toast.error('Failed to update date overrides: ' + error.message);
+  }
+};
   const addProvider = async (formData) => {
   try {
     const response = await axios.post(
@@ -549,7 +464,7 @@ const updateProvider = async (providerId, data) => {
       return;
     }
 
-    // Prevent multiple simultaneous calls for the same provider
+     // Prevent multiple simultaneous calls for the same provider
     if (appointmentsLoading && currentProviderRef.current === providerId) {
       console.log('Already loading appointments for this provider, skipping...');
       return;
@@ -771,7 +686,7 @@ const updateProvider = async (providerId, data) => {
 
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md">
         <div className="p-6">
           <div className="flex items-start space-x-4">
             <div className="flex-shrink-0">
@@ -876,42 +791,31 @@ const updateProvider = async (providerId, data) => {
             </div>
           </div>
 
-          <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => {
-                  setSelectedProvider(provider);
-                  setView("detail");
-                }}
-                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                {/* <Eye className="w-4 h-4 mr-1" /> */}
-                View
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedProvider(provider);
-                  loadProviderAppointments(provider._id);
-                  setView("appointments");
-                }}
-                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                {/* <Calendar className="w-4 h-4 mr-1" /> */}
-                Appointments
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedProvider(provider);
-                  loadProviderSchedule(provider._id);
-                  setView("schedule");
-                }}
-                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                {/* <Calendar className="w-4 h-4 mr-1" /> */}
-                Schedule
-              </button>
-
-            </div>
+          <div className="mt-6 ">
+       <div className="flex items-center gap-3 w-full">
+  <button
+    onClick={() => {
+      setSelectedProvider(provider);
+      setView("detail");
+    }}
+    className="flex-1 cursor-pointer items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 shadow-sm"
+  >
+    {/* <Eye className="w-4 h-4" /> */}
+    <span>View Details</span>
+  </button>
+  
+  <button
+    onClick={() => {
+      setSelectedProvider(provider);
+      loadProviderAppointments(provider._id);
+      setView("appointments");
+    }}
+    className="flex-1 items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-pink-800 rounded-lg hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 transition-all duration-200 shadow-sm"
+  >
+    {/* <Calendar className="w-4 h-4" /> */}
+    <span>Appointments</span>
+  </button>
+</div>
 
             <div className="flex justify-end">
               <button
@@ -957,7 +861,7 @@ const updateProvider = async (providerId, data) => {
 
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 mr-6">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <button
@@ -969,9 +873,9 @@ const updateProvider = async (providerId, data) => {
             <div className="flex space-x-2">
               <button
                 onClick={() => setShowAddServiceModal(true)}
-                className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-pink-800 rounded-lg hover:bg-green-700 transition-colors"
               >
-                <Plus className="w-4 h-4 mr-1" />
+                {/* <Plus className="w-4 h-4 mr-1" /> */}
                 Add Service
               </button>
             </div>
@@ -1043,9 +947,6 @@ const updateProvider = async (providerId, data) => {
                 </span>
               </div>
 
-
-
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="space-y-3">
                   <div className="flex items-center text-gray-600">
@@ -1066,7 +967,7 @@ const updateProvider = async (providerId, data) => {
                   {provider.bio && provider.bio.length > maxLength && (
                     <button
                       onClick={toggleExpanded}
-                      className="ml-2 text-green-700 text-sm font-medium hover:underline"
+                      className="ml-2 text-pink-800 text-sm font-medium hover:underline"
                     >
                       {expanded ? "See less" : "See more"}
                     </button>
@@ -1075,6 +976,37 @@ const updateProvider = async (providerId, data) => {
               </div>
             </div>
           </div>
+
+
+          {/* Action Buttons */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+            <button
+              onClick={() => setView("schedule")}
+              className="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+            >
+               Manage Weekly Schedule
+            </button>
+            
+            {/* NEW: Date Overrides Button */}
+            <button
+              onClick={() => setView("date-overrides")}
+              className="px-4 py-3 bg-pink-800 hover:bg-pink9-200 text-gray-50 rounded-lg font-medium transition-colors"
+            >
+               Manage Date Overrides
+            </button>
+          </div>
+
+          {/* Display current overrides count */}
+          {selectedProvider.dateOverrides && selectedProvider.dateOverrides.length > 0 && (
+            <div className="mt-4 p-4 bg-pink-50 border border-pink-200 rounded-lg">
+              <p className="text-sm text-pink-800">
+                 This provider has <strong>{selectedProvider.dateOverrides.length}</strong> active date override(s)
+              </p>
+            </div>
+          )}
+
+          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
 
             <div>
@@ -1121,7 +1053,7 @@ const updateProvider = async (providerId, data) => {
                       <div className="flex justify-end mt-2">
                         <button
                           onClick={() => setShowAllServices(!showAllServices)}
-                          className="text-green-600 text-sm font-medium hover:underline"
+                          className="text-pink-900 cursor-pointer text-sm font-medium hover:underline"
                         >
                           {showAllServices ? "See less" : "See all services"}
                         </button>
@@ -1649,9 +1581,9 @@ const AddServiceModal = ({ provider, services, onClose, onAdd }) => {
 
             <button
               onClick={() => setShowAddProviderModal(true)}
-              className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors w-full sm:w-auto justify-center"
+              className="inline-flex items-center px-4 py-2 bg-pink-800 text-white rounded-lg hover:bg-gray-700 transition-colors w-full sm:w-auto justify-center"
             >
-              <UserPlus className="w-5 h-5 mr-2" />
+              {/* <UserPlus className="w-5 h-5 mr-2" /> */}
               Add Provider
             </button>
           </div>
@@ -1669,21 +1601,6 @@ const AddServiceModal = ({ provider, services, onClose, onAdd }) => {
               />
             </div>
 
-            <div className="relative w-full sm:w-64">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <select
-                value={serviceFilter}
-                onChange={(e) => setServiceFilter(e.target.value)}
-                className="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent text-black bg-white"
-              >
-                <option value="">All Services</option>
-                {services.map(service => (
-                  <option key={service._id} value={service._id}>
-                    {service.title}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
         </div>
 
@@ -1733,6 +1650,26 @@ const AddServiceModal = ({ provider, services, onClose, onAdd }) => {
       </div>
     );
   };
+
+    if (view === "schedule" && selectedProvider) {
+    return (
+      <ScheduleManagement
+        provider={selectedProvider}
+        onUpdateWorkingHours={updateProviderWorkingHours}
+        onBack={() => setView("detail")}
+      />
+    );
+  }
+
+  if (view === "date-overrides" && selectedProvider) {
+    return (
+      <DateOverrideManagement
+        provider={selectedProvider}
+        onUpdateDateOverrides={updateProviderDateOverrides}
+        onBack={() => setView("detail")}
+      />
+    );
+  }
 
   // Replace the main container at the end of your component
   // Main render logic

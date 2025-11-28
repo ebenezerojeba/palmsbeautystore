@@ -124,7 +124,7 @@ const Orders = ({ token }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600"></div>
       </div>
     );
   }
@@ -186,7 +186,7 @@ const Orders = ({ token }) => {
               const isExpanded = expandedOrders.has(order._id);
 
               return (
-                <div key={order._id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
+                <div key={order._id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
                   <div className="p-6">
                     {/* Order Header */}
                     <div className="flex items-center justify-between mb-4">
@@ -219,8 +219,8 @@ const Orders = ({ token }) => {
                       <div className="lg:col-span-6">
                         <h4 className="font-medium text-gray-900 mb-3">Items Ordered</h4>
                         <div className="space-y-3">
-                          {order.items.slice(0, isExpanded ? order.items.length : 2).map((item, idx) => (
-                            <div key={idx} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border-l-4 border-blue-500">
+                          {(isExpanded ? order.items : order.items.slice(0, 2)).map((item, idx) => (
+                            <div key={idx} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border-l-40 border-blue-50">
                               {item.image && (
                                 <img 
                                   src={item.image} 

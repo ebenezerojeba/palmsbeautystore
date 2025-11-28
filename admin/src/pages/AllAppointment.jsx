@@ -17,6 +17,8 @@ import {
   XCircle
 } from "lucide-react";
 import { AdminContexts } from "../context/AdminContexts";
+import { toast } from "react-toastify";
+// import { backendUrl } from "../App";
 
 const AllAppointments = () => {
   const {
@@ -26,7 +28,8 @@ const AllAppointments = () => {
     completeAppointment, 
     slotDateFormat,
     loadingStates,
-    loadingId 
+    loadingId,
+    
   } = useContext(AdminContexts);
 
   // State management
@@ -39,6 +42,85 @@ const AllAppointments = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
+  // Add appointment modal state
+const [showAddModal, setShowAddModal] = useState(false);
+const [providers, setProviders] = useState([]);
+const [services, setServices] = useState([]);
+const [addingAppointment, setAddingAppointment] = useState(false);
+const [newAppointment, setNewAppointment] = useState({
+  userName: '',
+  userEmail: '',
+  userPhone: '',
+  providerId: '',
+  services: [],
+  date: '',
+  time: '',
+  clientNotes: '',
+  paymentStatus: 'pending',
+  paymentAmount: ''
+});
+
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+// Fetch providers and services for the add modal
+
+// Then fix the useEffect:
+useEffect(() => {
+  const fetchProvidersAndServices = async () => {
+    if (!showAddModal) return;
+    
+    try {
+      
+      
+      // Fetch providers
+
+      const providersRes = await fetch(`${backendUrl}/api/provider`);
+      
+      if (!providersRes.ok) {
+        throw new Error(`Providers fetch failed: ${providersRes.status}`);
+      }
+      
+      const providersData = await providersRes.json();
+      
+      if (providersData.success) {
+        setProviders(providersData.providers || []);
+        console.log(`✅ Loaded ${providersData.providers.length} providers`);
+      } else {
+        setProviders([]);
+      }
+
+      // Fetch services
+      const servicesRes = await fetch(`${backendUrl}/api/services/only-services`);
+
+      if (!servicesRes.ok) {
+        throw new Error(`Services fetch failed: ${servicesRes.status}`);
+      }
+      
+      const servicesData = await servicesRes.json();
+    
+      
+     if (servicesData.success && servicesData.services) {
+        setServices(servicesData.services);
+        
+      } else if (servicesData.services) {
+        // Handle case where response doesn't have success flag
+        setServices(servicesData.services);
+       
+      } else {
+        setServices([]);
+      }
+      
+    } catch (err) {
+   
+      alert('Failed to load providers and services: ' + err.message);
+      
+      // Set empty arrays so the UI doesn't break
+      setProviders([]);
+      setServices([]);
+    }
+  };
+
+  fetchProvidersAndServices();
+}, [showAddModal, backendUrl]);
   // Fixed useEffect with proper dependencies
   useEffect(() => {
     if (!hasInitialLoad && !loadingStates?.appointments && getAllAppointments) {
@@ -141,26 +223,129 @@ const AllAppointments = () => {
     return providerColor;
   }, [getAppointmentStatus, getProviderColor]);
 
-  // Enhanced error handling with user feedback
-  const handleCancelAppointment = useCallback(async (appointmentId) => {
-    try {
-      setActionError(null);
-      await cancelAppointment(appointmentId);
-    } catch (error) {
-      console.error('Error cancelling appointment:', error);
-      setActionError('Failed to cancel appointment. Please try again.');
-    }
-  }, [cancelAppointment]);
 
-  const handleCompleteAppointment = useCallback(async (appointmentId) => {
-    try {
-      setActionError(null);
-      await completeAppointment(appointmentId);
-    } catch (error) {
-      console.error('Error completing appointment:', error);
-      setActionError('Failed to complete appointment. Please try again.');
+const handleAddAppointment = async (e) => {
+  e.preventDefault();
+  setAddingAppointment(true);
+
+  try {
+    // Validate that at least one service is selected
+    if (newAppointment.services.length === 0) {
+      alert('Please select at least one service');
+      setAddingAppointment(false);
+      return;
     }
-  }, [completeAppointment]);
+
+    // Prepare the appointment data
+    const appointmentData = {
+      services: newAppointment.services,
+      date: newAppointment.date,
+      time: newAppointment.time,
+      providerId: newAppointment.providerId,
+      userName: newAppointment.userName,
+      userEmail: newAppointment.userEmail,
+      userPhone: newAppointment.userPhone,
+      clientNotes: newAppointment.clientNotes,
+      paymentStatus: newAppointment.paymentStatus,
+      paymentAmount: parseFloat(newAppointment.paymentAmount) || 0,
+      consentForm: {
+        healthConditions: '',
+        allergies: '',
+        consentToTreatment: true,
+      }
+    };
+
+    console.log('Sending appointment data:', appointmentData);
+
+    const res = await fetch(`${backendUrl}/api/admin/create-appointment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(appointmentData)
+    });
+
+    const data = await res.json();
+    
+
+    if (data.success) {
+      // Close modal
+      setShowAddModal(false);
+      toast.success(data.message || 'Appointment created successfully');
+      
+      // Reset form
+      setNewAppointment({
+        userName: '',
+        userEmail: '',
+        userPhone: '',
+        providerId: '',
+        services: [],
+        date: '',
+        time: '',
+        clientNotes: '',
+        paymentStatus: 'pending',
+        paymentAmount: ''
+      });
+      
+ 
+      try {
+        await getAllAppointments();
+      } catch (refreshError) {
+        console.error('Error refreshing appointments:', refreshError);
+        alert('Appointment created but failed to refresh list. Please reload the page.');
+      }
+    } else {
+      toast.error(data.message || 'Failed to create appointment');
+    }
+  } catch (error) {
+    console.error('Error creating appointment:', error);
+    alert('Failed to create appointment: ' + error.message);
+  } finally {
+    setAddingAppointment(false);
+  }
+};
+
+const handleServiceSelect = (service) => {
+  const isSelected = newAppointment.services.some(s => s.serviceId === service._id);
+  
+  if (isSelected) {
+    setNewAppointment(prev => ({
+      ...prev,
+      services: prev.services.filter(s => s.serviceId !== service._id)
+    }));
+  } else {
+    setNewAppointment(prev => ({
+      ...prev,
+      services: [...prev.services, {
+        serviceId: service._id,
+        serviceTitle: service.title,
+        duration: service.duration || 90,
+        price: service.price || 0
+      }]
+    }));
+  }
+};
+
+  // Enhanced error handling with user feedback
+const handleCancelAppointment = useCallback(async (appointmentId) => {
+  try {
+    if (!appointmentId) {
+      toast.error("Invalid appointment ID");
+      return;
+    }
+
+    setActionError(null);
+    
+    // Fix: Pass all three required parameters
+    // cancelAppointment expects: (cancelledBy, appointmentId, reason)
+    await cancelAppointment('admin', appointmentId, 'Cancelled by admin');
+    
+  } catch (error) {
+    console.error('Error cancelling appointment:', error);
+    setActionError('Failed to cancel appointment. Please try again.');
+    toast.error('Failed to cancel appointment. Please try again.');
+  }
+}, [cancelAppointment]);
 
   // Calendar functions
   const getDaysInMonth = useCallback((date) => {
@@ -282,27 +467,27 @@ const AllAppointments = () => {
     const statusConfig = {
       completed: {
         className: "bg-green-100 text-green-800",
-        icon: <CheckCircle2 className="w-3 h-3" />,
+        // icon: <CheckCircle2 className="w-3 h-3" />,
         label: "Completed"
       },
       cancelled: {
         className: "bg-red-100 text-red-800",
-        icon: <XCircle className="w-3 h-3" />,
+        // icon: <XCircle className="w-3 h-3" />,
         label: "Cancelled"
       },
       confirmed: {
         className: "bg-blue-100 text-blue-800",
-        icon: <CheckCircle2 className="w-3 h-3" />,
+        // icon: <CheckCircle2 className="w-3 h-3" />,
         label: "Confirmed"
       },
       'no-show': {
         className: "bg-gray-100 text-gray-800",
-        icon: <XCircle className="w-3 h-3" />,
+        // icon: <XCircle className="w-3 h-3" />,
         label: "No Show"
       },
       pending: {
         className: "bg-amber-100 text-amber-800",
-        icon: <AlertCircle className="w-3 h-3" />,
+        // icon: <AlertCircle className="w-3 h-3" />,
         label: "Pending"
       }
     };
@@ -610,7 +795,7 @@ const AllAppointments = () => {
                     view === 'calendar' ? 'bg-white text-pink-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  <Calendar className="w-4 h-4" />
+                  {/* <Calendar className="w-4 h-4" /> */}
                   <span className="hidden sm:inline">Calendar</span>
                 </button>
                 <button
@@ -622,36 +807,19 @@ const AllAppointments = () => {
                   <List className="w-4 h-4" />
                   <span className="hidden sm:inline">List</span>
                 </button>
+
+<button
+  onClick={() => setShowAddModal(true)}
+  className="px-4 py-2 bg-pink-700 text-white rounded-lg hover:bg-pink-700 transition-colors text-sm font-medium"
+>
+   Add Appointment
+</button>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder="Search appointments..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all text-sm"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
 
-              <div className="flex gap-2">
-                <select
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all text-sm min-w-0 flex-shrink-0"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="all">All Status</option>
-                  <option value="pending">Pending/Confirmed</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
-            </div>
+
+        
           </div>
         </div>
 
@@ -858,6 +1026,227 @@ const AllAppointments = () => {
           </div>
         )}
       </div>
+      {/* Add Appointment Modal */}
+{showAddModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-900">Add New Appointment</h3>
+          <button
+            onClick={() => setShowAddModal(false)}
+            className="p-2 text-gray-400 hover:text-gray-600"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+
+      <form onSubmit={handleAddAppointment} className="p-6 space-y-4">
+        {/* Customer Information */}
+        <div className="space-y-4">
+          <h4 className="font-medium text-gray-900">Customer Information</h4>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Name *
+              </label>
+              <input
+                type="text"
+                required
+                value={newAppointment.userName}
+                onChange={(e) => setNewAppointment(prev => ({ ...prev, userName: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500"
+                placeholder="Customer name"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email *
+              </label>
+              <input
+                type="email"
+                required
+                value={newAppointment.userEmail}
+                onChange={(e) => setNewAppointment(prev => ({ ...prev, userEmail: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500"
+                placeholder="customer@email.com"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Phone
+              </label>
+              <input
+                type="tel"
+                value={newAppointment.userPhone}
+                onChange={(e) => setNewAppointment(prev => ({ ...prev, userPhone: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500"
+                placeholder="123-456-7890"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Provider Selection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Provider/Stylist *
+          </label>
+          <select
+            required
+            value={newAppointment.providerId}
+            onChange={(e) => setNewAppointment(prev => ({ ...prev, providerId: e.target.value }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500"
+          >
+            <option value="">Select a provider</option>
+            {providers.map(provider => (
+              <option key={provider._id} value={provider._id}>
+                {provider.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Services Selection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Services * (Select one or more)
+          </label>
+          <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-md p-2 space-y-2">
+            {services.map(service => {
+              const isSelected = newAppointment.services.some(s => s.serviceId === service._id);
+              return (
+                <div
+                  key={service._id}
+                  onClick={() => handleServiceSelect(service)}
+                  className={`p-3 rounded-md cursor-pointer transition-colors ${
+                    isSelected 
+                      ? 'bg-pink-100 border-2 border-pink-500' 
+                      : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">{service.title}</span>
+                    <span className="text-sm text-gray-600">${service.price}</span>
+                  </div>
+                  <div className="text-xs text-gray-500">{service.duration} mins</div>
+                </div>
+              );
+            })}
+          </div>
+          {newAppointment.services.length > 0 && (
+            <div className="mt-2 text-sm text-gray-600">
+              Selected: {newAppointment.services.length} service(s) - 
+              Total: ${newAppointment.services.reduce((sum, s) => sum + s.price, 0)}
+            </div>
+          )}
+        </div>
+
+        {/* Date and Time */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Date *
+            </label>
+            <input
+              type="date"
+              required
+              value={newAppointment.date}
+              onChange={(e) => setNewAppointment(prev => ({ ...prev, date: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Time *
+            </label>
+            <input
+              type="time"
+              required
+              value={newAppointment.time}
+              onChange={(e) => setNewAppointment(prev => ({ ...prev, time: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500"
+            />
+          </div>
+        </div>
+
+        {/* Payment Status */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Payment Status
+            </label>
+            <select
+              value={newAppointment.paymentStatus}
+              onChange={(e) => setNewAppointment(prev => ({ ...prev, paymentStatus: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500"
+            >
+              <option value="pending">Pending</option>
+              <option value="paid">Paid (Cash/Other)</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Amount Paid
+            </label>
+            <input
+              type="number"
+              value={newAppointment.paymentAmount}
+              onChange={(e) => setNewAppointment(prev => ({ ...prev, paymentAmount: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500"
+              placeholder="0.00"
+            />
+          </div>
+        </div>
+
+        {/* Notes */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Notes
+          </label>
+          <textarea
+            value={newAppointment.clientNotes}
+            onChange={(e) => setNewAppointment(prev => ({ ...prev, clientNotes: e.target.value }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500"
+            rows="3"
+            placeholder="Any special notes..."
+          />
+        </div>
+
+        {/* Submit Button */}
+        <div className="flex gap-3 pt-4 border-t">
+          <button
+            type="button"
+            onClick={() => setShowAddModal(false)}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={addingAppointment || newAppointment.services.length === 0}
+            className="flex-1 px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {addingAppointment ? (
+              <>
+                <Loader className="w-4 h-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              'Create Appointment'
+            )}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
     </div>
   );
 };

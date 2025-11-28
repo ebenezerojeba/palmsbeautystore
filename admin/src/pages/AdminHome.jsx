@@ -67,7 +67,7 @@ const AdminHome = ({token}) => {
     <div className="flex-1 p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {/* Welcome Section */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6 mr-6">
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
             Welcome to Palms Beauty Admin
           </h1>

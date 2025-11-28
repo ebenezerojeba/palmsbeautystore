@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Edit, Trash2, Loader2, ChevronDown, ChevronRight, AlertCircle, CheckCircle, XCircle, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader2, ChevronDown, ChevronRight, AlertCircle, CheckCircle, XCircle, X, PlusIcon, PlusCircleIcon } from 'lucide-react';
 import { LoadingOverlay } from '../components/Loader';
 import { api, useApi } from '../hooks/api.js';
 import { Toast } from '../components/Toast.jsx';
@@ -38,8 +38,7 @@ const Services = () => {
   const fetchServices = useCallback(async () => {
     try {
       const { data } = await makeRequest(() => api.getServices());
-      console.log('Fetched services:', data);
-
+      
       const categoryMap = {};
       const categories = data.filter(s => s.isCategory);
 
@@ -568,7 +567,7 @@ const Services = () => {
                     <div className="flex gap-1 md:gap-2">
                       <button
                         onClick={() => startEdit(category)}
-                        className="text-blue-600 hover:text-blue-900 p-1"
+                        className="text-gray-600 hover:text-gray-900 p-1"
                         aria-label={`Edit ${category.title}`}
                       >
                         <Edit className="w-4 h-4" />
@@ -644,7 +643,7 @@ const Services = () => {
                       <div className="flex gap-1 md:gap-2">
                         <button
                           onClick={() => startEdit(service)}
-                          className="text-blue-600 hover:text-blue-900 p-1"
+                          className="textgray-600 hover:text-blue-900 p-1"
                           aria-label={`Edit ${service.title}`}
                         >
                           <Edit className="w-4 h-4" />
@@ -662,7 +661,7 @@ const Services = () => {
                             className="text-gray-600 hover:text-gray-900 p-1"
                             aria-label={`Delete image for ${service.title}`}
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-5 h-5" />
                           </button>
                         )}
                       </div>
@@ -686,7 +685,7 @@ const Services = () => {
   if (loading && Object.keys(services).length === 0) {
     return (
       <div className="flex justify-center items-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-pink-600" />
         <span className="ml-2 text-gray-600">Loading services...</span>
       </div>
     );
@@ -699,16 +698,16 @@ const Services = () => {
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <button
             onClick={startAddCategory}
-            className="bg-gray-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-gray-700 transition-colors"
+            className="bg-gray-800 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-gray-700 transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add Category
           </button>
           <button
             onClick={startAddService}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors"
+            className="bg-pink-900 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 cursor-pointer hover:bg-pink-700 transition-colors"
           >
-            <Plus className="w-4 h-4" />
+            <PlusCircleIcon className="w-4 h-4" />
             Add Service
           </button>
         </div>

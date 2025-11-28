@@ -1,0 +1,24 @@
+# palmsadmin/fly.toml
+app = 'palmsadmin'
+primary_region = 'yyz'
+
+[build]
+  [build.args]
+    VITE_BACKEND_URL = "https://palmsbackend.fly.dev"
+
+[env]
+  # Remove this - Vite env vars must be set at build time
+  # VITE_BACKEND_URL = "https://palmsbackend.fly.dev"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1

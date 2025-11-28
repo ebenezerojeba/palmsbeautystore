@@ -138,7 +138,7 @@ toggleCategoryStatus: async (id, status) => {
 
   // Delete service
   deleteService: async (id) => {
-    const res = await axios.delete(`${backendUrl}/api/admin/services/${id}`);
+    const res = await axios.delete(`${backendUrl}/api/admin/${id}`);
     return {
       data: res.data,
       message: res.data.message || 'Service deleted successfully',
@@ -158,7 +158,7 @@ toggleCategoryStatus: async (id, status) => {
 
   // Delete image from service
   deleteImage: async (id) => {
-    const res = await axios.delete(`${backendUrl}/api/admin/services/${id}/image`);
+    const res = await axios.delete(`${backendUrl}/api/admin/${id}/image`);
     return {
       data: res.data,
       message: res.data.message || 'Image deleted successfully',

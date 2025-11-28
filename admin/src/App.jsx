@@ -19,8 +19,11 @@ import StaffList from './pages/StaffList'
 import StaffForm from './pages/StaffForm'
 import StaffAppointments from './pages/StaffAppointment'
 import Provider from './pages/Provider'
+import VagaroImportTool from './pages/VagaroImport'
 
-export const backendUrl = 'https://palmsbeautystore-backend.onrender.com';
+export const backendUrl = 'https ://api.palmsbeautystore.com';
+// export const backendUrl = 'http://localhost:8000';
+
 
 const App = () => {
 
@@ -47,6 +50,7 @@ const App = () => {
   <Route path="/orders" element={<Orders token={token} />} />
   <Route path="/hours" element={<AdminBusinessHours token={token} />} />
   <Route path="/provider" element={<Provider token={token} />} />
+  <Route path="/vagaro" element={<VagaroImportTool token={token} />} />
 
 
 

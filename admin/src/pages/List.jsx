@@ -97,9 +97,8 @@ const List = ({ token }) => {
     try {
       setRemoving(id);
 
-      const response = await axios.post(
-        `${backendUrl}/api/product/remove`,
-        { id },
+      const response = await axios.delete(
+        `${backendUrl}/api/product/${id}`,
         { 
           headers: { token },
           timeout: 10000

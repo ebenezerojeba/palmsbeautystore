@@ -50,20 +50,10 @@ const AdminContextsProvider = (props) => {
   // Updated Admin Context Funct
 
 
-  const cancelAppointment = async (appointmentId, reason = "Cancelled by admin", cancelledBy = "provider") => {
+ const cancelAppointment = async (cancelledBy, appointmentId, reason = "Appointment cancelled") => {
   setLoadingId(appointmentId);
   
   try {
-    // Better token retrieval with validation
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    
-    if (!token) {
-      toast.error("Authentication required. Please log in again.");
-      setLoadingId(null);
-      return;
-    }
-
-    // Add validation
     if (!appointmentId) {
       toast.error("Invalid appointment ID");
       setLoadingId(null);
@@ -72,24 +62,23 @@ const AdminContextsProvider = (props) => {
 
     const response = await fetch(`${backendUrl}/api/admin/cancel-appointment`, {
       method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "token": token
-        // "Authorization": `Bearer ${token}` // Always include token for admin routes
+      headers: {
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ 
-        appointmentId, 
-        reason: reason.trim(), // Ensure reason is trimmed
-        cancelledBy 
+        appointmentId,
+        cancelledBy: 'admin', // Change based on your user role
+        reason: reason
       }),
     });
+
+    
 
     // Handle different response types
     let data;
     try {
       data = await response.json();
     } catch (parseError) {
-      console.error("Failed to parse response:", parseError);
       throw new Error("Invalid server response");
     }
 

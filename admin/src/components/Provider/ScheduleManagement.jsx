@@ -303,7 +303,7 @@ export const ScheduleManagement = ({
   ];
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+    <div className="ml-18 bg-white rounded-xl shadow-sm border border-gray-200">
       <div className="p-4 sm:p-6 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           {/* Back button */}
