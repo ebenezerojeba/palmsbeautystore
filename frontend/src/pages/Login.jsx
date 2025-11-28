@@ -20,6 +20,32 @@ const InputField = ({
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
+    const formatPhoneNumber = (value) => {
+  // Remove all non-digits
+  const cleaned = value.replace(/\D/g, '');
+  
+  // Limit to 10 digits
+  const limited = cleaned.slice(0, 10);
+  
+  // Format as (XXX) XXX-XXXX
+  if (limited.length <= 3) {
+    return limited;
+  } else if (limited.length <= 6) {
+    return `(${limited.slice(0, 3)}) ${limited.slice(3)}`;
+  } else {
+    return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)}-${limited.slice(6)}`;
+  }
+};
+
+const handleChange = (e) => {
+  if (type === "tel") {
+    const formatted = formatPhoneNumber(e.target.value);
+    onChange({ ...e, target: { ...e.target, value: formatted } });
+  } else {
+    onChange(e);
+  }
+};
+
   const inputAnimation = useSpring({
     from: { opacity: 0, transform: "translateY(20px)" },
     to: { opacity: 1, transform: "translateY(0px)" },
@@ -38,7 +64,7 @@ const InputField = ({
           type={type === "password" && showPassword ? "text" : type}
           placeholder={placeholder}
           value={value}
-          onChange={onChange}
+          onChange={handleChange}
           required={required}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
@@ -68,6 +94,35 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const [phoneError, setPhoneError] = useState("");
+
+const validatePhone = (value) => {
+  const cleaned = value.replace(/\D/g, '');
+  if (cleaned.length > 0 && cleaned.length < 10) {
+    setPhoneError("Phone number must be 10 digits");
+  } else {
+    setPhoneError("");
+  }
+};
+
+
+  const formatPhoneNumber = (value) => {
+  // Remove all non-digits
+  const cleaned = value.replace(/\D/g, '');
+  
+  // Limit to 10 digits
+  const limited = cleaned.slice(0, 10);
+  
+  // Format as (XXX) XXX-XXXX
+  if (limited.length <= 3) {
+    return limited;
+  } else if (limited.length <= 6) {
+    return `(${limited.slice(0, 3)}) ${limited.slice(3)}`;
+  } else {
+    return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)}-${limited.slice(6)}`;
+  }
+};
+
 
   // Get redirect information from multiple sources for better mobile compatibility
   const getRedirectInfo = () => {
@@ -116,14 +171,17 @@ const Login = () => {
   const onSubmitHandler = async (event) => {
     event.preventDefault();
     setIsLoading(true);
-
     try {
       if (state === "Sign Up") {
+
+        // Clean phone number before sending
+      const cleanedPhone = '+1' + phone.replace(/\D/g, '');
+
         const { data } = await axios.post(backendUrl + "/api/user/register", {
           name,
           password,
           email,
-          phone
+          phone: cleanedPhone,
         });
         if (data.success && data.token) {
           localStorage.setItem("token", data.token);
@@ -246,7 +304,7 @@ const Login = () => {
       <InputField
         icon={Phone}
         type="tel"
-        placeholder="Phone Number"
+        placeholder="+1 (XXX) XXX-XXXX"
         value={phone}
         onChange={(e) => setPhone(e.target.value)}
         required

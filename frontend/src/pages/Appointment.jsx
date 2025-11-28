@@ -58,7 +58,7 @@ const Appointment = () => {
   const [savePaymentMethod, setSavePaymentMethod] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("new");
   const [showCancellationPolicy, setShowCancellationPolicy] = useState(false);
-  
+
   // Preferences and settings
   const [reminderPreferences, setReminderPreferences] = useState({
     email24h: false,
@@ -92,14 +92,14 @@ const Appointment = () => {
       try {
         const res = await fetch(`${backendUrl}/api/services/services/${id}`);
         const data = await res.json();
-       if (data.service) {
-  setServiceInfo({
-    ...data.service,
-    providers: data.service.providers || [],   // make sure providers is kept
-    providerName: data.service.providers?.[0]?.name || ''
-  });
-  setSelectedServices([data.service]);
-}
+        if (data.service) {
+          setServiceInfo({
+            ...data.service,
+            providers: data.service.providers || [],   // make sure providers is kept
+            providerName: data.service.providers?.[0]?.name || ''
+          });
+          setSelectedServices([data.service]);
+        }
 
         else {
           toast.error("Service not found");
@@ -150,138 +150,138 @@ const Appointment = () => {
 
 
   useEffect(() => {
-  const fetchAvailableSlots = async () => {
-    if (selectedServices.length === 0) return;
+    const fetchAvailableSlots = async () => {
+      if (selectedServices.length === 0) return;
 
-    setIsLoading(true);
-    try {
-      const startDate = getTodayString();
-      const endDateObj = new Date();
-      endDateObj.setDate(endDateObj.getDate() + 25);
-      const endDate = formatLocalDate(endDateObj);
+      setIsLoading(true);
+      try {
+        const startDate = getTodayString();
+        const endDateObj = new Date();
+        endDateObj.setDate(endDateObj.getDate() + 25);
+        const endDate = formatLocalDate(endDateObj);
 
-      const servicesForSlots = selectedServices.map(service => ({
-        _id: service._id,
-        title: service.title,
-        duration: service.duration || 90,
-        price: service.price
-      }));
+        const servicesForSlots = selectedServices.map(service => ({
+          _id: service._id,
+          title: service.title,
+          duration: service.duration || 90,
+          price: service.price
+        }));
 
-      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  
-      const queryParams = new URLSearchParams({
-        serviceId: id,
-        startDate,
-        endDate,
-        selectedServices: JSON.stringify(servicesForSlots),
-        timezone: userTimezone  
-      });
+        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      const res = await fetch(
-        `${backendUrl}/api/appointment/available-slots?${queryParams.toString()}`
-      );
-
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
-      const data = await res.json();
-
-      if (data.availableSlots) {
-        const todayStr = getTodayString();
-        
-        const filteredSlots = data.availableSlots.filter(slot => {
-          const slotDateStr = Array.isArray(slot.date) ? slot.date[0] : slot.date;
-          return slotDateStr >= todayStr;
+        const queryParams = new URLSearchParams({
+          serviceId: id,
+          startDate,
+          endDate,
+          selectedServices: JSON.stringify(servicesForSlots),
+          timezone: userTimezone
         });
-        
-        setAvailableSlots(filteredSlots);
-      } else {
+
+        const res = await fetch(
+          `${backendUrl}/api/appointment/available-slots?${queryParams.toString()}`
+        );
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        if (data.availableSlots) {
+          const todayStr = getTodayString();
+
+          const filteredSlots = data.availableSlots.filter(slot => {
+            const slotDateStr = Array.isArray(slot.date) ? slot.date[0] : slot.date;
+            return slotDateStr >= todayStr;
+          });
+
+          setAvailableSlots(filteredSlots);
+        } else {
+          setAvailableSlots([]);
+        }
+      } catch (err) {
+        console.error('Error fetching slots:', err);
+        toast.error("Failed to fetch available slots");
         setAvailableSlots([]);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      console.error('Error fetching slots:', err);
-      toast.error("Failed to fetch available slots");
-      setAvailableSlots([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
 
-  fetchAvailableSlots();
-}, [selectedServices, id, backendUrl]);
+    fetchAvailableSlots();
+  }, [selectedServices, id, backendUrl]);
 
 
-//   useEffect(() => {
-//   const fetchAvailableSlots = async () => {
-//     if (selectedServices.length === 0) return;
+  //   useEffect(() => {
+  //   const fetchAvailableSlots = async () => {
+  //     if (selectedServices.length === 0) return;
 
-//     setIsLoading(true);
-//     try {
-//       // const startDate = new Date().toISOString().split('T')[0];
-//       const endDate = new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  //     setIsLoading(true);
+  //     try {
+  //       // const startDate = new Date().toISOString().split('T')[0];
+  //       const endDate = new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-//       const servicesForSlots = selectedServices.map(service => ({
-//         _id: service._id,
-//         title: service.title,
-//         duration: service.duration || 90,
-//         price: service.price
-//       }));
+  //       const servicesForSlots = selectedServices.map(service => ({
+  //         _id: service._id,
+  //         title: service.title,
+  //         duration: service.duration || 90,
+  //         price: service.price
+  //       }));
 
-      
-//       const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  
-//       const queryParams = new URLSearchParams({
-//         serviceId: id,
-//         // startDate,
-//         endDate,
-//         selectedServices: JSON.stringify(servicesForSlots),
-//         timezone: userTimezone  
-//       });
 
-//       const res = await fetch(
-//         `${backendUrl}/api/appointment/available-slots?${queryParams.toString()}`
-//       );
+  //       const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-//       if (!res.ok) {
-//         throw new Error(`HTTP error! status: ${res.status}`);
-//       }
+  //       const queryParams = new URLSearchParams({
+  //         serviceId: id,
+  //         // startDate,
+  //         endDate,
+  //         selectedServices: JSON.stringify(servicesForSlots),
+  //         timezone: userTimezone  
+  //       });
 
-//       const data = await res.json();
-      
+  //       const res = await fetch(
+  //         `${backendUrl}/api/appointment/available-slots?${queryParams.toString()}`
+  //       );
 
-//       // if (data.availableSlots) {
-//       //   setAvailableSlots(data.availableSlots);
-//       // } else {
-//       //   setAvailableSlots([]);
-//       // }
+  //       if (!res.ok) {
+  //         throw new Error(`HTTP error! status: ${res.status}`);
+  //       }
 
-//       if (data.availableSlots) {
-  
-//   const today = new Date();
-//   today.setHours(0, 0, 0, 0);
-  
-//   const filteredSlots = data.availableSlots.filter(slot => {
-//     const slotDate = new Date(slot.date);
-//     slotDate.setHours(0, 0, 0, 0);
-//     return slotDate >= today;
-//   });
-  
-//   setAvailableSlots(filteredSlots);
-// } else {
-//   setAvailableSlots([]);
-// }
-//     } catch (err) {
-//       console.error('Error fetching slots:', err);
-//       toast.error("Failed to fetch available slots");
-//       setAvailableSlots([]);
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
+  //       const data = await res.json();
 
-//   fetchAvailableSlots();
-// }, [selectedServices, id, backendUrl]);
+
+  //       // if (data.availableSlots) {
+  //       //   setAvailableSlots(data.availableSlots);
+  //       // } else {
+  //       //   setAvailableSlots([]);
+  //       // }
+
+  //       if (data.availableSlots) {
+
+  //   const today = new Date();
+  //   today.setHours(0, 0, 0, 0);
+
+  //   const filteredSlots = data.availableSlots.filter(slot => {
+  //     const slotDate = new Date(slot.date);
+  //     slotDate.setHours(0, 0, 0, 0);
+  //     return slotDate >= today;
+  //   });
+
+  //   setAvailableSlots(filteredSlots);
+  // } else {
+  //   setAvailableSlots([]);
+  // }
+  //     } catch (err) {
+  //       console.error('Error fetching slots:', err);
+  //       toast.error("Failed to fetch available slots");
+  //       setAvailableSlots([]);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
+
+  //   fetchAvailableSlots();
+  // }, [selectedServices, id, backendUrl]);
 
   const addService = (service) => {
     const isAlreadySelected = selectedServices.some(s => s._id === service._id);
@@ -355,146 +355,146 @@ const Appointment = () => {
 
   // Handle booking
   const handleBooking = async () => {
-  if (!validateBookingData()) return;
+    if (!validateBookingData()) return;
 
-  if (!userData) {
-    toast.warn("User information not available");
-    return;
-  }
-
-  // Enhanced provider validation
-  if (!serviceInfo || !serviceInfo.providers || serviceInfo.providers.length === 0) {
-    toast.error("No providers available for this service");
-    return;
-  }
-
-  // Filter out invalid providers first
-  const validProviders = serviceInfo.providers.filter(provider => 
-    provider && provider._id && provider.name
-  );
-
-  if (validProviders.length === 0) {
-    toast.error("No valid providers available for this service");
-    return;
-  }
-
-  // Select random provider from valid ones
-  const randomIndex = Math.floor(Math.random() * validProviders.length);
-  const chosenProvider = validProviders[randomIndex];
-
-  // Double-check the chosen provider (this should never fail now)
-  if (!chosenProvider || !chosenProvider._id) {
-    toast.error("Provider selection failed. Please try again.");
-    return;
-  }
-
-
-
-  const token = localStorage.getItem('token');
-  if (!token) {
-    toast.error("Please log in first!");
-    return;
-  }
-
-  setIsBooking(true);
-
-  try {
-    const bookingData = {
-      services: selectedServices.map((service, index) => ({
-        serviceId: service._id,
-        serviceTitle: service.title,
-        duration: parseInt(service.duration) || 90,
-        price: parseFloat(service.price) || 0,
-        order: index + 1
-      })),
-
-      date: selectedDate,
-      time: selectedTime,
-      providerId: chosenProvider._id,
-      providerName: chosenProvider.name,
-      totalDuration: getTotalDuration(),
-
-      payment: {
-        amount: getTotalPrice(),
-        currency: "CAD",
-        paymentMethod: selectedPaymentMethod === "new" ? "new_card" : selectedPaymentMethod
-      },
-
-      userName: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
-      userEmail: userData.email,
-      userPhone: userData.phone,
-
-      clientNotes,
-      specialRequests,
-      reminderPreferences,
-
-      paymentPreferences: {
-        savePaymentMethod,
-        selectedPaymentMethod
-      },
-
-      agreementConfirmations: {
-        cancellationPolicy: agreeToCancellationPolicy,
-        termsAndConditions: agreeToTerms
-      },
-
-      consentForm: {
-        healthConditions: consentForm.healthConditions,
-        allergies: consentForm.allergies,
-        consentToTreatment: consentForm.consentToTreatment,
-        submittedAt: new Date().toISOString()
-      },
-    };
-
-
-    const res = await fetch(`${backendUrl}/api/appointment/book-multiple-appointment`, {
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(bookingData),
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      if (data.appointment && data.appointment._id) {
-        setAppointmentId(data.appointment._id);
-      }
-
-      if (data.paymentUrl) {
-        setPaymentUrl(data.paymentUrl);
-        setShowPayment(true);
-        toast.success("Appointment created! Please complete payment to confirm.");
-      } else {
-        console.error('No payment URL in response:', data);
-        toast.error("Booking created but payment URL not received. Please contact support.");
-      }
-    } else {
-      console.error('Booking failed:', data);
-      toast.error(data.message || "Booking failed. Please try again.");
+    if (!userData) {
+      toast.warn("User information not available");
+      return;
     }
-  } catch (err) {
-    console.error("Booking error:", err);
-    toast.error("Something went wrong. Please try again.");
-  } finally {
-    setIsBooking(false);
-  }
-};
-const formatDate = (dateStr) => {
-  // ✅ FIX: Parse date in local timezone, not UTC
-  const cleanDateStr = Array.isArray(dateStr) ? dateStr[0] : dateStr;
-  const [year, month, day] = cleanDateStr.split('-').map(Number);
-  const date = new Date(year, month - 1, day); // Create local date
-  
-  return date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-};
+
+    // Enhanced provider validation
+    if (!serviceInfo || !serviceInfo.providers || serviceInfo.providers.length === 0) {
+      toast.error("No providers available for this service");
+      return;
+    }
+
+    // Filter out invalid providers first
+    const validProviders = serviceInfo.providers.filter(provider =>
+      provider && provider._id && provider.name
+    );
+
+    if (validProviders.length === 0) {
+      toast.error("No valid providers available for this service");
+      return;
+    }
+
+    // Select random provider from valid ones
+    const randomIndex = Math.floor(Math.random() * validProviders.length);
+    const chosenProvider = validProviders[randomIndex];
+
+    // Double-check the chosen provider (this should never fail now)
+    if (!chosenProvider || !chosenProvider._id) {
+      toast.error("Provider selection failed. Please try again.");
+      return;
+    }
+
+
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error("Please log in first!");
+      return;
+    }
+
+    setIsBooking(true);
+
+    try {
+      const bookingData = {
+        services: selectedServices.map((service, index) => ({
+          serviceId: service._id,
+          serviceTitle: service.title,
+          duration: parseInt(service.duration) || 90,
+          price: parseFloat(service.price) || 0,
+          order: index + 1
+        })),
+
+        date: selectedDate,
+        time: selectedTime,
+        providerId: chosenProvider._id,
+        providerName: chosenProvider.name,
+        totalDuration: getTotalDuration(),
+
+        payment: {
+          amount: getTotalPrice(),
+          currency: "CAD",
+          paymentMethod: selectedPaymentMethod === "new" ? "new_card" : selectedPaymentMethod
+        },
+
+        userName: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
+        userEmail: userData.email,
+        userPhone: userData.phone,
+
+        clientNotes,
+        specialRequests,
+        reminderPreferences,
+
+        paymentPreferences: {
+          savePaymentMethod,
+          selectedPaymentMethod
+        },
+
+        agreementConfirmations: {
+          cancellationPolicy: agreeToCancellationPolicy,
+          termsAndConditions: agreeToTerms
+        },
+
+        consentForm: {
+          healthConditions: consentForm.healthConditions,
+          allergies: consentForm.allergies,
+          consentToTreatment: consentForm.consentToTreatment,
+          submittedAt: new Date().toISOString()
+        },
+      };
+
+
+      const res = await fetch(`${backendUrl}/api/appointment/book-multiple-appointment`, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(bookingData),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        if (data.appointment && data.appointment._id) {
+          setAppointmentId(data.appointment._id);
+        }
+
+        if (data.paymentUrl) {
+          setPaymentUrl(data.paymentUrl);
+          setShowPayment(true);
+          toast.success("Appointment created! Please complete payment to confirm.");
+        } else {
+          console.error('No payment URL in response:', data);
+          toast.error("Booking created but payment URL not received. Please contact support.");
+        }
+      } else {
+        console.error('Booking failed:', data);
+        toast.error(data.message || "Booking failed. Please try again.");
+      }
+    } catch (err) {
+      console.error("Booking error:", err);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsBooking(false);
+    }
+  };
+  const formatDate = (dateStr) => {
+    // ✅ FIX: Parse date in local timezone, not UTC
+    const cleanDateStr = Array.isArray(dateStr) ? dateStr[0] : dateStr;
+    const [year, month, day] = cleanDateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day); // Create local date
+
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
 
   const formatDuration = (minutes) => {
     const hours = Math.floor(minutes / 60);
@@ -714,41 +714,38 @@ const formatDate = (dateStr) => {
                     </div>
                   ) : availableSlots.length > 0 ? (
                     <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
-                      {availableSlots.map((daySlot, index) => (
-                        <button
-                          key={index}
-                        onClick={() => {
+                     {availableSlots.map((daySlot, index) => {
   const dateStr = Array.isArray(daySlot.date) ? daySlot.date[0] : daySlot.date;
-  setSelectedDate(dateStr);
-  setSelectedTime("");
-}}className={`p-3 text-center rounded-lg border transition-all ${
-  // ✅ FIX: Compare correctly
-  (Array.isArray(daySlot.date) ? daySlot.date[0] : daySlot.date) === selectedDate
-    ? "border-pink-500 bg-pink-50 text-gray-700"
-    : "border-gray-200 hover:border-gray-300 text-gray-700"
-}`}
-                        >
-                          <div className="text-xs font-medium">
-                            {daySlot.dayOfWeek.substring(0, 3)}
-                          </div>
-                         <div className="text-lg font-bold mt-1">
-  {/* ✅ FIX: Parse date string without timezone conversion */}
-  {(() => {
-    const dateStr = Array.isArray(daySlot.date) ? daySlot.date[0] : daySlot.date;
-    const [year, month, day] = dateStr.split('-').map(Number);
-    return day;
-  })()}
-</div>
-<div className="text-xs">
-  {(() => {
-    const dateStr = Array.isArray(daySlot.date) ? daySlot.date[0] : daySlot.date;
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return monthNames[month - 1];
-  })()}
-</div>
-                        </button>
-                      ))}
+  const parts = dateStr.split('-');
+  const day = parseInt(parts[2], 10);
+  const monthIndex = parseInt(parts[1], 10) - 1;
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  return (
+    <button
+      key={index}
+      onClick={() => {
+        setSelectedDate(dateStr);
+        setSelectedTime("");
+      }}
+      className={`p-3 text-center rounded-lg border transition-all ${
+        dateStr === selectedDate
+          ? "border-pink-500 bg-pink-50 text-gray-700"
+          : "border-gray-200 hover:border-gray-300 text-gray-700"
+      }`}
+    >
+      <div className="text-xs font-medium">
+        {daySlot.dayOfWeek.substring(0, 3)}
+      </div>
+      <div className="text-lg font-bold mt-1">
+        {day}
+      </div>
+      <div className="text-xs">
+        {monthNames[monthIndex]}
+      </div>
+    </button>
+  );
+})}
                     </div>
                   ) : (
                     <div className="text-center py-12 text-gray-500">
@@ -780,8 +777,8 @@ const formatDate = (dateStr) => {
                               key={index}
                               onClick={() => setSelectedTime(timeSlot.time)}
                               className={`p-3 text-sm font-medium rounded-lg border transition-all ${selectedTime === timeSlot.time
-                                  ? "border-pink-500 bg-pink-50 text-gray-900"
-                                  : "border-gray-200 hover:border-gray-300 text-gray-700"
+                                ? "border-pink-500 bg-pink-50 text-gray-900"
+                                : "border-gray-200 hover:border-gray-300 text-gray-700"
                                 }`}
                             >
                               <div>{timeSlot.time}</div>
@@ -820,7 +817,7 @@ const formatDate = (dateStr) => {
               <p class="text-gray-700">The time indicated per appointment are estimations and can vary based on size of head, quantity of braids and length in comparison to your height.</p>
             </div>
 
-            
+
             {/* Terms and Policies */}
             <div className="bg-white rounded-lg shadow-sm">
 
@@ -1119,60 +1116,60 @@ const formatDate = (dateStr) => {
         </div>
       )}
 
-     {/* Payment Modal */}
-{showPayment && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-      <div className="text-center">
-        <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          You are almost there!
-        </h3>
-        <p className="text-gray-600 mb-6">
-          Complete payment to confirm your booking
-        </p>
+      {/* Payment Modal */}
+      {showPayment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="text-center">
+              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                You are almost there!
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Complete payment to confirm your booking
+              </p>
 
-        <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
-          <p className="font-medium text-gray-900 mb-2">
-            {formatDate(selectedDate)} at {selectedTime}
-          </p>
-          <div className="space-y-1 text-sm text-gray-600">
-            {selectedServices.map((service) => (
-              <p key={service._id}>• {service.title}</p>
-            ))}
-          </div>
-          <div className="border-t border-gray-200 mt-3 pt-3">
-            {/* ✅ ADD: Show full price */}
-            <div className="flex justify-between text-sm text-gray-600 mb-1">
-              <span>Total Service Price:</span>
-              <span>{formatNaira(getTotalPrice())}</span>
-            </div>
-            
-            {/* ✅ CHANGE: Show 50% deposit */}
-            <div className="flex justify-between font-semibold text-green-600">
-              <span>Deposit (50%):</span>
-              <span>{formatNaira(getTotalPrice() * 0.5)}</span>
-            </div>
-            
-            {/* ✅ ADD: Show remaining balance */}
-            {/* <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
+                <p className="font-medium text-gray-900 mb-2">
+                  {formatDate(selectedDate)} at {selectedTime}
+                </p>
+                <div className="space-y-1 text-sm text-gray-600">
+                  {selectedServices.map((service) => (
+                    <p key={service._id}>• {service.title}</p>
+                  ))}
+                </div>
+                <div className="border-t border-gray-200 mt-3 pt-3">
+                  {/* ✅ ADD: Show full price */}
+                  <div className="flex justify-between text-sm text-gray-600 mb-1">
+                    <span>Total Service Price:</span>
+                    <span>{formatNaira(getTotalPrice())}</span>
+                  </div>
+
+                  {/* ✅ CHANGE: Show 50% deposit */}
+                  <div className="flex justify-between font-semibold text-green-600">
+                    <span>Deposit (50%):</span>
+                    <span>{formatNaira(getTotalPrice() * 0.5)}</span>
+                  </div>
+
+                  {/* ✅ ADD: Show remaining balance */}
+                  {/* <div className="flex justify-between text-xs text-gray-500 mt-1">
               <span>Remaining balance (pay after service):</span>
               <span>{formatNaira(getTotalPrice() * 0.5)}</span>
             </div> */}
+                </div>
+              </div>
+
+              {/* ✅ CHANGE: Button shows deposit amount */}
+              <button
+                onClick={handlePayment}
+                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors mb-4"
+              >
+                Pay Deposit - {formatNaira(getTotalPrice() * 0.5)}
+              </button>
+            </div>
           </div>
         </div>
-
-        {/* ✅ CHANGE: Button shows deposit amount */}
-        <button
-          onClick={handlePayment}
-          className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors mb-4"
-        >
-          Pay Deposit - {formatNaira(getTotalPrice() * 0.5)}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 };

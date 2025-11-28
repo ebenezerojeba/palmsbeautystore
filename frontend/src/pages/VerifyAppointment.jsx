@@ -1,24 +1,21 @@
-// FRONTEND - Enhanced error handling and retry logic
+// FRONTEND - Updated to work with payment-first flow
 import { useContext, useEffect, useState } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Loader2 } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 
 export default function VerifyAppointment() {
-  const { appointmentId } = useParams();
-  const {backendUrl} = useContext(AppContext)
+  const { backendUrl } = useContext(AppContext);
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id');
   
   const [status, setStatus] = useState('verifying');
   const [message, setMessage] = useState('');
   const [retryCount, setRetryCount] = useState(0);
-  const [debugInfo, setDebugInfo] = useState(null);
+  const [appointmentData, setAppointmentData] = useState(null);
   const navigate = useNavigate();
 
-
-  const isValidId = (id) => typeof id === 'string' && id.length === 24;
   const isValidSessionId = (id) => typeof id === 'string' && id.trim() !== '';
 
   const config = {
@@ -34,22 +31,14 @@ export default function VerifyAppointment() {
     console.log(`🔄 Verification attempt ${attempts + 1}`);
     
     try {
-      const { data, status: httpStatus } = await axios.post(backendUrl +
-        '/api/appointment/verify',
-        { sessionId, appointmentId },
+      const { data, status: httpStatus } = await axios.post(
+        backendUrl + '/api/appointment/verify',
+        { sessionId }, // Only send sessionId, no appointmentId
         config
       );
 
       console.log('Response status:', httpStatus);
       console.log('Response data:', data);
-
-      // Store debug info
-      setDebugInfo({
-        httpStatus,
-        responseData: data,
-        attempt: attempts + 1,
-        timestamp: new Date().toISOString()
-      });
 
       // Handle processing status (retry)
       if (data.status === 'processing' || (data.payment_status === 'unpaid' && attempts < 8)) {
@@ -66,11 +55,14 @@ export default function VerifyAppointment() {
         console.log('✅ Payment verification successful');
         setStatus('success');
         setMessage(data.message);
+        setAppointmentData(data.appointment);
+        
+        // Redirect to success page with the newly created appointment
         setTimeout(() => {
-          navigate(`/success/${appointmentId}`, {
+          navigate(`/success/${data.appointment._id}`, {
             state: { appointment: data.appointment },
           });
-        }, 3000);
+        }, 2000);
       } else {
         console.log('❌ Payment verification failed');
         setStatus('error');
@@ -97,19 +89,18 @@ export default function VerifyAppointment() {
 
   useEffect(() => {
     console.log('🏁 Starting verification process');
-    console.log('Appointment ID:', appointmentId);
     console.log('Session ID:', sessionId);
     console.log('Token present:', !!localStorage.getItem('token'));
 
-    if (!appointmentId || !sessionId) {
+    if (!sessionId) {
       setStatus('error');
-      setMessage('Missing required parameters');
+      setMessage('Missing payment session ID. Please try booking again.');
       return;
     }
 
-    if (!isValidId(appointmentId) || !isValidSessionId(sessionId)) {
+    if (!isValidSessionId(sessionId)) {
       setStatus('error');
-      setMessage('Invalid parameters format');
+      setMessage('Invalid payment session format');
       return;
     }
 
@@ -120,7 +111,7 @@ export default function VerifyAppointment() {
     }
 
     verifyPayment();
-  }, [appointmentId, sessionId]);
+  }, [sessionId]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -131,6 +122,9 @@ export default function VerifyAppointment() {
             <h2 className="text-xl font-semibold text-gray-700">
               Verifying your payment...
             </h2>
+            <p className="text-sm text-gray-500">
+              Please wait while we confirm your payment and create your appointment.
+            </p>
             {retryCount > 0 && (
               <p className="text-sm text-gray-500">
                 Attempt {retryCount + 1} of 8
@@ -144,21 +138,23 @@ export default function VerifyAppointment() {
             <svg className="w-14 h-14" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
-            <h2 className="text-2xl font-bold">Payment Verified!</h2>
+            <h2 className="text-2xl font-bold">Payment Successful!</h2>
             <p className="text-gray-700">{message}</p>
-            <p className="text-sm text-gray-500">Redirecting to your appointment...</p>
+            <p className="text-sm text-gray-500">
+              Your appointment has been created. Redirecting...
+            </p>
           </div>
         )}
 
         {status === 'error' && (
-          <div className="flex flex-col items-centers gap-4 text-red-600">
+          <div className="flex flex-col items-center gap-4 text-red-600">
             <svg className="w-14 h-14" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
             <h2 className="text-2xl font-bold">Verification Failed</h2>
             <p className="text-gray-700 mb-4">{message}</p>
             
-            <div className="space-y-2">
+            <div className="space-y-2 w-full">
               <button
                 onClick={() => {
                   setStatus('verifying');
@@ -176,8 +172,14 @@ export default function VerifyAppointment() {
               >
                 View My Appointments
               </button>
+              
+              <button
+                onClick={() => navigate('/')}
+                className="w-full px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition"
+              >
+                Back to Home
+              </button>
             </div>
-
           </div>
         )}
       </div>
