@@ -70,7 +70,7 @@ const HeroSection = ({ heroImage }) => {
   };
 
   return (
-    <section className="relative min-h-screen overflow-hidden flex items-center">
+    <section className="relative md:min-h-[100vh] sm:min-h-[60vh] overflow-hidden flex items-center">
       {/* Background Image with Parallax */}
       <div 
         className="absolute inset-0 z-0"
@@ -153,17 +153,7 @@ const HeroSection = ({ heroImage }) => {
         </motion.div>
       </motion.div>
 
-      {/* Scroll Indicator */}
-      {/* <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 2, duration: 1, repeat: Infinity, repeatType: "reverse" }}
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10"
-      >
-        <div className="w-6 h-10 border-2 border-white/40 rounded-full flex items-start justify-center p-2">
-          <div className="w-1 h-2 bg-white/60 rounded-full"></div>
-        </div>
-      </motion.div> */}
+  
     </section>
   );
 };

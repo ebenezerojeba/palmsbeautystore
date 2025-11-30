@@ -235,8 +235,6 @@ const validatePhone = (value) => {
     }
   }, [token, redirectInfo, navigate]);
 
-  
-
   return (
     <div className="min-h-screen flex items-center justify-center p-6 -mt-16">
       {/* Decorative elements */}
