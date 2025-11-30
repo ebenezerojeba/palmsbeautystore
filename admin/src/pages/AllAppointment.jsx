@@ -788,33 +788,35 @@ const handleCancelAppointment = useCallback(async (appointmentId) => {
                 </span>
               </h1>
 
-              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
-                <button
-                  onClick={() => setView('calendar')}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    view === 'calendar' ? 'bg-white text-pink-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  {/* <Calendar className="w-4 h-4" /> */}
-                  <span className="hidden sm:inline">Calendar</span>
-                </button>
-                <button
-                  onClick={() => setView('list')}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    view === 'list' ? 'bg-white text-pink-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  <List className="w-4 h-4" />
-                  <span className="hidden sm:inline">List</span>
-                </button>
+<div className="w-full flex flex-1 sm:flex-row sm:items-center sm:justify-between gap-3">
 
-<button
-  onClick={() => setShowAddModal(true)}
-  className="px-4 py-2 bg-pink-700 text-white rounded-lg hover:bg-pink-700 transition-colors text-sm font-medium"
->
-   Add Appointment
-</button>
-              </div>
+  <button
+    onClick={() => setShowAddModal(true)}
+    className="px-4 py-2 bg-pink-700 text-white rounded-lg hover:bg-pink-700 transition-colors text-sm font-medium w-fit"
+  >
+    + Create Appointment
+  </button>
+
+  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+    <button
+      onClick={() => setView('calendar')}
+      className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${view === 'calendar' ? 'bg-white text-pink-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+    >
+      <Calendar className="w-4 h-4" />
+      <span className="hidden sm:inline">Calendar</span>
+    </button>
+
+    <button
+      onClick={() => setView('list')}
+      className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${view === 'list' ? 'bg-white text-pink-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+    >
+      <List className="w-4 h-4" />
+      <span className="hidden sm:inline">List</span>
+    </button>
+  </div>
+
+</div>
+
             </div>
 
 

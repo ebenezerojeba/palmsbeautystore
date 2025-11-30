@@ -198,8 +198,8 @@ const getStatusStats = () => {
 
   const StatCard = ({ icon, value, label, bgColor, textColor, status, trend, onClick, isRevenue = false }) => (
     <div 
-      className={`bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 transition-all duration-200 hover:shadow-md cursor-pointer hover:border-gray-300
-        ${filterStatus === status ? 'ring-2 ring-gray-500 border-gray-500' : ''}`}
+      className={`bg-white rounded-lg shadow-sm border border-gray-50 p-3 sm:p-4 transition-all duration-200 hover:shadow-md cursor-pointer hover:border-gray-300
+        ${filterStatus === status ? 'ring-1 ring-gray-400 border-gray-100' : ''}`}
       onClick={() => onClick && onClick(status)}
     >
       <div className="flex items-center justify-between mb-2">

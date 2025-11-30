@@ -1583,7 +1583,7 @@ const AddServiceModal = ({ provider, services, onClose, onAdd }) => {
               onClick={() => setShowAddProviderModal(true)}
               className="inline-flex items-center px-4 py-2 bg-pink-800 text-white rounded-lg hover:bg-gray-700 transition-colors w-full sm:w-auto justify-center"
             >
-              {/* <UserPlus className="w-5 h-5 mr-2" /> */}
+              <UserPlus className="w-5 h-5 mr-2" />
               Add Provider
             </button>
           </div>
