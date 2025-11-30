@@ -53,14 +53,14 @@ const handleChange = (e) => {
   });
 
   return (
-    <animated.div className="w-full relative mb-5" style={inputAnimation}>
+    <animated.div className="w-full relative mb-3" style={inputAnimation}>
       <div className={`relative transition-all duration-200 ${isFocused ? "ring-2 ring-primary/50 rounded-lg" : ""}`}>
         <Icon
           className={`absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors duration-200 ${isFocused ? "text-primary" : "text-gray-400"}`}
-          size={18}
+          size={12}
         />
         <input
-          className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-primary bg-white/90 text-gray-800 transition-all duration-200 text-sm"
+          className="w-full pl-10 pr-10 py-2.5 rounded-lg border-gray-100 focus:outline-none focus:border-none bg-white/90 text-gray-800 transition-all duration-200 text-sm"
           type={type === "password" && showPassword ? "text" : type}
           placeholder={placeholder}
           value={value}
@@ -72,7 +72,7 @@ const handleChange = (e) => {
         {type === "password" && (
           <button
             type="button"
-            className={`absolute right-3 top-1/2 transform -translate-y-1/2 transition-colors duration-200 ${isFocused ? "text-primary" : "text-gray-400"}`}
+            className={`absolute  right-3 top-1/2 transform -translate-y-1/2 transition-colors duration-200 ${isFocused ? "text-primary" : "text-gray-400"}`}
             onClick={() => setShowPassword(!showPassword)}
           >
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -96,32 +96,6 @@ const Login = () => {
   const [searchParams] = useSearchParams();
   const [phoneError, setPhoneError] = useState("");
 
-const validatePhone = (value) => {
-  const cleaned = value.replace(/\D/g, '');
-  if (cleaned.length > 0 && cleaned.length < 10) {
-    setPhoneError("Phone number must be 10 digits");
-  } else {
-    setPhoneError("");
-  }
-};
-
-
-  const formatPhoneNumber = (value) => {
-  // Remove all non-digits
-  const cleaned = value.replace(/\D/g, '');
-  
-  // Limit to 10 digits
-  const limited = cleaned.slice(0, 10);
-  
-  // Format as (XXX) XXX-XXXX
-  if (limited.length <= 3) {
-    return limited;
-  } else if (limited.length <= 6) {
-    return `(${limited.slice(0, 3)}) ${limited.slice(3)}`;
-  } else {
-    return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)}-${limited.slice(6)}`;
-  }
-};
 
 
   // Get redirect information from multiple sources for better mobile compatibility
@@ -333,7 +307,7 @@ const validatePhone = (value) => {
   <button
     type="submit"
     disabled={isLoading}
-    className={`w-full py-2 px-3 rounded-lg font-medium text-white transition-all duration-300 ${
+    className={`w-full cursor-pointer py-2 px-3 rounded-lg font-medium text-white transition-all duration-300 ${
       isLoading
         ? "bg-pink-900/70 cursor-not-allowed"
         : "bg-pink-800 hover:bg-primary-dark shadow-lg hover:shadow-primary/30"
@@ -344,18 +318,6 @@ const validatePhone = (value) => {
     ) : (
       <>
         {state === "Sign Up" ? "Create Account" : "Login"}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path
-            fillRule="evenodd"
-            d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-            clipRule="evenodd"
-          />
-        </svg>
       </>
     )}
   </button>

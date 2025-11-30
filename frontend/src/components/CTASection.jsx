@@ -75,14 +75,14 @@ const CTASection = ({ navigate, clientImages }) => {
               onClick={() => navigate('/services')}
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.98 }}
-              className="group bg-primary-foreground text-primary px-12 py-5 rounded-full font-light text-xl hover:bg-background transition-all duration-300 shadow-2xl hover:shadow-primary-foreground/50 tracking-wide flex items-center gap-3 relative overflow-hidden"
+              className="group bg text-primary px-8 py-4 rounded-full font-light text-xl hover:bg-background transition-all duration-300 shadow-2xl hover:shadow-primary-foreground/50 tracking-wide flex items-center gap-2 relative overflow-hidden"
             >
-              <span className="relative z-10 cursor-pointer">Reserve Your Session</span>
+              <span className="relative z-10 cursor-pointer text-lg ">Reserve Your Session</span>
               <motion.div
                 animate={{ x: [0, 5, 0] }}
                 transition={{ duration: 1.5, repeat: Infinity }}
               >
-                <ArrowRight className="w-5 h-5 relative z-10" />
+                {/* <ArrowRight className="w-5 h-5 relative z-10" /> */}
               </motion.div>
               
               {/* Shimmer effect */}
