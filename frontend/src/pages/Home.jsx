@@ -3,6 +3,10 @@ import { Calendar, ChevronRight, Star, ArrowRight, Phone, Mail, MapPin, Award, U
 import { useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
 import ServiceCard from "../components/HeroServiceCard";
+import HeroSection from "../components/HeroSection";
+import GallerySection from "../components/GallerySection";
+import TestimonialsSection from "../components/TestimonialSection";
+import CTASection from "../components/CTASection";
 
 const TestimonialCard = ({ name, review, rating, image, service, delay }) => (
   <div 
@@ -155,6 +159,20 @@ const testimonials = [
     rating: 5,
     image: assets.headshot3,
     service: "Natural Hair Care"
+  },
+  {
+    name: "Nicole Davis",
+    review: "From start to finish, my experience was flawless. The stylists are true artists and the products used made my hair feel healthier than ever.",
+    rating: 5,
+    image: assets.headshot1,
+    service: "Natural Hair Care"
+  },
+  {
+    name: "Emily Brown",
+    review: "I can't recommend PalmsBeauty enough. The lash extensions are stunning and so natural-looking. The entire process was comfortable and professional.",
+    rating: 5,
+    image: assets.headshot2,
+    service: "Hair Styling"
   }
 ];
 
@@ -167,195 +185,43 @@ const Home = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+    // In your component:
+const galleryImages = [
+  {
+    before: assets.before1,
+    after: assets.braids2,
+    title: "Color Transformation"
+  },
+  {
+    before: assets.naturalafter,
+    after: assets.stitches,
+    title: "Natural Hair Styling"
+  },
+  {
+    before: assets.beforelash,
+    after: assets.lash6,
+    title: "Lash Enhancement"
+  }
+];
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <section className="relative min-h-screen bg-neutral-50 overflow-hidden flex items-center">
-        {/* Subtle background elements */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-neutral-400 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-neutral-500 rounded-full blur-3xl"></div>
-        </div>
+          <HeroSection heroImage={assets.back2} />
+<GallerySection
+  images={galleryImages}
+  title="Before & After Gallery"
+  ctaText="View More"
+  onCtaClick={() => navigate('/about')}
+/>
 
-        <div className="relative max-w-7xl mx-auto px-6 lg:px-8 pt-20">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            {/* Left Column */}
-            <div className="text-center lg:text-left">
-              <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-white shadow-sm border border-neutral-200 mb-12">
-                <MapPin className="h-4 w-4 text-neutral-600" />
-                <span className="text-sm font-light tracking-wide text-neutral-600">St. John, Newfoundland</span>
-              </div>
-
-              <h1 className="text-5xl md:text-6xl font-extralight text-neutral-900 mb-8 leading-[0.9] tracking-tight">
-                Timeless
-                <span className="block font-light text-neutral-700">
-                  Elegance
-                </span>
-              </h1>
-
-              <p className="text-xl text-neutral-600 mb-12 leading-relaxed max-w-lg font-light">
-                 Experience personalized beauty services 
-                that enhance your natural radiance in our sanctuary.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-6 justify-center lg:justify-start mb-16">
-                <button 
-                onClick={()=> navigate('/services')}
-                  className="bg-pink-900 text-white px-12 py-4 rounded-full font-light text-lg hover:bg-neutral-800 transition-all duration-300 shadow-lg hover:shadow-xl tracking-wide flex items-center justify-center gap-3"
-                >
-
-                  Book Experience
-                </button>
-                <button
-                onClick={()=> navigate('/collections')}
-                 className="border border-pink-900 text-neutral-700 px-12 py-4 rounded-full font-light hover:bg-neutral-50 transition-all duration-300 tracking-wide">
-                  Shop Products
-                </button>
-              </div>
-
-              {/* Elegant Stats with Counter Animation */}
-              <div className="grid grid-cols-3 gap-12 text-center lg:text-left">
-                <CounterAnimation end={500} suffix="+" label="Happy Clients" />
-                <CounterAnimation end={8} suffix="+" label="Years Experience" />
-                <CounterAnimation end={4.9} label="Star Rating" />
-              </div>
-            </div>
-
-            {/* Right Column */}
-            <div className="relative">
-              <div className="relative">
-                <img 
-                  src={assets.hero}
-                  alt="Luxury beauty salon experience"
-                  className="w-full md:h-[700px] h-[350px] object-cover rounded-2xl shadow-2xl"
-                  style={{
-                    transform: `translateY(${scrollY * 0.05}px)`,
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent rounded-2xl"></div>
-              </div>
+<TestimonialsSection testimonials={testimonials} />
     
-            </div>
-          </div>
-        </div>
-      </section>
+  
 
-      
-      {/* Before/After Portfolio - Reduced padding */}
-      <section id="portfolio" className="py-20 bg-neutral-50">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-5xl md:text-7xl font-extralight text-neutral-900 mb-8 tracking-tight">
-              Transformative
-              <span className="block font-light text-neutral-700">Artistry</span>
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-            <BeforeAfterCard 
-              before={assets.before1}
-              after={assets.braids2}
-              title="Color Transformation"
-              delay={0}
-            />
-            <BeforeAfterCard 
-              before={assets.naturalafter}
-              after={assets.stitches}
-              title="Natural Hair Styling"
-              delay={100}
-            />
-            <BeforeAfterCard 
-              before={assets.beforelash}
-              after={assets.lash6}
-              title="Lash Enhancement"
-              delay={200}
-            />
-          </div>
-
-          <div className="text-center">
-            <button onClick={()=>navigate('/about')} className="bg-pink-900 text-white px-12 py-4 rounded-full font-light text-lg hover:bg-neutral-800 transition-colors shadow-lg tracking-wide">
-              View Complete Portfolio
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials - Reduced padding */}
-      <section id="testimonials" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-5xl md:text-7xl font-extralight text-neutral-900 mb-8 tracking-tight">
-              Client
-              <span className="block font-light text-neutral-700">Experiences</span>
-            </h2>
-            <p className="text-xl text-neutral-600 font-light">
-              Stories of transformation and confidence from our valued clients
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <TestimonialCard key={testimonial.name} {...testimonial} delay={index * 100} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Services Section - Reduced padding */}
-      <section id="services" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-neutral-50 border border-neutral-200 mb-8">
-              <span className="text-sm font-light tracking-wide text-neutral-600">Signature Services</span>
-            </div>
-            <h2 className="text-5xl md:text-7xl font-extralight text-neutral-900 mb-8 tracking-tight">
-              Artistry in
-              <span className="block font-light text-neutral-700">Motion</span>
-            </h2>
-         
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-12">
-            {services.map((service, index) => (
-              <ServiceCard key={service.title} {...service} delay={index * 100} />
-            ))}
-          </div>
-        </div>
-      </section>
-      
-
-      {/* Refined CTA Section */}
-      <section className="py-16 bg-pink-900 relative overflow-hidden border rounded-3xl">
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-neutral-300 rounded-full blur-3xl"></div>
-        </div>
-        
-        <div className="relative max-w-4xl mx-auto px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-6xl font-extralight text-white mb-8 tracking-tight">
-            Begin Your Transformative
-            <span className="block font-light text-neutral-300">Journey</span>
-          </h2>
-          <div className="flex flex-col sm:flex-row gap-8 justify-center items-center mb-16">
-            <button 
-            onClick={()=> navigate('/services')}
-              className="bg-white text-pink-900 px-12 py-5 rounded-full font-light text-xl hover:bg-neutral-100 transition-all duration-300 shadow-lg hover:shadow-xl tracking-wide flex items-center gap-3"
-            >
-             
-              Reserve Your Session
-            </button>
-            <div className="flex items-center gap-6 text-neutral-300">
-              <div className="flex -space-x-3">
-                <img src={assets.headshot1} alt="Client" className="w-10 h-10 rounded-full border-2 border-neutral-600" />
-                <img src={assets.headshot2} alt="Client" className="w-10 h-10 rounded-full border-2 border-neutral-600" />
-                <img src={assets.headshot3} alt="Client" className="w-10 h-10 rounded-full border-2 border-neutral-600" />
-              </div>
-              <span className="text-sm font-light tracking-wide">500+ satisfied clients</span>
-            </div>
-          </div>
-        </div>
-      </section>
+     <CTASection
+  navigate={navigate} 
+  clientImages={[assets.headshot1, assets.headshot2, assets.headshot3]} 
+/>
 
       {/* Custom Styles */}
       <style jsx>{`

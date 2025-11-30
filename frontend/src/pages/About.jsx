@@ -12,7 +12,7 @@ const LoadingSpinner = () => (
   </div>
 );
 
-// Error Boundary Component
+// Error Boundary Compone
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -224,19 +224,7 @@ const AboutPage = () => {
               </div>
             </motion.div>
 
-            {/* Our Values */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-20"
-            >
-              <h2 className="text-3xl font-bold text-gray-800 text-center mb-12">What We Stand For</h2>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                {values.map((value, index) => (
-                  <ValueCard key={index} {...value} />
-                ))}
-              </div>
-            </motion.div>
+           
 
             {/* Services Grid */}
             <motion.div
@@ -283,22 +271,7 @@ const AboutPage = () => {
               </div>
             </motion.div>
 
-            {/* Location Section */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-lg shadow-xl p-12 text-center"
-            >
-              <h2 className="text-3xl font-semibold text-gray-800 mb-4">Visit Us Today</h2>
-              <p className="text-gray-600 mb-2 text-lg">Located in the heart of St. John's, Newfoundland and Labrador</p>
-              <p className="text-gray-600 mb-8">Experience the difference at PalmsBeautyStore and let us help you bring out your inner beauty.</p>
-              <button 
-                className="px-8 py-4 bg-pink-600 text-white text-lg font-semibold cursor-pointer rounded-md hover:bg-pink-700 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all"
-                onClick={() => window.location.href = '/services'}
-              >
-                Book Your Appointment
-              </button>
-            </motion.div>
+      
           </div>
         </div>
       </React.Suspense>

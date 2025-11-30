@@ -164,7 +164,7 @@ const Footer = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-center sm:text-left">
             <div className="text-sm mb-4 sm:mb-0">
-              © {currentYear} PalmsBeauty. All rights reserved.
+              © {currentYear} Palmsbeautystore. All rights reserved.
             </div>
           
           </div>

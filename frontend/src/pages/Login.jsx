@@ -60,7 +60,7 @@ const handleChange = (e) => {
           size={18}
         />
         <input
-          className="w-full pl-10 pr-10 py-3 rounded-lg border border-gray-300 focus:outline-none focus:border-primary bg-white/90 text-gray-800 transition-all duration-200"
+          className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-primary bg-white/90 text-gray-800 transition-all duration-200 text-sm"
           type={type === "password" && showPassword ? "text" : type}
           placeholder={placeholder}
           value={value}
@@ -238,7 +238,7 @@ const validatePhone = (value) => {
   
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-900 to-pink-900 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-6 -mt-16">
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-primary/30 blur-3xl animate-pulse"></div>
@@ -247,10 +247,10 @@ const validatePhone = (value) => {
 
       <animated.div
         style={formAnimation}
-        className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl shadow-xl w-full max-w-md relative z-10 p-8"
+        className="bg-pink-900 backdrop-blur-lg border border-white/10 rounded-2xl shadow-xl w-full max-w-sm relative z-10 p-4"
       >
-        <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+        <div className="flex justify-center mb-2">
+          <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-10 w-10 text-primary bg-gray-300 rounded-full p-2"
@@ -268,10 +268,10 @@ const validatePhone = (value) => {
           </div>
         </div>
 
-        <h2 className="text-3xl font-bold text-center mb-2 text-white">
+        <h2 className="text-2xl cursor-pointer font-bold text-center mb-6 text-white">
           {state === "Sign Up" ? "Create Account" : "Welcome Back"}
         </h2>
-        <p className="text-center text-gray-300 mb-8">
+        <p className="text-center cursor-pointer text-gray-300 mb-8">
           {state === "Sign Up"
             ? "Join us to book your appointments easily"
             : "Login to access your account"}
@@ -332,25 +332,13 @@ const validatePhone = (value) => {
     required
   />
 
-  {state === "Login" && (
-    <div className="text-right">
-      <button
-        type="button"
-        onClick={() => navigate('/forgot-password')}
-        className="text-sm text-primary hover:text-primary-light transition-colors"
-      >
-        Forgot Password?
-      </button>
-    </div>
-  )}
-
   <button
     type="submit"
     disabled={isLoading}
-    className={`w-full py-3 px-4 rounded-lg font-medium text-white transition-all duration-300 ${
+    className={`w-full py-2 px-3 rounded-lg font-medium text-white transition-all duration-300 ${
       isLoading
-        ? "bg-primary/70 cursor-not-allowed"
-        : "bg-primary hover:bg-primary-dark shadow-lg hover:shadow-primary/30"
+        ? "bg-pink-900/70 cursor-not-allowed"
+        : "bg-pink-800 hover:bg-primary-dark shadow-lg hover:shadow-primary/30"
     } flex items-center justify-center space-x-2`}
   >
     {isLoading ? (
@@ -381,7 +369,7 @@ const validatePhone = (value) => {
             <div className="w-full border-t border-gray-600/30"></div>
           </div>
           <div className="relative flex justify-center">
-            <span className="px-3 bg-transparent text-sm text-gray-400">
+            <span className="px-3 cursor-pointer bg-transparent text-sm text-gray-400">
               {state === "Sign Up" ? "Already have an account?" : "New here?"}
             </span>
           </div>
